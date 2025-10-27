@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skreenit - Detailed Applicantion Form</title>
+  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
+  <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
+  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" style="height:28px; width:auto; display:block;" />
+        </div>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item active" data-section="overview">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Overview</span>
+        </li>
+        <li class="nav-item" data-section="profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <img src="https://via.placeholder.com/40" alt="User" class="user-avatar">
+          <div class="user-details">
+            <span id="candidateName" class="user-name">Loading...</span>
+            <span class="user-role">Candidate</span>
+          </div>
+        </div>
+        <button id="logoutBtn" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <div id="dashboardError" class="error-message"></div>
+      <div id="dashboardContent"></div>
+    </main>
+  </div>
+  <script type="module" src="https://auth.skreenit.com/assets/js/candidate-dashboard.js"></script>
+</body>
+</html>
