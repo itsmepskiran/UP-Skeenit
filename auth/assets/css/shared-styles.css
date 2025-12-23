@@ -705,3 +705,61 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 */
+
+/* ================================
+   AUTH INTERACTION SAFETY PATCH
+   ================================ */
+
+/* Decorative overlays must NEVER block clicks */
+.auth-wrapper::before,
+.auth-wrapper::after,
+body::before,
+body::after {
+    pointer-events: none;
+}
+
+/* Ensure auth content is always interactive */
+.auth-wrapper,
+.auth-body,
+form {
+    position: relative;
+    z-index: 1;
+}
+
+/* Explicitly allow interaction on custom UI */
+.role-card {
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+}
+/* Role cards using native radios (interaction-safe) */
+.role-selection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.role-card {
+  flex: 1;
+  cursor: pointer;
+}
+
+.role-card input {
+  display: none;
+}
+
+.role-content {
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
+  text-align: center;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.role-card input:checked + .role-content {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
