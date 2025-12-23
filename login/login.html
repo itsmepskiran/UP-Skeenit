@@ -41,17 +41,12 @@
       height: 100%;
     }
     
-    .role-card input[type="radio"]:checked + .role-content {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-      background-color: rgba(79, 70, 229, 0.05);
-    }
-
     /* Selected card */
     .role-card input:checked + .role-content {
       border-color: var(--primary-color);
       box-shadow: var(--shadow-glow);
       transform: translateY(-2px);
+      background-color: rgba(79, 70, 229, 0.05);
     }
   </style>
 </head>
@@ -82,8 +77,9 @@
 
       <!-- ROLE SELECTION -->
       <div class="role-selection">
-        <label class="role-card">
-          <input type="radio" name="role" value="candidate" class="role-radio" />
+
+        <label class="role-card" for="role-candidate">
+          <input type="radio" name="role" value="candidate" id="role-candidate" />
           <div class="role-content">
             <div class="role-icon">🎯</div>
             <h3>Candidate</h3>
@@ -91,8 +87,8 @@
           </div>
         </label>
 
-        <label class="role-card">
-          <input type="radio" name="role" value="recruiter" class="role-radio" />
+        <label class="role-card" for="role-recruiter">
+          <input type="radio" name="role" value="recruiter" id="role-recruiter" />
           <div class="role-content">
             <div class="role-icon">🏢</div>
             <h3>Recruiter</h3>
@@ -130,7 +126,6 @@
         </div>
 
       </div>
-
     </form>
   </div>
 </div>
@@ -140,33 +135,33 @@
 
   document.addEventListener('DOMContentLoaded', () => {
 
-    const roleRadios = document.querySelectorAll('input[name="role"]');
+    const roleCards = document.querySelectorAll('.role-card');
     const loginFields = document.getElementById('loginFields');
     const companyBox = document.getElementById('companyBox');
     const form = document.getElementById('loginForm');
 
-    // Function to handle role selection
-    function handleRoleSelection() {
-      const selectedRole = document.querySelector('input[name="role"]:checked');
-      
-      if (selectedRole) {
-        // Show login fields
-        loginFields.style.display = 'block';
-        
-        // Toggle company code field based on role
-        if (selectedRole.value === 'recruiter') {
-          companyBox.style.display = 'block';
-          companyBox.querySelector('input').setAttribute('required', 'required');
-        } else {
-          companyBox.style.display = 'none';
-          companyBox.querySelector('input').removeAttribute('required');
-        }
+    function toggleFormFields(role) {
+      loginFields.style.display = 'block';
+      const companyInput = companyBox.querySelector('input');
+
+      if (role === 'recruiter') {
+        companyBox.style.display = 'block';
+        companyInput.required = true;
+      } else {
+        companyBox.style.display = 'none';
+        companyInput.required = false;
       }
     }
 
-    // Add event listeners to radio buttons
-    roleRadios.forEach(radio => {
-      radio.addEventListener('change', handleRoleSelection);
+    roleCards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = true;
+          // Directly call the function to update the UI
+          toggleFormFields(radio.value);
+        }
+      });
     });
 
     // Initialize form state
