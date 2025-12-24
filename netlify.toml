@@ -1,60 +1,31 @@
-
 [build]
-  # Directory to change to before starting a build
-  base = "/"
-  
-  # Directory that contains the deploy-ready HTML files and assets
-  publish = "frontend"
-  
-  # Default build command
-  command = "npm run build"
+  # Since your HTML files are in the root and folders like /login, /auth, etc.
+  publish = "."
+  # You don't have a package.json/build script, so leave this empty
+  command = ""
 
-# Redirects and proxies
+# Redirects to support your folder-based routing
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/login/*"
+  to = "/login/login.html"
   status = 200
 
-# Environment variables (these should be set in Netlify dashboard)
-[build.environment]
-  NODE_VERSION = "18.17.0"
-  NPM_VERSION = "9.6.7"
-  
-# Required for Single Page Applications (SPA)
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/auth/*"
+  to = "/auth/index.html"
   status = 200
 
-# Security headers
+# API Proxy: Ensures /api calls on Netlify reach your Render backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://aiskreenit.onrender.com/:splat"
+  status = 200
+  force = true
+
+# Essential Headers for CORS and Security
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.skreenit.com https://auth.skreenit.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://*.skreenit.com https://auth.skreenit.com https://api.skreenit.com; frame-src 'self' https://*.youtube.com https://www.youtube.com;"
-
-# Cache control for static assets
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# API proxy configuration
-[[redirects]]
-  from = "/api/*"
-  to = "https://auth.skreenit.com/:splat"
-  status = 200
-  force = true
-  headers = {X-Forwarded-Proto = "https"}
-
-# Handle preflight requests for CORS
-[[headers]]
-  for = "/api/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "https://www.skreenit.com"
+    Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, Authorization"
-    Access-Control-Allow-Credentials = "true"
