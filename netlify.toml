@@ -1,0 +1,30 @@
+[build]
+# Run the build inside the frontend folder
+base = "frontend"
+command = "npm run build"
+publish = "dist"
+
+# Tell Netlify where your backend functions live (relative to repo root)
+functions = "backend/netlify/functions"
+
+[build.environment]
+PYTHON_VERSION = "3.11"
+
+[functions]
+# Make sure backend Python files and requirements are available to functions
+included_files = [
+  "backend/**/*.py",
+  "backend/requirements.txt"
+]
+
+# API calls -> backend functions
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/:splat"
+status = 200
+
+# Frontend SPA routing
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
