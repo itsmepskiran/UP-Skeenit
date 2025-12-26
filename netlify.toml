@@ -1,28 +1,35 @@
-# This configuration is for a project with a Python backend and multiple static frontend sites.
-
 [build]
-  # The command to build the backend function.
-  # It installs dependencies from the backend's requirements.txt file.
-  command = "python -m pip install --upgrade pip && pip install -r backend/requirements.txt"
+  # Install Python dependencies
+  command = "cd backend && python -m pip install --upgrade pip && pip install -r requirements.txt"
   
-  # The directory containing the serverless functions.
-  functions = "backend/netlify/functions"
-  
-  # The directory to publish, which is the root of the project.
-  # This makes all static HTML/CSS/JS folders (login, applicant, etc.) available.
+  # Publish the root directory to serve static files
   publish = "."
+  
+  # Directory containing Netlify functions
+  functions = "backend/netlify/functions"
 
 [build.environment]
-  # Specify the Python version for the build environment.
   PYTHON_VERSION = "3.11"
+  NODE_VERSION = "18"
 
 [functions]
-  # Ensure all necessary backend files are included in the function deployment.
+  # Include all Python files in the backend directory
   included_files = ["backend/**/*.py"]
 
-# This redirect makes the Python backend function accessible at the root.
-# For example, a request to /health will be routed to your function.
+# API requests to /api/* will be handled by the Netlify function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/main"
+  status = 200
+
+# Health check endpoint
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/main/health"
+  status = 200
+
+# All other requests should be handled by the SPA
 [[redirects]]
   from = "/*"
-  to = "/.netlify/functions/main"
+  to = "/index.html"
   status = 200
