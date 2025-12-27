@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Request, HTTPException, Form, UploadFile, File
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -184,19 +185,19 @@ async def password_updated(request: Request):
         full_name = metadata.get("full_name") or None
 
         try:
-            _ = auth_service.notify_password_changed(email=email, full_name=full_name)
-        except Exception:
-            pass
+            _ = service.notify_password_changed(email=email, full_name=full_name)
+        except Exception as e:
+            logging.error(f"Failed to send password changed notification: {str(e)}")
 
         if role == "recruiter":
             try:
-                company = auth_service.get_recruiter_company_info(user.get("id"))
+                company = service.get_recruiter_company_info(user.get("id"))
                 cid = company.get("company_id")
                 cname = company.get("company_name")
                 if cid:
-                    _ = auth_service.send_recruiter_company_email(email=email, full_name=full_name, company_id=cid, company_name=cname)
-            except Exception:
-                pass
+                    _ = service.send_recruiter_company_email(email=email, full_name=full_name, company_id=cid, company_name=cname)
+            except Exception as e:
+                logging.error(f"Failed to process recruiter company info: {str(e)}")
 
         # After updating metadata, return user info for frontend to handle login
         return {"ok": True, "data": {"user": user, "message": "Password updated successfully. Please log in."}}
