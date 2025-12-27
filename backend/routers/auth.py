@@ -203,3 +203,58 @@ async def password_updated(request: Request):
         return {"ok": True, "data": {"user": user, "message": "Password updated successfully. Please log in."}}
     except Exception as e:
         return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
+@router.post("/forgot-password")
+async def forgot_password(email: str = Form(...)):
+    """Send password reset email"""
+    try:
+        service = get_auth_service()
+        site_url = os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
+        redirect_to = f"{site_url}/update-password.html"
+        
+        # Send password reset email with redirect URL
+        result = service.supabase.auth.reset_password_email(
+            email,
+            {
+                "redirect_to": redirect_to
+            }
+        )
+        
+        return {
+            "ok": True,
+            "message": "Password reset email sent. Please check your email."
+        }
+        
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "user not found" in error_msg:
+            # Don't reveal that the email doesn't exist
+            return {"ok": True, "message": "If an account exists with this email, a password reset link has been sent."}
+        logging.error(f"Password reset error: {str(e)}")
+        raise HTTPException(status_code=400, detail="Failed to send password reset email")
+
+@router.get("/confirm-email")
+async def confirm_email(request: Request, token: str, type: str, redirect_to: str = None):
+    """Handle email confirmation and redirect to update password page"""
+    try:
+        service = get_auth_service()
+        
+        # Verify the email confirmation token
+        auth_resp = service.supabase.auth.verify_otp({
+            "token": token,
+            "type": type,  # This will be "signup" for email confirmation
+            "email": None,  # Will be extracted from token
+        })
+        
+        if not auth_resp or not getattr(auth_resp, "user", None):
+            raise HTTPException(status_code=400, detail="Invalid or expired confirmation link")
+        
+        # If we have a redirect URL, use it
+        if redirect_to:
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url=redirect_to)
+        
+        return {"ok": True, "message": "Email confirmed successfully"}
+        
+    except Exception as e:
+        logging.error(f"Email confirmation error: {str(e)}")
+        raise HTTPException(status_code=400, detail="Failed to confirm email")
