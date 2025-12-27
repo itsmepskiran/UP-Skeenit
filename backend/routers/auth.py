@@ -52,44 +52,47 @@ async def register(
         resume_bytes = None
         resume_filename = None
         if resume and role == 'candidate':
-            # Validate file type
-            allowed_types = ['application/pdf', 'application/msword', 
-                           'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+            allowed_types = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ]
             if resume.content_type not in allowed_types:
                 raise HTTPException(status_code=400, detail="Invalid resume format. Please upload PDF or DOC/DOCX file")
+            
             resume_bytes = await resume.read()
             resume_filename = resume.filename
-            
+
         # Register user
         try:
             service = get_auth_service()
             result = service.register(
-            full_name=full_name,
-            email=email,
-            mobile=mobile,
-            location=location,
-            role=role,
-            company_id=company_id,
-            company_name=company_name,
-            resume_bytes=resume_bytes,
-            resume_filename=resume_filename
-        )
-        
-        return {
-            "ok": True,
-            "message": "Registration successful! Please check your email to verify your account."
-        }
+                full_name=full_name,
+                email=email,
+                mobile=mobile,
+                location=location,
+                role=role,
+                company_id=company_id,
+                company_name=company_name,
+                resume_bytes=resume_bytes,
+                resume_filename=resume_filename
+            )
+            return {
+                "ok": True,
+                "message": "Registration successful! Please check your email to verify your account."
+            }
 
-    except Exception as e:
+        except Exception as e:
             error_msg = str(e).lower()
             if "already exists" in error_msg or "already registered" in error_msg:
                 raise HTTPException(status_code=400, detail="This email is already registered")
             raise
 
-    except HTTPException as he:
-        raise 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("/update-password")
 async def update_password(
     token: str = Form(...),
