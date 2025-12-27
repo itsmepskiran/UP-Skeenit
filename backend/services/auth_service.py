@@ -61,7 +61,7 @@ class AuthService:
                 "email": email,
                 "password": temp_password,
                 "options": {
-                    "email_redirect_to": redirect_to,
+                    "email_redirect_to": f"{site_url}/confirm-email.html",
                     "data": {
                         "full_name": full_name,
                         "mobile": mobile,
