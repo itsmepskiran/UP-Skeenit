@@ -45,61 +45,60 @@ class AuthService:
                  company_name: Optional[str] = None,
                  resume_bytes: Optional[bytes] = None,
                  resume_filename: Optional[str] = None) -> Dict[str, Any]:
-        import secrets, time, random, string
-
-        ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*"
-        def gen_temp(length: int = 12) -> str:
-            return "".join(secrets.choice(ALPHABET) for _ in range(length)
-
-        )
-
-        temp_password = gen_temp(12)
-
-        logging.info(f"Attempting to create user {email} in Supabase")
-        try:
-            auth_res = self.supabase.auth.sign_up({
-                "email": email,
-                "password": temp_password,
-                "options": {
-                    "email_redirect_to": "https://login.skreenit.com/update-password.html",
-                    "data": {
-                        "full_name": full_name,
-                        "mobile": mobile,
-                        "location": location,
-                        "role": role,
-                        "onboarded": False,
-                        "password_set": False,
-                        **({"company_id": company_id} if company_id else {}),
-                        **({"company_name": company_name} if company_name else {}),
-                    }
+        # Generate a strong random password (won't be used, just a placeholder)
+    import secrets
+    import string
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    temp_password = ''.join(secrets.choice(alphabet) for _ in range(32))
+    
+    # Configure the redirect URL for email confirmation
+    site_url = os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
+    redirect_to = f"{site_url}/update-password.html"
+    
+    try:
+        # Sign up the user with email confirmation
+        auth_res = self.supabase.auth.sign_up({
+            "email": email,
+            "password": temp_password,
+            "options": {
+                "email_redirect_to": redirect_to,
+                "data": {
+                    "full_name": full_name,
+                    "mobile": mobile,
+                    "location": location,
+                    "role": role,
+                    "onboarded": False,
+                    "password_set": False,
+                    **({"company_id": company_id} if company_id else {}),
+                    **({"company_name": company_name} if company_name else {}),
                 }
-            })
-        except Exception as ce:
-            msg = str(ce)
-            if "User already registered" in msg or "already exists" in msg:
-                raise ValueError("User already registered")
-            raise
-
+            }
+        })
+        
         user = getattr(auth_res, "user", None)
-        user_id = user.id if user else None
-        if not user_id:
-            raise RuntimeError("Failed to create user in Supabase")
-
+        if not user:
+            raise ValueError("Failed to create user in Supabase")
+            
+        # Handle resume upload if provided
         resume_path = None
-        if resume_bytes is not None and resume_filename:
+        if resume_bytes and resume_filename:
             try:
+                import time
                 ts = int(time.time() * 1000)
                 safe_name = resume_filename.replace(" ", "_")
-                resume_path = f"{user_id}/{ts}-{safe_name}"
+                resume_path = f"{user.id}/{ts}-{safe_name}"
                 up = self.supabase.storage.from_("resumes").upload(resume_path, resume_bytes)
                 if getattr(up, "error", None):
                     resume_path = None
-            except Exception:
+            except Exception as e:
+                logging.error(f"Failed to upload resume: {str(e)}")
                 resume_path = None
-
-        # If recruiter and company_name provided but company_id missing, create company and update user metadata
+        
+        # Handle company creation for recruiters
         final_company_id = company_id
-        if role == "recruiter" and (not final_company_id) and (company_name or "").strip():
+        if role == "recruiter" and (not final_company_id) and company_name:
+            import random
+            import string
             base = ''.join(ch for ch in (company_name or "") if ch.isalpha()).upper()
             if len(base) < 8:
                 base = base + ''.join(random.choice(string.ascii_uppercase) for _ in range(8 - len(base)))
@@ -108,14 +107,15 @@ class AuthService:
                 comp_ins = self.supabase.table("companies").insert({
                     "id": gen_id,
                     "name": company_name,
-                    "created_by": user_id,
+                    "created_by": user.id,
                 }).execute()
-                err = getattr(comp_ins, "error", None)
-                if err:
-                    raise Exception(err)
+                if getattr(comp_ins, "error", None):
+                    raise Exception(str(comp_ins.error))
                 final_company_id = gen_id
+                
+                # Update user metadata with company info
                 try:
-                    _ = self.supabase.auth.admin.update_user_by_id(user_id, {
+                    self.supabase.auth.admin.update_user_by_id(user.id, {
                         "user_metadata": {
                             "role": "recruiter",
                             "company_id": final_company_id,
@@ -124,36 +124,56 @@ class AuthService:
                             "password_set": False,
                         }
                     })
-                except Exception:
-                    pass
-            except Exception:
+                except Exception as e:
+                    logging.error(f"Failed to update user metadata: {str(e)}")
+                    
+            except Exception as e:
+                logging.error(f"Failed to create company: {str(e)}")
                 final_company_id = None
-
-        login_url = os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
-        html = f"""
-        <div>
-          <p>Hi {full_name},</p>
-          <p>Welcome to Skreenit! Your account has been created successfully.</p>
-          <p><strong>Login Email:</strong> {email}</p>
-          {('<p><strong>Your Company ID:</strong> ' + final_company_id + '</p>') if (role == 'recruiter' and final_company_id) else ''}
-          <p>We've sent a confirmation email to your address. Please check your inbox (and spam folder) and click the confirmation link to activate your account.</p>
-          <p>Once your email is confirmed, you can login here:</p>
-          <p><a href=\"{login_url}\">{login_url}</a></p>
-          <p><b>Regards,</b><br/>Team Skreenit</p>
-        </div>
-        """
-        logging.info(f"Sending custom welcome email to {email} via Resend.")
-        try:
-            email_res = send_email(
-                to=email,
-                subject="Welcome to Skreenit",
-                html=html,
-                email_type="welcome"
-            )
-            logging.info(f"Custom welcome email result for {email}: {email_res}")
-        except Exception as e:
-            email_res = {"error": str(e)}
-
+        
+        # Send welcome email
+        self._send_welcome_email(email, full_name, role, final_company_id)
+        
+        return {
+            "ok": True,
+            "user_id": user.id,
+            "email": email,
+            "company_id": final_company_id,
+            "resume_path": resume_path
+        }
+        
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "already registered" in error_msg or "already exists" in error_msg:
+            raise ValueError("This email is already registered")
+        raise RuntimeError(f"Registration failed: {str(e)}")
+def _send_welcome_email(self, email: str, full_name: str, role: str, company_id: Optional[str] = None):
+    """Send welcome email with instructions"""
+    site_url = os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
+    
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Welcome to Skreenit, {full_name}!</h2>
+        <p>Thank you for registering as a {role} on our platform.</p>
+        {f'<p>Your Company ID: <strong>{company_id}</strong></p>' if role == 'recruiter' and company_id else ''}
+        <p>Please check your email for a confirmation link to activate your account and set your password.</p>
+        <p>If you didn't receive the email, please check your spam folder.</p>
+        <p>Once your account is activated, you can log in at:</p>
+        <p><a href="{site_url}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">Go to Login</a></p>
+        <p>Best regards,<br>The Skreenit Team</p>
+    </div>
+    """
+    
+    try:
+        send_email(
+            to=email,
+            subject="Welcome to Skreenit - Confirm Your Email",
+            html=html,
+            email_type="welcome"
+        )
+    except Exception as e:
+        logging.error(f"Failed to send welcome email to {email}: {str(e)}")
+        
         return {
             "ok": True,
             "user_id": user_id,

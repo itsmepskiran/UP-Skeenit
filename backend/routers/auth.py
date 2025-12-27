@@ -63,10 +63,7 @@ async def register(
         # Register user
         try:
             service = get_auth_service()
-        except RuntimeError as re:
-            return JSONResponse(status_code=500, content={"ok": False, "error": str(re)})
-
-        result = service.register(
+            result = service.register(
             full_name=full_name,
             email=email,
             mobile=mobile,
@@ -80,14 +77,77 @@ async def register(
         
         return {
             "ok": True,
-            "data": result,
             "message": "Registration successful! Please check your email to verify your account."
         }
-    except HTTPException as he:
-        return JSONResponse(status_code=he.status_code, content={"ok": False, "error": he.detail})
-    except Exception as e:
-        return JSONResponse(status_code=400, content={"ok": False, "error": str(e)})
 
+    except Exception as e:
+            error_msg = str(e).lower()
+            if "already exists" in error_msg or "already registered" in error_msg:
+                raise HTTPException(status_code=400, detail="This email is already registered")
+            raise
+
+    except HTTPException as he:
+        raise 
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+@router.post("/update-password")
+async def update_password(
+    token: str = Form(...),
+    new_password: str = Form(...),
+):
+    """Update user password after email confirmation"""
+    try:
+        service = get_auth_service()
+        
+        # Verify the token and update password
+        try:
+            # First try to verify the token
+            auth_resp = service.supabase.auth.verify_otp({
+                "token": token,
+                "type": "recovery",
+                "email": None,  # Will be extracted from token
+            })
+            
+            if not auth_resp or not getattr(auth_resp, "user", None):
+                raise ValueError("Invalid or expired token")
+                
+            user = auth_resp.user
+            
+            # Update the user's password
+            service.supabase.auth.update_user(
+                user.id,
+                password=new_password
+            )
+            
+            # Update user metadata
+            try:
+                service.supabase.auth.admin.update_user_by_id(
+                    user.id,
+                    {
+                        "user_metadata": {
+                            **getattr(user, "user_metadata", {}),
+                            "password_set": True,
+                            "onboarded": True
+                        }
+                    }
+                )
+            except Exception as e:
+                logging.error(f"Failed to update user metadata: {str(e)}")
+            
+            return {
+                "ok": True,
+                "message": "Password updated successfully. You can now log in with your new password."
+            }
+            
+        except Exception as e:
+            logging.error(f"Password update error: {str(e)}")
+            raise HTTPException(status_code=400, detail="Invalid or expired token")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error in update_password: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
 @router.post("/login")
 async def login(request: LoginRequest):
     try:
