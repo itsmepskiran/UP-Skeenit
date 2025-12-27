@@ -1,35 +1,28 @@
 [build]
-  # Install Python dependencies
-  command = "cd backend && python -m pip install --upgrade pip && pip install -r requirements.txt"
+  # No build command needed for static files
+  command = ""
   
-  # Publish the root directory to serve static files
-  publish = "."
+  # Point to the frontend directory
+  publish = "frontend"
   
-  # Directory containing Netlify functions
-  functions = "backend/netlify/functions"
+  # No functions needed since backend is on Render
+  functions = ""
 
-[build.environment]
-  PYTHON_VERSION = "3.11"
-  NODE_VERSION = "18"
-
-[functions]
-  # Include all Python files in the backend directory
-  included_files = ["backend/**/*.py"]
-
-# API requests to /api/* will be handled by the Netlify function
+# Redirect all API requests to your Render backend
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/main"
+  to = "https://aiskreenit.onrender.com/api/:splat"
   status = 200
+  force = true
 
-# Health check endpoint
-[[redirects]]
-  from = "/health"
-  to = "/.netlify/functions/main/health"
-  status = 200
-
-# All other requests should be handled by the SPA
+# SPA fallback - serve index.html for all routes
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Optional: Environment variables for frontend
+[build.environment]
+  NODE_VERSION = "18"
+  # Add any other frontend environment variables here
+  # Example: REACT_APP_API_URL = "https://aiskreenit.onrender.com/api"
