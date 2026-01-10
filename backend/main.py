@@ -41,6 +41,7 @@ else:
         "http://127.0.0.1:8000",
         "https://localhost:3000",
         "https://127.0.0.1:3000",
+        "https://127.0.0.1:5173",
         # Production skreenit.com subdomains
         "https://www.skreenit.com",
         "https://skreenit.com",
@@ -49,6 +50,8 @@ else:
         "https://applicant.skreenit.com",
         "https://recruiter.skreenit.com",
         "https://dashboard.skreenit.com",
+        "https://app.skreenit.com",
+        "https://hrms.skreenit.com",
         # Development subdomains
         "http://auth.localhost:3000",
         "http://login.localhost:3000",
