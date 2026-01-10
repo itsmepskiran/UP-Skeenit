@@ -1,9 +1,13 @@
 // Supabase Configuration and Client Setup
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2'
 
-// Read from runtime globals if provided to avoid hardcoding credentials in source
-const SUPABASE_URL = window.SKREENIT_SUPABASE_URL || 'https://gfkbqhniopgcaapolzbu.supabase.co'
-const SUPABASE_ANON_KEY = window.SKREENIT_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdma2JxaG5pb3BnY2FhcG9semJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNTgzMzYsImV4cCI6MjA3MzkzNDMzNn0.BXSTy-KnTUYLDEGbQXWGTtiwMm7UHomIlRW6lW-lCm0'
+// Get Supabase URL and Anon Key from environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || window.SKREENIT_SUPABASE_URL || ''
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || window.SKREENIT_SUPABASE_ANON_KEY || ''
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Missing Supabase URL or Anon Key. Please check your environment configuration.')
+}
 
 // Create Supabase client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
