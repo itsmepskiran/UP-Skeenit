@@ -1,4 +1,5 @@
 import logging
+import os
 from fastapi import APIRouter, Request, HTTPException, Form, UploadFile, File
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -7,10 +8,7 @@ from services.auth_service import AuthService
 from services.supabase_client import get_client
 from typing import Optional
 
-# Do NOT create the Supabase client at module import time. Creating it during import
-# will cause the app to crash on startup when environment secrets are not yet provided
-# by the hosting environment. Instead we lazily initialize the client and AuthService
-# on first request. This keeps the app importable and avoids deployment failures.
+# Lazily initialize the client and AuthService on first request
 load_dotenv()
 
 router = APIRouter(tags=["auth"])
@@ -19,11 +17,9 @@ _auth_service: Optional[AuthService] = None
 def get_auth_service() -> AuthService:
     global _auth_service
     if _auth_service is None:
-        # Attempt to create a Supabase client from environment
         try:
             supabase = get_client()
         except Exception as e:
-            # Re-raise a clear error so endpoints can return a controlled response
             raise RuntimeError("Supabase client not configured: " + str(e)) from e
         _auth_service = AuthService(supabase)
     return _auth_service
@@ -41,15 +37,12 @@ async def register(
 ):
     """Register a new user with role-specific handling"""
     try:
-        # Validate role
         if role not in ['candidate', 'recruiter']:
             raise HTTPException(status_code=400, detail="Invalid role specified")
         
-        # Validate recruiter-specific fields
         if role == 'recruiter' and not company_name:
             raise HTTPException(status_code=400, detail="Company name is required for recruiter registration")
             
-        # Handle resume for candidates
         resume_bytes = None
         resume_filename = None
         if resume and role == 'candidate':
@@ -64,7 +57,6 @@ async def register(
             resume_bytes = await resume.read()
             resume_filename = resume.filename
 
-        # Register user
         try:
             service = get_auth_service()
             result = service.register(
@@ -97,40 +89,56 @@ async def register(
 @router.post("/update-password")
 async def update_password(
     request: Request,
-    token: str = Form(None),
     new_password: str = Form(...)
 ):
-    """Update user password using a token"""
+    """Update user password using the session from the Authorization header"""
     try:
-        # Get token from form data or JSON body
-        if not token:
-            try:
-                data = await request.json()
-                token = data.get('token')
-                new_password = data.get('new_password', new_password)
-            except:
-                pass
-                
-        if not token:
-            raise HTTPException(status_code=400, detail="Token is required")
-            
-        # Get auth service
+        # Extract Bearer token from header
+        auth_header = request.headers.get("authorization")
+        if not auth_header or not auth_header.lower().startswith("bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+        
+        token = auth_header.split(" ", 1)[1]
+        
         try:
             service = get_auth_service()
-            # Update password using Supabase Admin API
-            response = service.supabase.auth.admin.update_user_by_id(
-                user_id=token,  # In this case, token is the user ID
+            
+            # Validate the token to ensure we have a real user session
+            user_info = service.validate_token(token)
+            user = user_info.get("user")
+            
+            if not user or not user.get("id"):
+                raise HTTPException(status_code=401, detail="Invalid or expired session")
+            
+            user_id = user["id"]
+            user_email = user.get("email")
+            
+            # 1. Update password via Admin API (sure-fire way)
+            service.supabase.auth.admin.update_user_by_id(
+                user_id=user_id,
                 attributes={"password": new_password}
             )
             
-            # Notify user of password change
-            user_email = response.user.email if hasattr(response, 'user') else None
+            # 2. Update metadata to mark user as onboarded
+            service.supabase.auth.admin.update_user_by_id(
+                user_id=user_id,
+                attributes={
+                    "user_metadata": {
+                        **user.get("user_metadata", {}),
+                        "password_set": True,
+                        "onboarded": True
+                    }
+                }
+            )
+            
+            # 3. Send notification email
             if user_email:
-                service.notify_password_changed(
-                    email=user_email,
-                    full_name=getattr(response.user.user_metadata, 'full_name', None)
-                )
-                
+                try:
+                    full_name = user.get("user_metadata", {}).get("full_name")
+                    service.notify_password_changed(email=user_email, full_name=full_name)
+                except Exception as e:
+                    logging.error(f"Failed to send password notification: {e}")
+
             return {
                 "ok": True,
                 "message": "Password updated successfully"
@@ -138,6 +146,9 @@ async def update_password(
             
         except Exception as e:
             logging.error(f"Password update failed: {str(e)}")
+            # Return generic error unless it's an HTTPException
+            if isinstance(e, HTTPException):
+                raise e
             raise HTTPException(status_code=400, detail="Failed to update password")
             
     except HTTPException:
@@ -145,6 +156,7 @@ async def update_password(
     except Exception as e:
         logging.error(f"Error in update_password: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.post("/login")
 async def login(request: LoginRequest):
     try:
@@ -154,7 +166,7 @@ async def login(request: LoginRequest):
             return JSONResponse(status_code=500, content={"ok": False, "error": str(re)})
 
         result = service.login(request.email, request.password)
-        return result  # already {"ok": True, "data": {...}}
+        return result
     except Exception as e:
         return JSONResponse(status_code=401, content={"ok": False, "error": str(e)})
 
@@ -192,10 +204,10 @@ async def password_updated(request: Request):
             except Exception as e:
                 logging.error(f"Failed to process recruiter company info: {str(e)}")
 
-        # After updating metadata, return user info for frontend to handle login
         return {"ok": True, "data": {"user": user, "message": "Password updated successfully. Please log in."}}
     except Exception as e:
         return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
+
 @router.post("/forgot-password")
 async def forgot_password(email: str = Form(...)):
     """Send password reset email"""
@@ -205,7 +217,7 @@ async def forgot_password(email: str = Form(...)):
         redirect_to = f"{site_url}/update-password.html"
         
         # Send password reset email with redirect URL
-        result = service.supabase.auth.reset_password_email(
+        service.supabase.auth.reset_password_email(
             email,
             {
                 "redirect_to": redirect_to
@@ -234,8 +246,8 @@ async def confirm_email(request: Request, token: str, type: str, redirect_to: st
         # Verify the email confirmation token
         auth_resp = service.supabase.auth.verify_otp({
             "token": token,
-            "type": type,  # This will be "signup" for email confirmation
-            "email": None,  # Will be extracted from token
+            "type": type,
+            "email": None,
         })
         
         if not auth_resp or not getattr(auth_resp, "user", None):

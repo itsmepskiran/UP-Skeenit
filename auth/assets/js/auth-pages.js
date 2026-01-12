@@ -1,59 +1,21 @@
 // auth/assets/js/auth-pages.js
 
 import { supabase } from './supabase-config.js'
-import { backendUploadFile, handleResponse, backendUrl } from './backend-client.js'
+import { backendUploadFile, handleResponse, backendUrl, backendClient } from './backend-client.js'
 
 // -------- Auth State Handling --------
 
 // Listen for authentication events (e.g., after email confirmation)
-// This ensures the session is captured when the user lands on the update-password page.
 supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN') {
-    // User has signed in (e.g., via the confirmation link).
-    // Persist the session to make it available for the password update.
     await persistSessionToLocalStorage();
     console.log('User signed in, session persisted.');
-
   } else if (event === 'PASSWORD_RECOVERY') {
-    // This event is fired when the user is redirected from a password recovery link
-    // The session is now active, and the user can update their password.
     console.log('Password recovery session started.');
   }
 });
 
 // -------- Utilities --------
-
-// Send email to recruiter with user ID and Company ID after email confirmation
-async function sendRecruiterEmail(user, companyId) {
-  if (user?.user_metadata?.role !== 'recruiter') return;
-
-  try {
-    await fetch(`${backendUrl()}/api/send-recruiter-email`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('skreenit_token')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: user.id,
-        companyId: companyId,
-        email: user.email,
-      }),
-    });
-    console.log('Recruiter credentials email sent successfully.');
-  } catch (error) {
-    console.error('Error sending recruiter email:', error);
-  }
-}
-
-
-// Generate a strong temporary password for the initial Supabase signUp
-function generateTempPassword(length = 16) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:,.?'
-  let out = ''
-  for (let i = 0; i < length; i++) out += chars[Math.floor(Math.random() * chars.length)]
-  return out
-}
 
 // Persist session and user info for use across subdomains/pages
 async function persistSessionToLocalStorage() {
@@ -77,36 +39,35 @@ async function persistSessionToLocalStorage() {
 // Role-based redirect after login with first-time login handling
 async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard.html') {
   const role = localStorage.getItem('skreenit_role')
-  const userId = localStorage.getItem('skreenit_user_id')
   
   try {
-    // Check if this is first-time login by checking user profile completion
     const { data: { user } } = await supabase.auth.getUser()
     const isFirstTimeLogin = user?.user_metadata?.first_time_login === true
+    // Logic: if password_updated is true, they have finished onboarding
     const hasUpdatedPassword = user?.user_metadata?.password_updated === true
     
-  if (role === 'recruiter') {
-      if (isFirstTimeLogin) {
-        // First-time recruiter goes to profile setup
-        window.location.href = 'https://recruiter.skreenit.com/recruiter-profile.html'
+    // Recruiter Logic
+    if (role === 'recruiter') {
+      if (!hasUpdatedPassword && isFirstTimeLogin) {
+         window.location.href = 'https://recruiter.skreenit.com/recruiter-profile.html'
       } else {
-        // Returning recruiter goes to dashboard
-        window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html'
+         window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html'
       }
-  } else if (role === 'candidate') {
-      if (isFirstTimeLogin) {
-        // First-time candidate goes to detailed application form
-        window.location.href = 'https://applicant.skreenit.com/detailed-application-form.html'
+    } 
+    // Candidate Logic
+    else if (role === 'candidate') {
+      if (!hasUpdatedPassword && isFirstTimeLogin) {
+         window.location.href = 'https://applicant.skreenit.com/detailed-application-form.html'
       } else {
-        // Returning candidate goes to dashboard
-        window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html'
+         window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html'
       }
-  } else {
-    window.location.href = defaultUrl
-  }
+    } 
+    // Fallback
+    else {
+      window.location.href = defaultUrl
+    }
   } catch (error) {
     console.error('Error checking first-time login:', error)
-    // Fallback to default behavior
     if (role === 'recruiter') {
       window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html'
     } else {
@@ -117,8 +78,7 @@ async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candi
 
 // -------- Handlers --------
 
-// Registration: user provides basic details; Supabase sends verification email.
-// After email verification, user is redirected to update-password page.
+// Registration Handler
 export async function handleRegistrationSubmit(event) {
   event.preventDefault()
   const form = event.target
@@ -136,7 +96,6 @@ export async function handleRegistrationSubmit(event) {
     const company_name = (fd.get('company_name') || '').trim()
     const resume = fd.get('resume')
 
-    // Validate role selection and required fields
     if (!role || !['candidate', 'recruiter'].includes(role)) {
       throw new Error('Please select a valid role (Candidate or Recruiter)')
     }
@@ -144,15 +103,12 @@ export async function handleRegistrationSubmit(event) {
       throw new Error('Please fill in all required fields')
     }
 
-    // Basic validations
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     if (!emailOk) throw new Error('Please enter a valid email address')
     if (mobile.length < 7) throw new Error('Please enter a valid mobile number')
 
-    // Recruiter must provide company name
     if (role === 'recruiter' && !company_name) throw new Error('Company name is required for recruiters')
 
-    // Prepare payload for backend
     const bfd = new FormData()
     bfd.append('full_name', full_name)
     bfd.append('email', email)
@@ -166,7 +122,6 @@ export async function handleRegistrationSubmit(event) {
     const result = await handleResponse(resp)
     if (!result || result.ok === false) throw new Error(result?.error || 'Registration failed')
 
-    // Replace form body with thank-you content
     const formEl = document.querySelector('.auth-body')
     if (formEl) {
       formEl.innerHTML = `
@@ -189,8 +144,7 @@ export async function handleRegistrationSubmit(event) {
   }
 }
 
-// Update Password after the email verification link opens update-password page.
-// Requires the email link to have created a valid session.
+// Update Password Handler (Fixed)
 export async function handleUpdatePasswordSubmit(event) {
   event.preventDefault()
   const form = event.target
@@ -202,49 +156,48 @@ export async function handleUpdatePasswordSubmit(event) {
     const fd = new FormData(form)
     const new_password = (fd.get('new_password') || '').trim()
     const confirm_password = (fd.get('confirm_password') || '').trim()
+    
     if (new_password.length < 8) throw new Error('Password must be at least 8 characters.')
     if (new_password !== confirm_password) throw new Error('Passwords do not match.')
 
-    const hash = window.location.hash
-    const token = new URLSearchParams(hash.slice(1)).get('access_token')
+    // 1. Get Token from Hash
+    let token = '';
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+       // Remove the leading '#'
+       const params = new URLSearchParams(hash.substring(1)); 
+       token = params.get('access_token');
+    }
+    
+    // Fallback: Check query params
+    if (!token) {
+        const urlParams = new URLSearchParams(window.location.search);
+        token = urlParams.get('token');
+    }
+
     if (!token) throw new Error('Missing access token. Please use the link from your email.')
 
-    const { error } = await supabase.auth.updateUser(
-      { password: new_password },
-      { accessToken: token }
-    )
-    if (error) throw new Error(error.message)
-    // Notify backend about password update (for email notifications)
-    try {
-      // After a successful password update, the session is refreshed.
-      // We must get the new session data to ensure we have a valid token.
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw new Error('Could not retrieve session after password update.');
-      
-      const token = session?.access_token;
-      if (!token) throw new Error('No valid token found after password update.');
+    // 2. Notify Backend to update password (and metadata)
+    // We send the token in the Authorization header so backend knows WHO we are
+    const formData = new FormData();
+    formData.append('new_password', new_password);
 
-      const response = await fetch(`${backendUrl()}/auth/password-updated`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const result = await response.json();
-      if (!result || result.ok === false) {
-        throw new Error(result?.error || 'Failed to update password on backend.');
-      }
+    const response = await fetch(`${backendUrl()}/auth/update-password`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
 
-    } catch (e) {
-      console.warn('Failed to notify backend about password update:', e);
-      // Non-critical error, so we don't block the user.
-    }
+    const result = await handleResponse(response);
+    if (!result || result.ok === false) throw new Error(result?.error || 'Failed to update password.');
 
     notify('Password updated successfully! Redirecting to login...', 'success')
     setTimeout(() => {
       window.location.href = 'https://login.skreenit.com/login.html'
-    }, 5000)
+    }, 3000)
+
   } catch (err) {
     console.error('Update password error:', err)
     notify(err.message || 'Failed to update password. Please try again.', 'error')
@@ -253,7 +206,7 @@ export async function handleUpdatePasswordSubmit(event) {
   }
 }
 
-// Login with email + password, store session/role, and redirect by role
+// Login Handler
 export async function handleLoginSubmit(event) {
   event.preventDefault()
   const form = event.target
@@ -263,28 +216,36 @@ export async function handleLoginSubmit(event) {
 
   try {
     const fd = new FormData(form)
-    const role = (fd.get('role') || '').trim() // used for UI, we still trust role from user_metadata
     const email = (fd.get('email') || '').trim()
     const password = (fd.get('password') || '').trim()
-    const company_id = (fd.get('company_id') || '').trim() // optional recruiter context
 
     if (!email || !password) throw new Error('Email and password are required.')
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error(error.message)
 
-    // Persist session + role in localStorage for downstream pages
     await persistSessionToLocalStorage()
-
-    // Optional: you can pass company_id to backend if needed (e.g., validate company mapping)
-    // try { await backendFetch('/auth/login-meta', { method: 'POST', body: JSON.stringify({ company_id }), headers: { 'Content-Type': 'application/json' } }) } catch {}
-
-    // Redirect by role from user_metadata
     redirectByRole()
   } catch (err) {
     console.error('Login error:', err)
     notify(err.message || 'Login failed. Please try again.', 'error')
   } finally {
     if (submitBtn) { submitBtn.textContent = originalText; submitBtn.disabled = false }
+  }
+}
+
+// Global Notify Helper
+function notify(message, type = 'info') {
+  // Check if a notify container exists, otherwise use alert/log
+  const container = document.getElementById('notification-container');
+  if (container) {
+     const notif = document.createElement('div');
+     notif.className = `notification ${type}`;
+     notif.innerText = message;
+     container.appendChild(notif);
+     setTimeout(() => notif.remove(), 4000);
+  } else {
+     if (type === 'error') alert(message);
+     else console.log(message);
   }
 }
