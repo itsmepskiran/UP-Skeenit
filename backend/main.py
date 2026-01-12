@@ -75,7 +75,7 @@ def validate_origins(origins_list):
             continue
 
         # In production, be more restrictive
-        if os.getenv("ENVIRONMENT") == "production":
+        if os.getenv("NODE_ENV") == "production":
             # Only allow specific production domains
             allowed_domains = [
                 ".skreenit.com"
