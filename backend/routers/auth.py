@@ -96,62 +96,55 @@ async def register(
 
 @router.post("/update-password")
 async def update_password(
-    token: str = Form(...),
-    new_password: str = Form(...),
+    request: Request,
+    token: str = Form(None),
+    new_password: str = Form(...)
 ):
-    """Update user password after email confirmation"""
+    """Update user password using a token"""
     try:
-        service = get_auth_service()
-        
-        # Verify the token and update password
-        try:
-            # First try to verify the token
-            auth_resp = service.supabase.auth.verify_otp({
-                "token": token,
-                "type": "recovery",
-                "email": None,  # Will be extracted from token
-            })
-            
-            if not auth_resp or not getattr(auth_resp, "user", None):
-                raise ValueError("Invalid or expired token")
+        # Get token from form data or JSON body
+        if not token:
+            try:
+                data = await request.json()
+                token = data.get('token')
+                new_password = data.get('new_password', new_password)
+            except:
+                pass
                 
-            user = auth_resp.user
+        if not token:
+            raise HTTPException(status_code=400, detail="Token is required")
             
-            # Update the user's password
-            service.supabase.auth.update_user(
-                user.id,
-                password=new_password
+        # Get auth service
+        try:
+            service = get_auth_service()
+            # Update password using Supabase Admin API
+            response = service.supabase.auth.admin.update_user_by_id(
+                user_id=token,  # In this case, token is the user ID
+                attributes={"password": new_password}
             )
             
-            # Update user metadata
-            try:
-                service.supabase.auth.admin.update_user_by_id(
-                    user.id,
-                    {
-                        "user_metadata": {
-                            **getattr(user, "user_metadata", {}),
-                            "password_set": True,
-                            "onboarded": True
-                        }
-                    }
+            # Notify user of password change
+            user_email = response.user.email if hasattr(response, 'user') else None
+            if user_email:
+                service.notify_password_changed(
+                    email=user_email,
+                    full_name=getattr(response.user.user_metadata, 'full_name', None)
                 )
-            except Exception as e:
-                logging.error(f"Failed to update user metadata: {str(e)}")
-            
+                
             return {
                 "ok": True,
-                "message": "Password updated successfully. You can now log in with your new password."
+                "message": "Password updated successfully"
             }
             
         except Exception as e:
-            logging.error(f"Password update error: {str(e)}")
-            raise HTTPException(status_code=400, detail="Invalid or expired token")
+            logging.error(f"Password update failed: {str(e)}")
+            raise HTTPException(status_code=400, detail="Failed to update password")
             
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"Unexpected error in update_password: {str(e)}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+        logging.error(f"Error in update_password: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 @router.post("/login")
 async def login(request: LoginRequest):
     try:
