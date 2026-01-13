@@ -116,10 +116,10 @@ export async function handleRegistrationSubmit(event) {
       throw new Error('Company name is required for recruiters');
     }
 
-    // 1. First, sign up the user with Supabase Auth
+    // In auth-pages.js, update the signUp call:
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      password: generateStrongPassword(), // Generate a strong temporary password
+      password: generateStrongPassword(),
       options: {
         data: {
           full_name,
@@ -127,10 +127,10 @@ export async function handleRegistrationSubmit(event) {
           first_time_login: true,
           password_updated: false,
           ...(role === 'recruiter' && company_name && { company_name })
-        },
-        emailRedirectTo: `${window.location.origin}/update-password.html`
-      }
-    });
+    },
+    emailRedirectTo: `${window.location.origin}/update-password.html` // Redirect to update password page 
+  }
+});
 
     if (authError) throw new Error(authError.message);
     if (!authData.user) throw new Error('Failed to create user account');
@@ -163,18 +163,21 @@ export async function handleRegistrationSubmit(event) {
 
     // Show success message
     const formEl = document.querySelector('.auth-body');
-    if (formEl) {
-      formEl.innerHTML = `
+  if (formEl) {
+    formEl.innerHTML = `
         <div class="text-center py-8">
-          <div class="text-green-500 text-5xl mb-4">✓</div>
-          <h2 class="text-2xl font-bold mb-2">Registration Successful!</h2>
-          <p class="mb-6">Please check your email to verify your account and set your password.</p>
-          <a href="https://login.skreenit.com/login.html" class="btn btn-primary">Go to Login</a>
+            <div class="text-green-500 text-5xl mb-4">✓</div>
+            <h2 class="text-2xl font-bold mb-2">Registration Successful!</h2>
+            <p class="mb-6">You'll be redirected to login shortly...</p>
         </div>
-      `;
-    }
-
-    return true;
+    `;
+    
+    // Redirect to login after 3 seconds
+    setTimeout(() => {
+        window.location.href = '/login.html';
+    }, 3000);
+  }
+  return true;
   } catch (err) {
     console.error('Registration error:', err);
     notify(err.message || 'Registration failed. Please try again.', 'error');
@@ -288,17 +291,11 @@ export async function handleLoginSubmit(event) {
 }
 
 // Global Notify Helper
-function notify(message, type = 'info') {
-  // Check if a notify container exists, otherwise use alert/log
-  const container = document.getElementById('notification-container');
-  if (container) {
-     const notif = document.createElement('div');
-     notif.className = `notification ${type}`;
-     notif.innerText = message;
-     container.appendChild(notif);
-     setTimeout(() => notif.remove(), 4000);
-  } else {
-     if (type === 'error') alert(message);
-     else console.log(message);
-  }
+export function notify(message, type = 'info') {
+  // Implementation of notify function
+  const toast = document.createElement('div')
+  toast.className = `toast toast-${type}`
+  toast.textContent = message
+  document.body.appendChild(toast)
+  setTimeout(() => toast.remove(), 5000)
 }
