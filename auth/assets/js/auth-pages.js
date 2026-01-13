@@ -146,7 +146,7 @@ export async function handleRegistrationSubmit(event) {
     if (company_name) formData.append('company_name', company_name);
     if (resume) formData.append('resume', resume);
 
-    const response = await fetch(`${backendUrl()}/auth/register`, {
+    const response = await fetch(`${backendUrl()}/register`, {
       method: 'POST',
       body: formData,
       headers: {
