@@ -22,7 +22,8 @@ Skreenit is a modern recruitment platform that leverages AI to streamline the hi
 - **Backend**: Python, FastAPI
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth
-- **Deployment**: Netlify (Frontend), Render (Backend)
+- **Deployment**: Render (Backend)
+- **Email Flow**: Resend
 
 ## Getting Started
 
