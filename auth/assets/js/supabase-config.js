@@ -6,152 +6,168 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || window.SKREENIT_SUPABA
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || window.SKREENIT_SUPABASE_ANON_KEY || ''
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Missing Supabase URL or Anon Key. Please check your environment configuration.')
+    console.error('Missing Supabase URL or Anon Key. Please check your environment configuration.')
+    throw new Error('Missing Supabase configuration')
 }
 
-// Create Supabase client
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+// Create Supabase client with enhanced configuration
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+        debug: import.meta.env.DEV, // Enable debug in development
+        storageKey: 'skreenit-auth-token' // Custom storage key
+    }
+})
+
+// Auth state change listener
+supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', event)
+    if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+        // Store the latest session
+        if (session?.access_token) {
+            localStorage.setItem('skreenit_token', session.access_token)
+        }
+    } else if (event === 'SIGNED_OUT') {
+        // Clear local storage on sign out
+        localStorage.removeItem('skreenit_token')
+        localStorage.removeItem('skreenit_user_id')
+        localStorage.removeItem('skreenit_role')
+    }
+})
 
 // Authentication functions
 export const auth = {
-    // Sign up new user
+    // Sign up new user with email and additional metadata
     async signUp(email, password, userData = {}) {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: userData
-            }
-        })
-        return { data, error }
-    },
-
-    // Sign in user
-    async signIn(email, password) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        })
-        return { data, error }
-    },
-
-    // Sign out user
-    async signOut() {
-        const { error } = await supabase.auth.signOut()
         try {
-            // Clear local storage keys used across subdomains
-            localStorage.removeItem('skreenit_token')
-            localStorage.removeItem('skreenit_refresh_token')
-            localStorage.removeItem('skreenit_user_id')
-            localStorage.removeItem('skreenit_role')
-        } catch {}
-        // Redirect to centralized login page
-        try { window.location.href = 'https://login.skreenit.com/login.html' } catch {}
-        return { error }
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        ...userData,
+                        created_at: new Date().toISOString()
+                    },
+                    emailRedirectTo: `${window.location.origin}/update-password.html`
+                }
+            })
+
+            if (error) throw error
+            
+            // Store user ID and role in localStorage for first-time login flow
+            if (data?.user) {
+                localStorage.setItem('skreenit_user_id', data.user.id)
+                if (userData.role) {
+                    localStorage.setItem('skreenit_role', userData.role)
+                }
+                if (data.session?.access_token) {
+                    localStorage.setItem('skreenit_token', data.session.access_token)
+                }
+            }
+
+            return { data, error: null }
+        } catch (error) {
+            console.error('Sign up error:', error)
+            return { data: null, error }
+        }
+    },
+
+    // Sign in with email and password
+    async signIn(email, password) {
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            })
+
+            if (error) throw error
+
+            // Store session data
+            if (data?.session) {
+                localStorage.setItem('skreenit_token', data.session.access_token)
+                localStorage.setItem('skreenit_user_id', data.user.id)
+                if (data.user.user_metadata?.role) {
+                    localStorage.setItem('skreenit_role', data.user.user_metadata.role)
+                }
+            }
+
+            return { data, error: null }
+        } catch (error) {
+            console.error('Sign in error:', error)
+            return { data: null, error }
+        }
+    },
+
+    // Sign out
+    async signOut() {
+        try {
+            const { error } = await supabase.auth.signOut()
+            if (error) throw error
+            return { error: null }
+        } catch (error) {
+            console.error('Sign out error:', error)
+            return { error }
+        }
+    },
+
+    // Get current user session
+    async getSession() {
+        try {
+            const { data, error } = await supabase.auth.getSession()
+            if (error) throw error
+            return { session: data?.session, error: null }
+        } catch (error) {
+            console.error('Get session error:', error)
+            return { session: null, error }
+        }
     },
 
     // Get current user
-    async getCurrentUser() {
-        const { data: { user } } = await supabase.auth.getUser()
-        return user
+    async getUser() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser()
+            if (error) throw error
+            return { user, error: null }
+        } catch (error) {
+            console.error('Get user error:', error)
+            return { user: null, error }
+        }
     },
 
-    // Listen to auth changes
-    onAuthStateChange(callback) {
-        return supabase.auth.onAuthStateChange(callback)
+    // Update user profile
+    async updateProfile(updates) {
+        try {
+            const { data, error } = await supabase.auth.updateUser({
+                data: updates
+            })
+            if (error) throw error
+            return { data, error: null }
+        } catch (error) {
+            console.error('Update profile error:', error)
+            return { data: null, error }
+        }
+    },
+
+    // Password reset
+    async resetPassword(email) {
+        try {
+            const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/update-password.html`
+            })
+            if (error) throw error
+            return { data, error: null }
+        } catch (error) {
+            console.error('Password reset error:', error)
+            return { data: null, error }
+        }
     }
 }
 
-// Database helper functions
-export const db = {
-    // Generic select function
-    async select(table, columns = '*', filters = {}) {
-        let query = supabase.from(table).select(columns)
-        
-        Object.entries(filters).forEach(([key, value]) => {
-            if (Array.isArray(value)) {
-                query = query.in(key, value)
-            } else if (typeof value === 'object' && value.operator) {
-                query = query.filter(key, value.operator, value.value)
-            } else {
-                query = query.eq(key, value)
-            }
-        })
-        
-        const { data, error } = await query
-        return { data, error }
-    },
-
-    // Generic insert function
-    async insert(table, data) {
-        const { data: result, error } = await supabase
-            .from(table)
-            .insert(data)
-            .select()
-        return { data: result, error }
-    },
-
-    // Generic update function
-    async update(table, id, data) {
-        const { data: result, error } = await supabase
-            .from(table)
-            .update(data)
-            .eq('id', id)
-            .select()
-        return { data: result, error }
-    },
-
-    // Generic delete function
-    async delete(table, id) {
-        const { error } = await supabase
-            .from(table)
-            .delete()
-            .eq('id', id)
-        return { error }
-    },
-
-    // Subscribe to real-time changes
-    subscribe(table, callback, filters = {}) {
-        let channel = supabase
-            .channel(`${table}_changes`)
-            .on('postgres_changes', 
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: table,
-                    ...filters
-                }, 
-                callback
-            )
-            .subscribe()
-        
-        return channel
-    }
-}
-
-// File storage functions
-export const storage = {
-    // Upload file
-    async uploadFile(bucket, path, file) {
-        const { data, error } = await supabase.storage
-            .from(bucket)
-            .upload(path, file)
-        return { data, error }
-    },
-
-    // Get file URL
-    getPublicUrl(bucket, path) {
-        const { data } = supabase.storage
-            .from(bucket)
-            .getPublicUrl(path)
-        return data.publicUrl
-    },
-
-    // Delete file
-    async deleteFile(bucket, paths) {
-        const { data, error } = await supabase.storage
-            .from(bucket)
-            .remove(paths)
-        return { data, error }
-    }
+// Export the Supabase client and auth functions
+export default {
+    supabase,
+    auth
 }

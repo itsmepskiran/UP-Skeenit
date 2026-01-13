@@ -1,180 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skreenit – Login</title>
-
-  <link rel="icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
-  <script>
-    window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com,https://aiskreenit.netlify.app';
-  </script>
-
-  <style>
-    /* Hide native radios completely */
-    .role-card input {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .role-selection {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .role-card {
-      flex: 1;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .role-content {
-      padding: 1.5rem;
-      border-radius: 16px;
-      border: 2px solid var(--border-color);
-      text-align: center;
-      background: white;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      display: block;
-      height: 100%;
-    }
-    
-    /* Selected card */
-    .role-card input:checked + .role-content {
-      border-color: var(--primary-color);
-      box-shadow: var(--shadow-glow);
-      transform: translateY(-2px);
-      background-color: rgba(79, 70, 229, 0.05);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SkreenIt</title>
+    <link rel="stylesheet" href="/auth/assets/css/shared-styles.css">
+    <link rel="stylesheet" href="/auth/assets/css/auth.css">
 </head>
-
-<body>
-
-<div class="floating-elements">
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-</div>
-
-<a href="https://skreenit.com" class="logo-link">
-  <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
-</a>
-
-<div class="auth-wrapper animate-slideInScale">
-  <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand-image" />
-
-  <div class="auth-header">
-    <h1><i class="fas fa-sign-in-alt"></i> Welcome Back</h1>
-    <p>Sign in to your Skreenit account</p>
-  </div>
-
-  <div class="auth-body">
-    <form id="loginForm">
-
-      <!-- ROLE SELECTION -->
-      <div class="role-selection">
-
-        <label class="role-card" for="role-candidate">
-          <input type="radio" name="role" value="candidate" id="role-candidate" />
-          <div class="role-content">
-            <div class="role-icon">🎯</div>
-            <h3>Candidate</h3>
-            <p>Looking for opportunities</p>
-          </div>
-        </label>
-
-        <label class="role-card" for="role-recruiter">
-          <input type="radio" name="role" value="recruiter" id="role-recruiter" />
-          <div class="role-content">
-            <div class="role-icon">🏢</div>
-            <h3>Recruiter</h3>
-            <p>Hiring Authenticated Talent</p>
-          </div>
-        </label>
-
-
-      </div>
-
-      <!-- LOGIN FIELDS -->
-      <div id="loginFields" style="display:none;">
-        <div class="form-group">
-          <label><i class="fas fa-envelope"></i> Email ID</label>
-          <input type="email" name="email" placeholder="Enter your email" required />
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-header">
+            <img src="/auth/assets/images/logo.png" alt="SkreenIt" class="auth-logo">
+            <h1>Welcome Back</h1>
+            <p>Sign in to your account</p>
         </div>
 
-        <div class="form-group">
-          <label><i class="fas fa-lock"></i> Password</label>
-          <input type="password" name="password" placeholder="Enter your password" required />
-        </div>
+        <form id="loginForm" class="auth-form">
+            <div id="error-message" class="error-message hidden"></div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
 
-        <div class="form-group" id="companyBox" style="display:none;">
-          <label><i class="fas fa-building"></i> Company Code</label>
-          <input type="text" name="company_id" placeholder="Enter company code" required />
-        </div>
+            <div class="form-group">
+                <div class="password-header">
+                    <label for="password">Password</label>
+                    <a href="/login/forgot-password.html" class="forgot-password">Forgot password?</a>
+                </div>
+                <div class="password-input">
+                    <input type="password" id="password" name="password" required>
+                    <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                        👁️
+                    </button>
+                </div>
+            </div>
 
-        <button type="submit" class="btn btn-primary btn-large" style="width:100%;">
-          <i class="fas fa-sign-in-alt"></i> Sign In
-        </button>
+            <button type="submit" class="btn btn-primary btn-block">
+                <span class="btn-text">Sign In</span>
+                <span class="btn-loader hidden">Signing in...</span>
+            </button>
 
-        <div class="auth-actions">
-          <a href="registration.html">Create account</a>
-          <a href="forgot-password.html">Forgot password?</a>
-        </div>
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="/login/registration.html">Sign up</a></p>
+            </div>
+        </form>
+    </div>
 
-      </div>
-    </form>
-  </div>
-</div>
+    <script type="module">
+        import { auth } from '/auth/assets/js/supabase-config.js';
+        import { showMessage, togglePasswordVisibility } from '/auth/assets/js/auth-utils.js';
 
-<script type="module">
-  import { handleLoginSubmit } from 'https://auth.skreenit.com/assets/js/auth-pages.js'
+        // Initialize form
+        document.addEventListener('DOMContentLoaded', () => {
+            // Toggle password visibility
+            const toggleBtn = document.querySelector('.toggle-password');
+            const passwordInput = document.getElementById('password');
+            if (toggleBtn && passwordInput) {
+                toggleBtn.addEventListener('click', () => {
+                    togglePasswordVisibility(passwordInput, toggleBtn);
+                });
+            }
 
-  document.addEventListener('DOMContentLoaded', () => {
+            // Handle form submission
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const submitBtn = loginForm.querySelector('button[type="submit"]');
+                    const btnText = submitBtn.querySelector('.btn-text');
+                    const btnLoader = submitBtn.querySelector('.btn-loader');
 
-    const roleCards = document.querySelectorAll('.role-card');
-    const loginFields = document.getElementById('loginFields');
-    const companyBox = document.getElementById('companyBox');
-    const form = document.getElementById('loginForm');
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    btnText.classList.add('hidden');
+                    btnLoader.classList.remove('hidden');
 
-    function toggleFormFields(role) {
-      loginFields.style.display = 'block';
-      const companyInput = companyBox.querySelector('input');
+                    try {
+                        const { data, error } = await auth.signIn(email, password);
+                        
+                        if (error) throw error;
 
-      if (role === 'recruiter') {
-        companyBox.style.display = 'block';
-        companyInput.required = true;
-      } else {
-        companyBox.style.display = 'none';
-        companyInput.required = false;
-      }
-    }
+                        // Redirect based on user role
+                        const { user } = await auth.getUser();
+                        const role = user?.user_metadata?.role || 'candidate';
+                        
+                        window.location.href = role === 'candidate' 
+                            ? '/candidate-dashboard.html' 
+                            : '/recruiter-dashboard.html';
 
-    roleCards.forEach(card => {
-      card.addEventListener('click', (e) => {
-        const radio = card.querySelector('input[type="radio"]');
-        if (radio) {
-          radio.checked = true;
-          // Directly call the function to update the UI
-          toggleFormFields(radio.value);
-        }
-      });
-    });
-
-    // Initialize form state
-    loginFields.style.display = 'none';
-    companyBox.style.display = 'none';
-
-    form.addEventListener('submit', handleLoginSubmit)
-  })
-</script>
-
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        showMessage(error.message || 'Invalid email or password', 'error');
+                    } finally {
+                        // Reset button state
+                        submitBtn.disabled = false;
+                        btnText.classList.remove('hidden');
+                        btnLoader.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

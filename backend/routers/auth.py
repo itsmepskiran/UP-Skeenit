@@ -26,6 +26,8 @@ def get_auth_service() -> AuthService:
 
 @router.post("/register")
 async def register(
+    request: Request,  # Add request to access headers
+    user_id: str = Form(...),  # Add user_id from Supabase Auth
     full_name: str = Form(...),
     email: str = Form(...),
     mobile: str = Form(...),
@@ -37,14 +39,37 @@ async def register(
 ):
     """Register a new user with role-specific handling"""
     try:
+        # Verify the user is authenticated and the token is valid
+        auth_header = request.headers.get("authorization")
+        if not auth_header or not auth_header.lower().startswith("bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid authorization token")
+            
+        token = auth_header.split(" ", 1)[1]
+        service = get_auth_service()
+        
+        try:
+            # Verify the token and get user info
+            user_info = service.validate_token(token)
+            if not user_info or user_info.get("user", {}).get("id") != user_id:
+                raise HTTPException(status_code=403, detail="Invalid user ID or token")
+                
+            # Verify the email matches
+            if user_info.get("user", {}).get("email", "").lower() != email.lower():
+                raise HTTPException(status_code=400, detail="Email does not match authenticated user")
+                
+        except Exception as e:
+            logging.error(f"Token validation error: {str(e)}")
+            raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
+
+        # Role validation
         if role not in ['candidate', 'recruiter']:
             raise HTTPException(status_code=400, detail="Invalid role specified")
         
         if role == 'recruiter' and not company_name:
             raise HTTPException(status_code=400, detail="Company name is required for recruiter registration")
             
-        resume_bytes = None
-        resume_filename = None
+        # Handle resume upload for candidates
+        resume_data = None
         if resume and role == 'candidate':
             allowed_types = [
                 'application/pdf',
@@ -52,14 +77,25 @@ async def register(
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             ]
             if resume.content_type not in allowed_types:
-                raise HTTPException(status_code=400, detail="Invalid resume format. Please upload PDF or DOC/DOCX file")
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Invalid resume format. Please upload PDF or DOC/DOCX file"
+                )
             
-            resume_bytes = await resume.read()
-            resume_filename = resume.filename
+            try:
+                resume_data = {
+                    "content": await resume.read(),
+                    "filename": resume.filename,
+                    "content_type": resume.content_type
+                }
+            except Exception as e:
+                logging.error(f"Error reading resume file: {str(e)}")
+                raise HTTPException(status_code=400, detail="Error processing resume file")
 
         try:
-            service = get_auth_service()
+            # Call the auth service with the Supabase user_id
             result = service.register(
+                user_id=user_id,  # Pass the Supabase user_id
                 full_name=full_name,
                 email=email,
                 mobile=mobile,
@@ -67,24 +103,28 @@ async def register(
                 role=role,
                 company_id=company_id,
                 company_name=company_name,
-                resume_bytes=resume_bytes,
-                resume_filename=resume_filename
+                resume_bytes=resume_data["content"] if resume_data else None,
+                resume_filename=resume_data["filename"] if resume_data else None
             )
+            
             return {
                 "ok": True,
-                "message": "Registration successful! Please check your email to verify your account."
+                "message": "Registration successful! Your account has been created.",
+                "user_id": user_id
             }
 
         except Exception as e:
             error_msg = str(e).lower()
             if "already exists" in error_msg or "already registered" in error_msg:
                 raise HTTPException(status_code=400, detail="This email is already registered")
-            raise
+            logging.error(f"Registration error: {str(e)}")
+            raise HTTPException(status_code=400, detail="Registration failed. Please try again.")
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logging.error(f"Unexpected error in registration: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred during registration")
 
 @router.post("/update-password")
 async def update_password(

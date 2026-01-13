@@ -77,71 +77,124 @@ async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candi
 }
 
 // -------- Handlers --------
-
 // Registration Handler
 export async function handleRegistrationSubmit(event) {
-  event.preventDefault()
-  const form = event.target
-  const submitBtn = form.querySelector('button[type="submit"]')
-  const originalText = submitBtn?.textContent || 'Register'
-  if (submitBtn) { submitBtn.textContent = 'Registering...'; submitBtn.disabled = true }
+  event.preventDefault();
+  const form = event.target;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn?.textContent || 'Register';
 
   try {
-    const fd = new FormData(form)
-    const full_name = (fd.get('full_name') || '').trim()
-    const email = (fd.get('email') || '').trim()
-    const mobile = (fd.get('mobile') || '').trim()
-    const location = (fd.get('location') || '').trim()
-    const role = (fd.get('role') || '').trim()
-    const company_name = (fd.get('company_name') || '').trim()
-    const resume = fd.get('resume')
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+    }
 
+    const fd = new FormData(form);
+    const full_name = (fd.get('full_name') || '').trim();
+    const email = (fd.get('email') || '').trim().toLowerCase();
+    const mobile = (fd.get('mobile') || '').trim();
+    const location = (fd.get('location') || '').trim();
+    const role = (fd.get('role') || '').trim();
+    const company_name = (fd.get('company_name') || '').trim();
+    const resume = fd.get('resume');
+
+    // Validation
     if (!role || !['candidate', 'recruiter'].includes(role)) {
-      throw new Error('Please select a valid role (Candidate or Recruiter)')
+      throw new Error('Please select a valid role (Candidate or Recruiter)');
     }
     if (!full_name || !email || !mobile || !location) {
-      throw new Error('Please fill in all required fields')
+      throw new Error('Please fill in all required fields');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Please enter a valid email address');
+    }
+    if (mobile.length < 7) {
+      throw new Error('Please enter a valid mobile number');
+    }
+    if (role === 'recruiter' && !company_name) {
+      throw new Error('Company name is required for recruiters');
     }
 
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    if (!emailOk) throw new Error('Please enter a valid email address')
-    if (mobile.length < 7) throw new Error('Please enter a valid mobile number')
+    // 1. First, sign up the user with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password: generateStrongPassword(), // Generate a strong temporary password
+      options: {
+        data: {
+          full_name,
+          role,
+          first_time_login: true,
+          password_updated: false,
+          ...(role === 'recruiter' && company_name && { company_name })
+        },
+        emailRedirectTo: `${window.location.origin}/update-password.html`
+      }
+    });
 
-    if (role === 'recruiter' && !company_name) throw new Error('Company name is required for recruiters')
+    if (authError) throw new Error(authError.message);
+    if (!authData.user) throw new Error('Failed to create user account');
 
-    const bfd = new FormData()
-    bfd.append('full_name', full_name)
-    bfd.append('email', email)
-    bfd.append('mobile', mobile)
-    bfd.append('location', location)
-    bfd.append('role', role)
-    if (company_name) bfd.append('company_name', company_name)
-    if (resume && resume.size > 0) bfd.append('resume', resume)
+    // 2. Send additional user data to backend
+    const formData = new FormData();
+    formData.append('user_id', authData.user.id);
+    formData.append('full_name', full_name);
+    formData.append('email', email);
+    formData.append('mobile', mobile);
+    formData.append('location', location);
+    formData.append('role', role);
+    if (company_name) formData.append('company_name', company_name);
+    if (resume) formData.append('resume', resume);
 
-    const resp = await backendUploadFile('/auth/register', bfd)
-    const result = await handleResponse(resp)
-    if (!result || result.ok === false) throw new Error(result?.error || 'Registration failed')
+    const response = await fetch(`${backendUrl()}/auth/register`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+      }
+    });
 
-    const formEl = document.querySelector('.auth-body')
+    const result = await handleResponse(response);
+    if (!result?.ok) {
+      // Clean up auth user if backend registration fails
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      throw new Error(result?.error || 'Registration failed');
+    }
+
+    // Show success message
+    const formEl = document.querySelector('.auth-body');
     if (formEl) {
       formEl.innerHTML = `
-        <div id="thankYou" class="thank-you-message">
-          <i class="fas fa-check-circle success-icon"></i>
-          <h2>Thank You for registering with us!</h2>
-          <p>Please check your email for the verification link and further instructions.</p>
+        <div class="text-center py-8">
+          <div class="text-green-500 text-5xl mb-4">✓</div>
+          <h2 class="text-2xl font-bold mb-2">Registration Successful!</h2>
+          <p class="mb-6">Please check your email to verify your account and set your password.</p>
           <a href="https://login.skreenit.com/login.html" class="btn btn-primary">Go to Login</a>
         </div>
-      `
+      `;
     }
 
-    return true
+    return true;
   } catch (err) {
-    console.error('Registration error:', err)
-    notify(err.message || 'Registration failed. Please try again.', 'error')
-    return false
+    console.error('Registration error:', err);
+    notify(err.message || 'Registration failed. Please try again.', 'error');
+    return false;
   } finally {
-    if (submitBtn) { submitBtn.textContent = originalText; submitBtn.disabled = false }
+    if (submitBtn) {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }
   }
+}
+
+// Add this helper function at the top of your file
+function generateStrongPassword() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
+  let password = '';
+  for (let i = 0; i < 16; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
 }
 
 // Update Password Handler (Fixed)
