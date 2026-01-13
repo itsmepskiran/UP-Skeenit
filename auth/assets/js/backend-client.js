@@ -31,7 +31,6 @@ class BackendClient {
     // Note: ensure your hosting platform routes API requests to the backend on this domain.
     return [
       'https://aiskreenit.onrender.com',
-      'https://auth.skreenit.com'
     ]
   }
 
