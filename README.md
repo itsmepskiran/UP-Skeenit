@@ -37,7 +37,7 @@ Skreenit is a modern recruitment platform that leverages AI to streamline the hi
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/skreenit.git
+   git clone https://github.com/itsmepskiran/UP-skreenit.git
    cd skreenit
    ```
 
@@ -82,12 +82,6 @@ Skreenit is a modern recruitment platform that leverages AI to streamline the hi
    ```
 
 ## Deployment
-
-### Frontend (Netlify)
-1. Connect your GitHub repository to Netlify
-2. Set the build command: `cd frontend && npm install && npm run build`
-3. Set the publish directory: `frontend/build`
-4. Add environment variables in the Netlify dashboard
 
 ### Backend (Render)
 1. Create a new Web Service on Render
