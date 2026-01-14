@@ -4,13 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SkreenIt</title>
-    <link rel="stylesheet" href="/auth/assets/css/shared-styles.css">
-    <link rel="stylesheet" href="/auth/assets/css/auth.css">
+      <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
+      <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
+        <link rel="manifest" href="https://auth.skreenit.com/assets/images/android-chrome-192x192.png" />
+        <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+
 </head>
 <body class="auth-page">
     <div class="auth-container">
         <div class="auth-header">
-            <img src="/auth/assets/images/logo.png" alt="SkreenIt" class="auth-logo">
+            <img src="https://auth.skreenit.com/assets/images/logo.png" alt="SkreenIt" class="auth-logo">
             <h1>Welcome Back</h1>
             <p>Sign in to your account</p>
         </div>
@@ -26,7 +32,7 @@
             <div class="form-group">
                 <div class="password-header">
                     <label for="password">Password</label>
-                    <a href="/login/forgot-password.html" class="forgot-password">Forgot password?</a>
+                    <a href="https://login.skreenit.com/forgot-password.html" class="forgot-password">Forgot password?</a>
                 </div>
                 <div class="password-input">
                     <input type="password" id="password" name="password" required>
@@ -42,7 +48,7 @@
             </button>
 
             <div class="auth-footer">
-                <p>Don't have an account? <a href="/login/registration.html">Sign up</a></p>
+                <p>Don't have an account? <a href="https://login.skreenit.com/registration.html">Sign up</a></p>
             </div>
         </form>
     </div>
@@ -89,8 +95,8 @@
                         const role = user?.user_metadata?.role || 'candidate';
                         
                         window.location.href = role === 'candidate' 
-                            ? '/candidate-dashboard.html' 
-                            : '/recruiter-dashboard.html';
+                            ? 'https://dashboard.skreenit.com/candidate-dashboard.html' 
+                            : 'https://dashboard.skreenit.com/recruiter-dashboard.html';
 
                     } catch (error) {
                         console.error('Login error:', error);
