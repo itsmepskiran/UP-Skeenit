@@ -98,16 +98,14 @@
 </div>
 
 <script type="module">
-  import { handleLoginSubmit } from 'https://auth.skreenit.com/assets/js/auth-pages.js'
-
   document.addEventListener('DOMContentLoaded', () => {
-
     const roleCards = document.querySelectorAll('.role-card');
     const loginFields = document.getElementById('loginFields');
     const companyBox = document.getElementById('companyBox');
     const form = document.getElementById('loginForm');
 
     function toggleFormFields(role) {
+      // Show the login fields when a role is selected
       loginFields.style.display = 'block';
       const companyInput = companyBox.querySelector('input');
 
@@ -120,13 +118,41 @@
       }
     }
 
+    // Add click handler to each role card
     roleCards.forEach(card => {
       card.addEventListener('click', (e) => {
+        // Remove active class from all cards
+        roleCards.forEach(c => c.classList.remove('active'));
+        // Add active class to clicked card
+        card.classList.add('active');
+        
         const radio = card.querySelector('input[type="radio"]');
         if (radio) {
           radio.checked = true;
-          // Directly call the function to update the UI
           toggleFormFields(radio.value);
+        }
+      });
+
+      // Add keyboard navigation
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+
+    // Add hover effects
+    roleCards.forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        if (!card.classList.contains('active')) {
+          card.style.transform = 'translateY(-2px)';
+        }
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        if (!card.classList.contains('active')) {
+          card.style.transform = 'translateY(0)';
         }
       });
     });
@@ -135,9 +161,50 @@
     loginFields.style.display = 'none';
     companyBox.style.display = 'none';
 
-    form.addEventListener('submit', handleLoginSubmit)
-  })
-</script>
+    // Form submission handler
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      const role = formData.get('role');
+      const email = formData.get('email');
+      const password = formData.get('password');
+      const companyId = formData.get('company_id');
 
+      // Basic validation
+      if (!role) {
+        alert('Please select a role');
+        return;
+      }
+
+      if (!email || !password) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      if (role === 'recruiter' && !companyId) {
+        alert('Please enter your company code');
+        return;
+      }
+
+      try {
+        // Here you would typically call your auth service
+        console.log('Logging in with:', { role, email, companyId });
+        
+        // For now, just show a success message
+        alert(`Successfully logged in as ${role}`);
+        
+        // Redirect based on role (replace with your actual redirect logic)
+        // window.location.href = role === 'candidate' 
+        //   ? '/candidate-dashboard.html' 
+        //   : '/recruiter-dashboard.html';
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed. Please check your credentials and try again.');
+      }
+    });
+  });
+</script>
 </body>
 </html>
