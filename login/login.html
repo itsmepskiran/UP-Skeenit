@@ -161,50 +161,96 @@
     loginFields.style.display = 'none';
     companyBox.style.display = 'none';
 
-    // Form submission handler
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(form);
-      const role = formData.get('role');
-      const email = formData.get('email');
-      const password = formData.get('password');
-      const companyId = formData.get('company_id');
+// Form submission handler
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const formData = new FormData(form);
+  const role = formData.get('role');
+  const email = formData.get('email');
+  const password = formData.get('password');
+  const companyId = formData.get('company_id');
+  const submitButton = form.querySelector('button[type="submit"]');
+  const btnText = submitButton.querySelector('.btn-text');
+  const btnLoader = submitButton.querySelector('.btn-loader');
 
-      // Basic validation
-      if (!role) {
-        alert('Please select a role');
-        return;
-      }
+  // Basic validation
+  if (!role) {
+    showError('Please select a role');
+    return;
+  }
 
-      if (!email || !password) {
-        alert('Please fill in all required fields');
-        return;
-      }
+  if (!email || !password) {
+    showError('Please fill in all required fields');
+    return;
+  }
 
-      if (role === 'recruiter' && !companyId) {
-        alert('Please enter your company code');
-        return;
-      }
+  if (role === 'recruiter' && !companyId) {
+    showError('Please enter your company code');
+    return;
+  }
 
-      try {
-        // Here you would typically call your auth service
-        console.log('Logging in with:', { role, email, companyId });
-        
-        // For now, just show a success message
-        alert(`Successfully logged in as ${role}`);
-        
-        // Redirect based on role (replace with your actual redirect logic)
-        // window.location.href = role === 'candidate' 
-        //   ? '/candidate-dashboard.html' 
-        //   : '/recruiter-dashboard.html';
-        
-      } catch (error) {
-        console.error('Login error:', error);
-        alert('Login failed. Please check your credentials and try again.');
-      }
+  try {
+    // Show loading state
+    submitButton.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'flex';
+
+    // Call your authentication API
+    const response = await fetch('https://your-backend-api.com/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        role,
+        ...(role === 'recruiter' && { company_id: companyId })
+      })
     });
-  });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+
+    // Handle successful login
+    // Store the auth token (if using JWT)
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+    }
+
+    // Redirect based on role
+    window.location.href = role === 'candidate' 
+      ? '/candidate-dashboard.html' 
+      : '/recruiter-dashboard.html';
+
+  } catch (error) {
+    console.error('Login error:', error);
+    showError(error.message || 'Invalid email or password');
+  } finally {
+    // Reset button state
+    submitButton.disabled = false;
+    btnText.style.display = 'inline';
+    btnLoader.style.display = 'none';
+  }
+});
+
+// Helper function to show error messages
+function showError(message) {
+  const errorDiv = document.getElementById('error-message');
+  if (!errorDiv) return;
+  
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    errorDiv.style.display = 'none';
+  }, 5000);
+}
 </script>
 </body>
 </html>
