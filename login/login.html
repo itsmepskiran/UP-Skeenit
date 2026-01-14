@@ -45,7 +45,7 @@
       <!-- ROLE SELECTION -->
       <div class="role-selection">
 
-        <label class="role-card" for="role-candidate">
+        <label class="role-card" for="role-candidate" tabindex="0">
           <input type="radio" name="role" value="candidate" id="role-candidate" />
           <div class="role-content">
             <div class="role-icon">🎯</div>
@@ -54,7 +54,7 @@
           </div>
         </label>
 
-        <label class="role-card" for="role-recruiter">
+        <label class="role-card" for="role-recruiter" tabindex="0">
           <input type="radio" name="role" value="recruiter" id="role-recruiter" />
           <div class="role-content">
             <div class="role-icon">🏢</div>
@@ -120,7 +120,12 @@
 
     // Add click handler to each role card
     roleCards.forEach(card => {
-      card.addEventListener('click', (e) => {
+      // Add tabindex for better keyboard navigation
+      card.setAttribute('tabindex', '0');
+      
+      // Click handler
+      const handleClick = (e) => {
+        console.log('Role card clicked');
         // Remove active class from all cards
         roleCards.forEach(c => c.classList.remove('active'));
         // Add active class to clicked card
@@ -129,18 +134,23 @@
         const radio = card.querySelector('input[type="radio"]');
         if (radio) {
           radio.checked = true;
+          console.log('Selected role:', radio.value);
           toggleFormFields(radio.value);
         }
-      });
+      };
 
-      // Add keyboard navigation
+      // Add event listeners
+      card.addEventListener('click', handleClick);
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          card.click();
+          handleClick(e);
         }
       });
     });
+    
+    // Log when script loads
+    console.log('Role selection script loaded');
 
     // Add hover effects
     roleCards.forEach(card => {
