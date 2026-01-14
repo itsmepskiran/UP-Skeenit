@@ -1,115 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SkreenIt</title>
-      <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
-      <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
-        <link rel="manifest" href="https://auth.skreenit.com/assets/images/android-chrome-192x192.png" />
-        <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skreenit - Login</title>
 
+  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
+  <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
+  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+
+  <script>
+    window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com';
+  </script>
 </head>
-<body class="auth-page">
-    <div class="auth-container">
-        <div class="auth-header">
-            <img src="https://auth.skreenit.com/assets/images/logo.png" alt="SkreenIt" class="auth-logo">
-            <h1>Welcome Back</h1>
-            <p>Sign in to your account</p>
-        </div>
 
-        <form id="loginForm" class="auth-form">
-            <div id="error-message" class="error-message hidden"></div>
-            
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
-            </div>
+<body>
+  <!-- Decorative elements -->
+  <div class="floating-elements" style="pointer-events:none;">
+    <div class="floating-circle"></div>
+    <div class="floating-circle"></div>
+    <div class="floating-circle"></div>
+    <div class="floating-circle"></div>
+  </div>
 
-            <div class="form-group">
-                <div class="password-header">
-                    <label for="password">Password</label>
-                    <a href="https://login.skreenit.com/forgot-password.html" class="forgot-password">Forgot password?</a>
-                </div>
-                <div class="password-input">
-                    <input type="password" id="password" name="password" required>
-                    <button type="button" class="toggle-password" aria-label="Toggle password visibility">
-                        👁️
-                    </button>
-                </div>
-            </div>
+  <a href="https://skreenit.com" class="logo-link">
+    <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
+  </a>
 
-            <button type="submit" class="btn btn-primary btn-block">
-                <span class="btn-text">Sign In</span>
-                <span class="btn-loader hidden">Signing in...</span>
-            </button>
+  <div class="auth-wrapper animate-slideInScale">
+    <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand-image" />
 
-            <div class="auth-footer">
-                <p>Don't have an account? <a href="https://login.skreenit.com/registration.html">Sign up</a></p>
-            </div>
-        </form>
+    <div class="auth-header">
+      <h1><i class="fas fa-sign-in-alt"></i> Welcome Back</h1>
+      <p>Sign in to your Skreenit account</p>
     </div>
 
-    <script type="module">
-        import { auth } from '/auth/assets/js/supabase-config.js';
-        import { showMessage, togglePasswordVisibility } from '/auth/assets/js/auth-utils.js';
+    <div class="auth-body">
+      <form id="loginForm">
+        <div id="error-message" class="error-message" style="display: none;"></div>
 
-        // Initialize form
-        document.addEventListener('DOMContentLoaded', () => {
-            // Toggle password visibility
-            const toggleBtn = document.querySelector('.toggle-password');
-            const passwordInput = document.getElementById('password');
-            if (toggleBtn && passwordInput) {
-                toggleBtn.addEventListener('click', () => {
-                    togglePasswordVisibility(passwordInput, toggleBtn);
-                });
-            }
+        <!-- ROLE SELECTION -->
+        <div class="form-group">
+          <label>I am a</label>
+          <div class="role-selection">
+            <label class="role-option">
+              <input type="radio" name="role" value="candidate" checked>
+              <span class="role-content">
+                <i class="fas fa-user-graduate"></i>
+                <span>Candidate</span>
+              </span>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="recruiter">
+              <span class="role-content">
+                <i class="fas fa-briefcase"></i>
+                <span>Recruiter</span>
+              </span>
+            </label>
+          </div>
+        </div>
 
-            // Handle form submission
-            const loginForm = document.getElementById('loginForm');
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-                    const submitBtn = loginForm.querySelector('button[type="submit"]');
-                    const btnText = submitBtn.querySelector('.btn-text');
-                    const btnLoader = submitBtn.querySelector('.btn-loader');
+        <!-- LOGIN FIELDS -->
+        <div class="form-group">
+          <label for="email"><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email" required />
+        </div>
 
-                    // Show loading state
-                    submitBtn.disabled = true;
-                    btnText.classList.add('hidden');
-                    btnLoader.classList.remove('hidden');
+        <div class="form-group">
+          <div class="password-header">
+            <label for="password"><i class="fas fa-lock"></i> Password</label>
+            <a href="forgot-password.html" class="forgot-password">Forgot password?</a>
+          </div>
+          <div class="password-input">
+            <input type="password" id="password" name="password" placeholder="Enter your password" required />
+            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
 
-                    try {
-                        const { data, error } = await auth.signIn(email, password);
-                        
-                        if (error) throw error;
+        <div class="form-group" id="companyBox" style="display: none;">
+          <label for="company_id"><i class="fas fa-building"></i> Company Code</label>
+          <input type="text" id="company_id" name="company_id" placeholder="Enter company code" />
+        </div>
 
-                        // Redirect based on user role
-                        const { user } = await auth.getUser();
-                        const role = user?.user_metadata?.role || 'candidate';
-                        
-                        window.location.href = role === 'candidate' 
-                            ? 'https://dashboard.skreenit.com/candidate-dashboard.html' 
-                            : 'https://dashboard.skreenit.com/recruiter-dashboard.html';
+        <button type="submit" class="btn btn-primary btn-large" id="loginButton">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-loader" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Signing in...
+          </span>
+        </button>
 
-                    } catch (error) {
-                        console.error('Login error:', error);
-                        showMessage(error.message || 'Invalid email or password', 'error');
-                    } finally {
-                        // Reset button state
-                        submitBtn.disabled = false;
-                        btnText.classList.remove('hidden');
-                        btnLoader.classList.add('hidden');
-                    }
-                });
-            }
+        <div class="auth-footer">
+          <p>Don't have an account? <a href="registration.html">Sign up</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from '../auth/assets/js/supabase-config.js';
+    import { showMessage } from '../auth/assets/js/auth-utils.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('loginForm');
+      const roleRadios = document.querySelectorAll('input[name="role"]');
+      const companyBox = document.getElementById('companyBox');
+      const loginButton = document.getElementById('loginButton');
+      const btnText = loginButton.querySelector('.btn-text');
+      const btnLoader = loginButton.querySelector('.btn-loader');
+      const togglePassword = document.querySelector('.toggle-password');
+      const passwordInput = document.getElementById('password');
+
+      // Toggle password visibility
+      if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', () => {
+          const type = passwordInput.type === 'password' ? 'text' : 'password';
+          passwordInput.type = type;
+          togglePassword.innerHTML = type === 'password' ? 
+            '<i class="fas fa-eye"></i>' : 
+            '<i class="fas fa-eye-slash"></i>';
         });
-    </script>
+      }
+
+      // Show/hide company code based on role
+      roleRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          companyBox.style.display = radio.value === 'recruiter' ? 'block' : 'none';
+          if (radio.value === 'recruiter') {
+            document.getElementById('company_id').setAttribute('required', '');
+          } else {
+            document.getElementById('company_id').removeAttribute('required');
+          }
+        });
+      });
+
+      // Handle form submission
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
+        const companyId = document.getElementById('company_id')?.value;
+
+        // Show loading state
+        loginButton.disabled = true;
+        btnText.style.display = 'none';
+        btnLoader.style.display = 'inline-flex';
+
+        try {
+          const { data, error } = await auth.signIn(email, password);
+          
+          if (error) throw error;
+
+          // If recruiter, verify company code
+          if (role === 'recruiter' && companyId) {
+            // Add company verification logic here
+            console.log('Verifying company:', companyId);
+          }
+
+          // Redirect based on role
+          const { user } = await auth.getUser();
+          const userRole = user?.user_metadata?.role || role;
+          
+          window.location.href = userRole === 'recruiter' 
+            ? '/recruiter-dashboard.html' 
+            : '/candidate-dashboard.html';
+
+        } catch (error) {
+          console.error('Login error:', error);
+          showMessage(error.message || 'Invalid email or password', 'error');
+        } finally {
+          // Reset button state
+          loginButton.disabled = false;
+          btnText.style.display = 'inline';
+          btnLoader.style.display = 'none';
+        }
+      });
+
+      // Helper function to show messages
+      function showMessage(message, type = 'error') {
+        const errorDiv = document.getElementById('error-message');
+        if (!errorDiv) return;
+        
+        errorDiv.textContent = message;
+        errorDiv.className = `${type}-message`;
+        errorDiv.style.display = 'block';
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          errorDiv.style.display = 'none';
+        }, 5000);
+      }
+    });
+  </script>
 </body>
 </html>
