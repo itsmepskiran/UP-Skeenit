@@ -1,14 +1,9 @@
 // Supabase Configuration and Client Setup
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2'
 
-// Get Supabase URL and Anon Key from environment variables
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || window.SKREENIT_SUPABASE_URL || ''
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || window.SKREENIT_SUPABASE_ANON_KEY || ''
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('Missing Supabase URL or Anon Key. Please check your environment configuration.')
-    throw new Error('Missing Supabase configuration')
-}
+// Directly use Supabase URL and Anon Key
+const SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co' // Replace with your actual Supabase URL
+const SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX' //your-supabase-anon-key' // Replace with your actual Supabase Anon Key
 
 // Create Supabase client with enhanced configuration
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
