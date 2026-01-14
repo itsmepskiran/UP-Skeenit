@@ -82,6 +82,52 @@ def delete_job(job_id: str, user: dict = Depends(require_recruiter)):
         return svc.delete_job(job_id, recruiter_id=user["id"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Job delete failed: {str(e)}")
+@router.get("/candidates/{candidate_id}")
+def get_candidate_details(candidate_id: str, job_id: str = None, user: dict = Depends(require_recruiter)):
+    try:
+        supabase = get_supabase()
+
+        # Fetch candidate profile
+        profile_res = (
+            supabase.table("candidate_profiles")
+            .select("*")
+            .eq("user_id", candidate_id)
+            .single()
+            .execute()
+        )
+        profile = getattr(profile_res, "data", None)
+
+        # Fetch application (optional job filter)
+        if job_id:
+            app_res = (
+                supabase.table("job_applications")
+                .select("*")
+                .eq("candidate_id", candidate_id)
+                .eq("job_id", job_id)
+                .single()
+                .execute()
+            )
+        else:
+            app_res = (
+                supabase.table("job_applications")
+                .select("*")
+                .eq("candidate_id", candidate_id)
+                .order("submitted_at", desc=True)
+                .limit(1)
+                .single()
+                .execute()
+            )
+
+        application = getattr(app_res, "data", None)
+
+        return {
+            "ok": True,
+            "candidate": profile,
+            "application": application
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch candidate details: {str(e)}")
 
 @router.post("/companies")
 def create_company(payload: dict, user: dict = Depends(require_recruiter)):

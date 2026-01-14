@@ -1,0 +1,273 @@
+/* ---------------------------------------------------------
+   Skreenit Auth Styles (Login, Register, Forgot, Update)
+   Clean • Soft Gradient • Premium • Unified
+--------------------------------------------------------- */
+
+/* AUTH WRAPPER --------------------------------------------------------- */
+
+.auth-wrapper {
+  max-width: 520px;
+  margin: 5rem auto 2rem;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,255,255,0.4);
+  overflow: hidden;
+  animation: fadeInUp .7s ease-out;
+}
+
+.auth-header {
+  padding: 2rem 2rem 1rem;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.auth-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+}
+
+.auth-header i {
+  color: var(--primary-color);
+  font-size: 1.4rem;
+}
+
+.auth-body {
+  padding: 2rem;
+}
+
+/* FORM ELEMENTS --------------------------------------------------------- */
+
+.auth-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.auth-form .form-group label {
+  font-weight: 600;
+  margin-bottom: .4rem;
+  display: block;
+}
+
+.auth-form input,
+.auth-form select,
+.auth-form textarea {
+  width: 100%;
+  padding: .85rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #fff;
+  font-size: .95rem;
+}
+
+.auth-form input:focus,
+.auth-form select:focus,
+.auth-form textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+  outline: none;
+}
+
+/* PASSWORD FIELD WITH TOGGLE --------------------------------------------------------- */
+
+.input-group {
+  position: relative;
+}
+
+.input-group input {
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: .75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: .25rem;
+  transition: color .2s ease;
+}
+
+.toggle-password:hover {
+  color: var(--primary-color);
+}
+
+/* PASSWORD STRENGTH --------------------------------------------------------- */
+
+.password-strength {
+  margin-top: .5rem;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.password-strength-fill {
+  height: 100%;
+  width: 0;
+  transition: width .3s ease, background-color .3s ease;
+}
+
+.password-requirements {
+  margin-top: .5rem;
+  font-size: .85rem;
+  color: var(--text-light);
+}
+
+.password-requirements ul {
+  list-style: none;
+  padding-left: 1.25rem;
+}
+
+.password-requirements li {
+  position: relative;
+  margin-bottom: .25rem;
+}
+
+.password-requirements li::before {
+  content: "•";
+  position: absolute;
+  left: -1rem;
+  color: var(--text-light);
+}
+
+.password-requirements li.valid {
+  color: var(--secondary-color);
+}
+
+.password-requirements li.valid::before {
+  content: "✓";
+  left: -1.25rem;
+  color: var(--secondary-color);
+}
+
+/* ROLE SELECTION --------------------------------------------------------- */
+
+.role-selection {
+  display: flex;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.role-card {
+  flex: 1;
+  padding: 1.5rem;
+  border-radius: 14px;
+  border: 2px solid var(--border-color);
+  background: #fff;
+  cursor: pointer;
+  transition: all .25s ease;
+  text-align: center;
+}
+
+.role-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+}
+
+.role-card.active {
+  border-color: var(--primary-color);
+  background: rgba(79,70,229,0.05);
+  box-shadow: var(--shadow-soft-glow);
+}
+
+.role-card input[type="radio"] {
+  display: none;
+}
+
+.role-icon {
+  font-size: 2rem;
+  margin-bottom: .5rem;
+  color: var(--primary-color);
+}
+
+.role-card h3 {
+  margin: .5rem 0;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+}
+
+.role-card p {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--text-light);
+}
+
+/* AUTH ACTIONS --------------------------------------------------------- */
+
+.auth-actions {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  font-size: .9rem;
+}
+
+.auth-actions a {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.auth-actions a:hover {
+  color: var(--primary-dark);
+}
+
+/* LOGO --------------------------------------------------------- */
+
+.logo-link {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+}
+
+.logo-link img {
+  height: 42px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+/* FLOATING ELEMENTS (Softened) --------------------------------------------------------- */
+
+.floating-elements {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.floating-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-circle:nth-child(1) { width: 70px; height: 70px; top: 18%; left: 12%; }
+.floating-circle:nth-child(2) { width: 50px; height: 50px; top: 60%; right: 18%; }
+.floating-circle:nth-child(3) { width: 40px; height: 40px; top: 78%; left: 22%; }
+.floating-circle:nth-child(4) { width: 90px; height: 90px; top: 12%; right: 22%; }
+
+/* RESPONSIVE --------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .auth-wrapper {
+    margin: 2rem 1rem;
+  }
+
+  .role-selection {
+    flex-direction: column;
+  }
+
+  .logo-link img {
+    height: 36px;
+  }
+}

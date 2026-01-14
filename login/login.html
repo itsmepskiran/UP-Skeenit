@@ -5,21 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skreenit - Login</title>
 
-  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
-  <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
+  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/auth.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
   <script>
-    window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com';
-    // Supabase configuration
     window.SKREENIT_SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co';
     window.SKREENIT_SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX';
   </script>
-  <!-- Supabase Client Library -->
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -45,229 +40,118 @@
   </div>
 
   <div class="auth-body">
+
+    <div id="error-message" class="error-message" style="display:none;"></div>
+
     <form id="loginForm">
 
-      <!-- ROLE SELECTION -->
-      <div class="role-selection">
-
-        <label class="role-card" for="role-candidate" tabindex="0">
-          <input type="radio" name="role" value="candidate" id="role-candidate" />
-          <div class="role-content">
-            <div class="role-icon">🎯</div>
-            <h3>Candidate</h3>
-            <p>Looking for opportunities</p>
-          </div>
-        </label>
-
-        <label class="role-card" for="role-recruiter" tabindex="0">
-          <input type="radio" name="role" value="recruiter" id="role-recruiter" />
-          <div class="role-content">
-            <div class="role-icon">🏢</div>
-            <h3>Recruiter</h3>
-            <p>Hiring Authenticated Talent</p>
-          </div>
-        </label>
-
-
+      <div class="form-group">
+        <label><i class="fas fa-envelope"></i> Email ID</label>
+        <input type="email" name="email" placeholder="Enter your email" required />
       </div>
 
-      <!-- LOGIN FIELDS -->
-      <div id="loginFields" style="display:none;">
-        <div class="form-group">
-          <label><i class="fas fa-envelope"></i> Email ID</label>
-          <input type="email" name="email" placeholder="Enter your email" required />
-        </div>
-
-        <div class="form-group">
-          <label><i class="fas fa-lock"></i> Password</label>
-          <input type="password" name="password" placeholder="Enter your password" required />
-        </div>
-
-        <div class="form-group" id="companyBox" style="display:none;">
-          <label><i class="fas fa-building"></i> Company Code</label>
-          <input type="text" name="company_id" placeholder="Enter company code" required />
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-large" style="width:100%;">
-          <i class="fas fa-sign-in-alt"></i> Sign In
-        </button>
-
-        <div class="auth-actions">
-          <a href="registration.html">Create account</a>
-          <a href="forgot-password.html">Forgot password?</a>
-        </div>
-
+      <div class="form-group">
+        <label><i class="fas fa-lock"></i> Password</label>
+        <input type="password" name="password" placeholder="Enter your password" required />
       </div>
+
+      <button type="submit" class="btn btn-primary btn-large" style="width:100%;">
+        <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
+        <span class="btn-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+      </button>
+
+      <div class="auth-actions">
+        <a href="registration.html">Create account</a>
+        <a href="forgot-password.html">Forgot password?</a>
+      </div>
+
     </form>
   </div>
 </div>
 
-<!-- Main Application Script -->
 <script type="module">
-  document.addEventListener('DOMContentLoaded', () => {
-    const roleCards = document.querySelectorAll('.role-card');
-    const loginFields = document.getElementById('loginFields');
-    const companyBox = document.getElementById('companyBox');
-    const form = document.getElementById('loginForm');
+document.addEventListener('DOMContentLoaded', () => {
 
-    function toggleFormFields(role) {
-      // Show the login fields when a role is selected
-      loginFields.style.display = 'block';
-      const companyInput = companyBox.querySelector('input');
+  const { createClient } = supabase;
+  const supabaseClient = createClient(
+    window.SKREENIT_SUPABASE_URL,
+    window.SKREENIT_SUPABASE_ANON_KEY
+  );
 
-      if (role === 'recruiter') {
-        companyBox.style.display = 'block';
-        companyInput.required = true;
-      } else {
-        companyBox.style.display = 'none';
-        companyInput.required = false;
-      }
-    }
+  const form = document.getElementById('loginForm');
+  const errorDiv = document.getElementById('error-message');
 
-    // Add click handler to each role card
-    roleCards.forEach(card => {
-      // Add tabindex for better keyboard navigation
-      card.setAttribute('tabindex', '0');
-      
-      // Click handler
-      const handleClick = (e) => {
-        console.log('Role card clicked');
-        // Remove active class from all cards
-        roleCards.forEach(c => c.classList.remove('active'));
-        // Add active class to clicked card
-        card.classList.add('active');
-        
-        const radio = card.querySelector('input[type="radio"]');
-        if (radio) {
-          radio.checked = true;
-          console.log('Selected role:', radio.value);
-          toggleFormFields(radio.value);
-        }
-      };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      // Add event listeners
-      card.addEventListener('click', handleClick);
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick(e);
-        }
+    const formData = new FormData(form);
+    const email = formData.get('email');
+    const password = formData.get('password');
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    const btnText = submitButton.querySelector('.btn-text');
+    const btnLoader = submitButton.querySelector('.btn-loader');
+
+    // UI loading state
+    submitButton.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline-block';
+
+    try {
+      // 1️⃣ LOGIN WITH SUPABASE
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
       });
-    });
-    
-    // Log when script loads
-    console.log('Role selection script loaded');
 
-    // Add hover effects
-    roleCards.forEach(card => {
-      card.addEventListener('mouseenter', () => {
-        if (!card.classList.contains('active')) {
-          card.style.transform = 'translateY(-2px)';
-        }
-      });
-      
-      card.addEventListener('mouseleave', () => {
-        if (!card.classList.contains('active')) {
-          card.style.transform = 'translateY(0)';
-        }
-      });
-    });
+      if (error) throw error;
 
-    // Initialize form state
-    loginFields.style.display = 'none';
-    companyBox.style.display = 'none';
+      const user = data.user;
+      const role = user.user_metadata?.role;
+      const firstTime = user.user_metadata?.first_time_login ?? true;
 
-    // Form submission handler
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(form);
-      const role = formData.get('role');
-      const email = formData.get('email');
-      const password = formData.get('password');
-      const companyId = formData.get('company_id');
-      const submitButton = form.querySelector('button[type="submit"]');
-      const btnText = submitButton.querySelector('.btn-text');
-      const btnLoader = submitButton.querySelector('.btn-loader');
-
-      // Basic validation
       if (!role) {
-        showError('Please select a role');
-        return;
+        throw new Error("Your account is missing a role. Contact support.");
       }
 
-      if (!email || !password) {
-        showError('Please fill in all required fields');
-        return;
-      }
+      // Store session
+      localStorage.setItem('skreenit_token', data.session.access_token);
+      localStorage.setItem('skreenit_user_id', user.id);
+      localStorage.setItem('skreenit_role', role);
 
-      if (role === 'recruiter' && !companyId) {
-        showError('Please enter your company code');
-        return;
-      }
-
-      try {
-        // Show loading state
-        submitButton.disabled = true;
-        btnText.style.display = 'none';
-        btnLoader.style.display = 'flex';
-
-        // Call your authentication API
-        const response = await fetch('https://aiskreenit.onrender.com/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            role,
-            ...(role === 'recruiter' && { company_id: companyId })
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Login failed');
+      // 2️⃣ ROLE + FIRST-TIME ROUTING
+      if (role === 'candidate') {
+        if (firstTime) {
+          window.location.href = 'https://applicants.skreenit.com/detailed-application-form.html';
+        } else {
+          window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
         }
-
-        // Handle successful login
-        // Store the auth token (if using JWT)
-        if (data.token) {
-          localStorage.setItem('authToken', data.token);
+      } else {
+        if (firstTime) {
+          window.location.href = 'https://recruiter.skreenit.com/recruiter-profile.html';
+        } else {
+          window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
         }
-
-        // Redirect based on role
-        window.location.href = role === 'candidate' 
-          ? '/candidate-dashboard.html' 
-          : '/recruiter-dashboard.html';
-
-      } catch (error) {
-        console.error('Login error:', error);
-        showError(error.message || 'Invalid email or password');
-      } finally {
-        // Reset button state
-        submitButton.disabled = false;
-        btnText.style.display = 'inline';
-        btnLoader.style.display = 'none';
       }
-    });
 
-    // Helper function to show error messages
-    function showError(message) {
-      const errorDiv = document.getElementById('error-message');
-      if (!errorDiv) return;
-      
-      errorDiv.textContent = message;
-      errorDiv.style.display = 'block';
-      
-      // Auto-hide after 5 seconds
-      setTimeout(() => {
-        errorDiv.style.display = 'none';
-      }, 5000);
+    } catch (err) {
+      console.error(err);
+      showError(err.message || "Invalid email or password");
+    } finally {
+      submitButton.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoader.style.display = 'none';
     }
-  }); // Close DOMContentLoaded
+  });
+
+  function showError(message) {
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    setTimeout(() => errorDiv.style.display = 'none', 5000);
+  }
+
+});
 </script>
+
 </body>
 </html>

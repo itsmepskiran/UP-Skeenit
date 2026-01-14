@@ -7,13 +7,27 @@ def upload_to_bucket(
     path: str,
     content: bytes,
     content_type: Optional[str] = None
-) -> None:
+) -> str:
     """
     Uploads content to a specified Supabase Storage bucket.
+    Returns the uploaded file path.
     """
-    up = client.storage.from_(bucket).upload(path, content, content_type or "application/octet-stream")
-    if getattr(up, "error", None):
-        raise Exception(f"Upload error: {up.error}")
+    up = client.storage.from_(bucket).upload(
+        path,
+        content,
+        content_type or "application/octet-stream"
+    )
+
+    # Handle both object-style and dict-style responses
+    error = getattr(up, "error", None)
+    if not error and isinstance(up, dict):
+        error = up.get("error")
+
+    if error:
+        raise Exception(f"Upload error: {error}")
+
+    return path
+
 
 def create_signed_url(
     client: Client,
@@ -25,7 +39,14 @@ def create_signed_url(
     Generates a signed URL for accessing content in a Supabase bucket.
     """
     su = client.storage.from_(bucket).create_signed_url(path, expire_seconds)
-    url = getattr(su, "data", {}).get("signedUrl") if hasattr(su, "data") else None
+
+    # Supabase returns {"signedURL": "..."}
+    if isinstance(su, dict):
+        url = su.get("signedURL")
+    else:
+        url = getattr(su, "signedURL", None)
+
     if not url:
         raise Exception("Failed to create signed URL")
+
     return url

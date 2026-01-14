@@ -55,3 +55,23 @@ class RecruiterProfileRequest(BaseModel):
     phone: Optional[str] = None
     position: Optional[str] = None
     linkedin_url: Optional[str] = None
+class CandidateApplicationResponse(BaseModel):
+    candidate: Optional[Dict]
+    application: Optional[Dict]
+class JobResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    requirements: str
+    responsibilities: Optional[str]
+    department: Optional[str]
+    location: str
+    job_type: str
+    experience_level: Optional[str]
+    salary_min: Optional[int]
+    salary_max: Optional[int]
+    currency: Optional[str]
+    status: JobStatus
+    company_id: str
+    created_by: str
+    expires_at: Optional[str]

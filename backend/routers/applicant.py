@@ -215,3 +215,27 @@ def get_draft(candidate_id: str, user: dict = Depends(require_candidate)):
         return {'ok': True, 'data': draft}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Failed to fetch draft: {str(e)}')
+@router.get("/applications/{application_id}")
+def get_application_details(application_id: str, user: dict = Depends(require_candidate)):
+    try:
+        supabase = get_supabase()
+        res = (
+            supabase.table("job_applications")
+            .select("*")
+            .eq("id", application_id)
+            .single()
+            .execute()
+        )
+
+        err = getattr(res, "error", None)
+        if err:
+            raise Exception(err)
+
+        data = getattr(res, "data", None)
+        if not data:
+            raise HTTPException(status_code=404, detail="Application not found")
+
+        return {"ok": True, "application": data}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch application: {str(e)}")

@@ -215,3 +215,14 @@ class ApplicantService:
             return out
         except Exception:
             return {"status": "missing"}
+    def get_application_details(self, application_id: str) -> Dict[str, Any]:
+        res = (
+            self.supabase.table("job_applications")
+            .select("*")
+            .eq("id", application_id)
+            .single()
+            .execute()
+        )
+        if getattr(res, "error", None):
+            raise Exception(res.error)
+        return getattr(res, "data", None)

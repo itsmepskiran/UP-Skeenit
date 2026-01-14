@@ -8,28 +8,65 @@ class VideoService:
         self.supabase = supabase_client
         self.bucket_name = "videos"
 
+    # ---------------------------------------------------------
+    # UPLOAD VIDEO
+    # ---------------------------------------------------------
     def upload_video_to_storage(self, file_content: bytes, filename: str, candidate_id: str) -> str:
         try:
             file_extension = filename.split('.')[-1] if '.' in filename else 'mp4'
             unique_filename = f"{candidate_id}/{uuid.uuid4()}.{file_extension}"
-            storage_response = self.supabase.storage.from_(self.bucket_name).upload(unique_filename, file_content)
-            err = getattr(storage_response, "error", None)
-            if err:
-                raise Exception(f"Storage upload failed: {err}")
-            public_url = self.supabase.storage.from_(self.bucket_name).get_public_url(unique_filename)
+
+            storage_response = (
+                self.supabase
+                .storage
+                .from_(self.bucket_name)
+                .upload(unique_filename, file_content)
+            )
+
+            if getattr(storage_response, "error", None):
+                raise Exception(f"Storage upload failed: {storage_response.error}")
+
+            # Public URL (works with your current frontend)
+            public_url = (
+                self.supabase
+                .storage
+                .from_(self.bucket_name)
+                .get_public_url(unique_filename)
+            )
+
             return public_url
+
         except Exception as e:
             raise Exception(f"Video upload failed: {str(e)}")
 
+    # ---------------------------------------------------------
+    # SIGNED URL
+    # ---------------------------------------------------------
     def create_signed_url(self, file_path: str, expires_in: int = 3600) -> str:
         try:
-            signed_url = self.supabase.storage.from_(self.bucket_name).create_signed_url(file_path, expires_in)
-            return signed_url['signedURL']
+            signed_url = (
+                self.supabase
+                .storage
+                .from_(self.bucket_name)
+                .create_signed_url(file_path, expires_in)
+            )
+            return signed_url["signedURL"]
         except Exception as e:
             raise Exception(f"Failed to create signed URL: {str(e)}")
 
-    def save_video_response(self, application_id: str, question_id: str, video_url: str,
-                            transcript: Optional[str] = None, duration: Optional[int] = None, status: str = "completed") -> Dict[str, Any]:
+    # ---------------------------------------------------------
+    # SAVE VIDEO RESPONSE
+    # ---------------------------------------------------------
+    def save_video_response(
+        self,
+        application_id: str,
+        question_id: str,
+        video_url: str,
+        transcript: Optional[str] = None,
+        duration: Optional[int] = None,
+        status: str = "completed",
+        candidate_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         try:
             payload = {
                 "application_id": application_id,
@@ -38,20 +75,33 @@ class VideoService:
                 "transcript": transcript,
                 "duration": duration,
                 "status": status,
-                "recorded_at": datetime.utcnow().isoformat()
+                "recorded_at": datetime.utcnow().isoformat(),
             }
+
+            if candidate_id:
+                payload["candidate_id"] = candidate_id
+
             res = self.supabase.table("video_responses").insert(payload).execute()
-            err = getattr(res, "error", None)
-            if err:
-                raise Exception(err)
+
+            if getattr(res, "error", None):
+                raise Exception(res.error)
+
             data = getattr(res, "data", None)
-            if not data:
-                return {}
             return data[0] if isinstance(data, list) and data else {}
+
         except Exception as e:
             raise Exception(f"Failed to save video response: {str(e)}")
 
-    def save_general_video(self, candidate_id: str, video_url: str, status: str = "completed", ai_analysis: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    # ---------------------------------------------------------
+    # SAVE GENERAL VIDEO
+    # ---------------------------------------------------------
+    def save_general_video(
+        self,
+        candidate_id: str,
+        video_url: str,
+        status: str = "completed",
+        ai_analysis: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         try:
             payload = {
                 "candidate_id": candidate_id,
@@ -59,35 +109,63 @@ class VideoService:
                 "status": status,
                 "created_at": datetime.utcnow().isoformat(),
                 "is_general": True,
-                "ai_analysis": ai_analysis or {}
+                "ai_analysis": ai_analysis or {},
             }
-            res = self.supabase.table("general_video_interviews").upsert(payload, on_conflict="candidate_id").execute()
-            err = getattr(res, "error", None)
-            if err:
-                raise Exception(err)
+
+            res = (
+                self.supabase
+                .table("general_video_interviews")
+                .upsert(payload, on_conflict="candidate_id")
+                .execute()
+            )
+
+            if getattr(res, "error", None):
+                raise Exception(res.error)
+
             data = getattr(res, "data", None)
-            if not data:
-                return {}
             return data[0] if isinstance(data, list) and data else {}
+
         except Exception as e:
             raise Exception(f"Failed to save general video: {str(e)}")
 
+    # ---------------------------------------------------------
+    # GET RESPONSES FOR AN APPLICATION
+    # ---------------------------------------------------------
     def get_video_responses(self, application_id: str) -> Dict[str, Any]:
         try:
-            res = self.supabase.table("video_responses").select("*").eq("application_id", application_id).execute()
-            err = getattr(res, "error", None)
-            if err:
-                raise Exception(err)
+            res = (
+                self.supabase
+                .table("video_responses")
+                .select("*")
+                .eq("application_id", application_id)
+                .execute()
+            )
+
+            if getattr(res, "error", None):
+                raise Exception(res.error)
+
             return {"responses": res.data}
+
         except Exception as e:
             raise Exception(f"Failed to fetch video responses: {str(e)}")
 
+    # ---------------------------------------------------------
+    # GET ALL VIDEOS FOR A CANDIDATE
+    # ---------------------------------------------------------
     def get_candidate_videos(self, candidate_id: str) -> Dict[str, Any]:
         try:
-            res = self.supabase.table("video_responses").select("*").eq("candidate_id", candidate_id).execute()
-            err = getattr(res, "error", None)
-            if err:
-                raise Exception(err)
+            res = (
+                self.supabase
+                .table("video_responses")
+                .select("*")
+                .eq("candidate_id", candidate_id)
+                .execute()
+            )
+
+            if getattr(res, "error", None):
+                raise Exception(res.error)
+
             return {"videos": res.data}
+
         except Exception as e:
             raise Exception(f"Failed to fetch candidate videos: {str(e)}")

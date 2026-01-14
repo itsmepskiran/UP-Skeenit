@@ -53,3 +53,14 @@ class CandidateExperienceRequest(BaseModel):
     start_year: int
     end_year: Optional[int] = None
     description: Optional[str] = None
+class ApplicationDetailResponse(BaseModel):
+    id: str
+    job_id: str
+    candidate_id: str
+    status: ApplicationStatus
+    cover_letter: Optional[str]
+    resume_url: Optional[str]
+    ai_score: Optional[int]
+    ai_analysis: Optional[Dict]
+    recruiter_notes: Optional[str]
+    applied_at: Optional[str]
