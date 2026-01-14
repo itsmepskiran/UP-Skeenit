@@ -15,7 +15,12 @@
 
   <script>
     window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com';
+    // Supabase configuration
+    window.SKREENIT_SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co';
+    window.SKREENIT_SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX';
   </script>
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
@@ -97,6 +102,7 @@
   </div>
 </div>
 
+<!-- Main Application Script -->
 <script type="module">
   document.addEventListener('DOMContentLoaded', () => {
     const roleCards = document.querySelectorAll('.role-card');
