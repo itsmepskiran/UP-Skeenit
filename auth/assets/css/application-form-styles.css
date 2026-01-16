@@ -1,275 +1,36 @@
-/* ---------------------------------------------------------
-   Skreenit – Detailed Application Form (Improved Styles)
-   Clean, responsive, accessible, and consistent
---------------------------------------------------------- */
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: #f5f7fa;
-  color: #2d3748;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
-
-/* ---------------------------------------------------------
-   NAVBAR
---------------------------------------------------------- */
-.navbar {
-  background: #fff;
-  border-bottom: 1px solid #e2e8f0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0.75rem 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-}
-
-.nav-logo .logo {
-  height: 48px;
-  width: auto;
-}
-
-.nav-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.save-draft-btn,
-.logout-btn {
-  background: #e2e8f0;
-  border: none;
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.save-draft-btn:hover,
-.logout-btn:hover {
-  background: #cbd5e0;
-}
-
-/* ---------------------------------------------------------
-   PROGRESS BAR
---------------------------------------------------------- */
-.progress-container {
-  max-width: 1100px;
-  margin: 1rem auto;
-  padding: 0 1rem;
-}
-
-.progress-bar {
-  height: 6px;
-  background: #e2e8f0;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 6px;
-  width: 0;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  transition: width 0.3s ease;
-}
-
-.progress-steps {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: #718096;
-}
-
-.step.active {
-  color: #2d3748;
-}
-
-/* ---------------------------------------------------------
-   MAIN CONTENT
---------------------------------------------------------- */
-.main-content {
-  max-width: 1100px;
-  margin: 1rem auto;
-  padding: 1rem;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-}
-
-.application-form .step-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0.5rem 0 1rem;
-}
-
-.form-section {
-  margin: 1rem 0;
-}
-
-/* ---------------------------------------------------------
-   FORM ELEMENTS
---------------------------------------------------------- */
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.form-group {
-  margin: 0.75rem 0;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.35rem;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 0.65rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* Focus state for accessibility */
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  border-color: #667eea;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* ---------------------------------------------------------
-   FILE UPLOAD
---------------------------------------------------------- */
-.upload-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1rem;
-}
-
-.file-upload {
-  padding: 1rem;
-  text-align: center;
-  border: 1px dashed #cbd5e0;
-  border-radius: 8px;
-  color: #718096;
-}
-
-/* ---------------------------------------------------------
-   FORM NAVIGATION
---------------------------------------------------------- */
-.form-navigation {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin: 1rem 0;
-}
-
-.nav-btn {
-  padding: 0.65rem 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.prev-btn {
-  background: #e2e8f0;
-  color: #2d3748;
-}
-
-.next-btn,
-.submit-btn {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff;
-}
-
-.nav-btn:hover {
-  opacity: 0.9;
-}
-
-.nav-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ---------------------------------------------------------
-   MODAL
---------------------------------------------------------- */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal .modal-content {
-  max-width: 520px;
-  background: #fff;
-  padding: 2rem;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.success-icon {
-  font-size: 3rem;
-  color: #38a169;
-}
-
-.success-btn {
-  margin-top: 0.5rem;
-  padding: 0.65rem 1rem;
-  background: #38a169;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* ---------------------------------------------------------
-   RESPONSIVE BREAKPOINTS
---------------------------------------------------------- */
-@media (max-width: 600px) {
-  .main-content {
-    padding: 0.75rem;
-  }
-}
+/* Minimal styles for Detailed Application Form (shared) */
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f5f7fa;color:#2d3748;margin:0}
+.navbar{background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100}
+.nav-container{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem}
+.nav-logo{display:flex;align-items:center;gap:.5rem;font-weight:600}
+.nav-logo .logo{height:48px;width:auto}
+.nav-actions{display:flex;gap:.5rem}
+.save-draft-btn,.logout-btn{background:#e2e8f0;border:none;border-radius:8px;padding:.5rem .75rem;cursor:pointer}
+.save-draft-btn:hover,.logout-btn:hover{background:#cbd5e0}
+.progress-container{max-width:1100px;margin:1rem auto;padding:0 1rem}
+.progress-bar{height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.progress-fill{height:6px;background:linear-gradient(135deg,#667eea,#764ba2);width:0}
+.progress-steps{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.5rem}
+.step{display:flex;align-items:center;gap:.35rem;color:#718096}
+.step.active{color:#2d3748}
+.main-content{max-width:1100px;margin:1rem auto;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,.08);padding:1rem}
+.application-form .step-header{display:flex;align-items:center;gap:.75rem;margin:.5rem 0 1rem}
+.form-section{margin:1rem 0}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.form-group{margin:.75rem 0}
+.form-group label{display:block;margin-bottom:.35rem}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:.65rem;border:1px solid #e2e8f0;border-radius:8px}
+.checkbox-group{display:flex;align-items:center;gap:.5rem}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.file-upload{border:1px dashed #cbd5e0;border-radius:8px;padding:1rem;text-align:center;color:#718096}
+.form-navigation{display:flex;justify-content:space-between;gap:.5rem;margin:1rem 0}
+.nav-btn{border:none;border-radius:8px;padding:.65rem 1rem;cursor:pointer}
+.prev-btn{background:#e2e8f0;color:#2d3748}
+.next-btn,.submit-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200}
+.modal .modal-content{max-width:520px;margin:10% auto;background:#fff;border-radius:12px;padding:2rem;text-align:center}
+.success-icon{font-size:3rem;color:#38a169}
+.success-btn{background:#38a169;color:#fff;border:none;border-radius:8px;padding:.65rem 1rem;cursor:pointer;margin-top:.5rem}
+@media (max-width:900px){.form-row{grid-template-columns:1fr 1fr}.upload-grid{grid-template-columns:1fr}}
+@media (max-width:600px){.form-row{grid-template-columns:1fr}}

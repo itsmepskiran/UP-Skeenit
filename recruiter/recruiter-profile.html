@@ -3,172 +3,113 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Skreenit – Recruiter Profile</title>
-
-  <meta name="description" content="Complete your recruiter profile on Skreenit to start posting jobs and reviewing applicants." />
-
-  <!-- Favicons -->
+  <title>Skreenit - Recruiter Profile</title>
   <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
   <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
-
-  <!-- Global Design System -->
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-
-  <!-- Dashboard Styles -->
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
-
-  <!-- Icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
   <style>
-    .page {
-      max-width: 900px;
-      margin: 3rem auto;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.1);
-    }
-    .page-header {
-      padding: 1.25rem 1.75rem;
-      border-bottom: 1px solid #e2e8f0;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .page-body {
-      padding: 1.75rem;
-    }
-    .notice {
-      background:#ebf8ff;
-      border:1px solid #90cdf4;
-      color:#2a4365;
-      padding:1rem;
-      border-radius:8px;
-      margin-bottom:1rem;
-    }
-    .grid {
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-    @media (max-width: 768px) {
-      .grid { grid-template-columns: 1fr; }
-    }
-    .footer-actions {
-      display: flex;
-      gap: .75rem;
-      margin-top: 1rem;
-    }
+    .page { max-width: 900px; margin: 3rem auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.1); }
+    .page-header { padding: 1.25rem 1.75rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.75rem; }
+    .page-body { padding: 1.75rem; }
+    .notice { background:#ebf8ff; border:1px solid #90cdf4; color:#2a4365; padding:1rem; border-radius:8px; margin-bottom:1rem; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
-
 <body>
+  <a href="https://skreenit.com" style="position:fixed;left:16px;top:16px;z-index:10;display:inline-block;">
+    <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" style="height:48px;width:auto;" />
+  </a>
 
   <div class="page">
     <div class="page-header">
       <i class="fas fa-building"></i>
       <h1>Recruiter Profile</h1>
     </div>
-
     <div class="page-body">
-
       <div class="notice">
         <strong>Welcome!</strong> Please complete your recruiter profile to start posting jobs and reviewing applicants.
       </div>
 
       <form id="recruiterProfileForm">
-
         <div class="grid">
           <div class="form-group">
             <label for="company_name">Company Name*</label>
             <input type="text" id="company_name" name="company_name" required />
           </div>
-
           <div class="form-group">
             <label for="company_website">Company Website</label>
             <input type="url" id="company_website" name="company_website" placeholder="https://example.com" />
           </div>
-
           <div class="form-group">
             <label for="contact_name">Contact Name*</label>
             <input type="text" id="contact_name" name="contact_name" required />
           </div>
-
           <div class="form-group">
             <label for="contact_email">Contact Email*</label>
             <input type="email" id="contact_email" name="contact_email" required />
           </div>
-
           <div class="form-group">
             <label for="location">Primary Location</label>
             <input type="text" id="location" name="location" />
           </div>
-
           <div class="form-group">
             <label for="about">About Company</label>
             <textarea id="about" name="about" rows="4" placeholder="Short description"></textarea>
           </div>
         </div>
 
-        <div class="footer-actions">
+        <div class="modal-footer" style="padding:0; margin-top:1rem; display:flex; gap:.75rem;">
           <button type="submit" class="btn btn-primary">Save Profile</button>
           <a class="btn btn-secondary" href="https://dashboard.skreenit.com/recruiter-dashboard.html">Skip for now → Dashboard</a>
         </div>
-
       </form>
     </div>
   </div>
 
-  <!-- TOKEN BOOTSTRAP -->
   <script>
+    // Bootstrap tokens and user info from URL hash across subdomains
     (function () {
       try {
         const hash = window.location.hash ? window.location.hash.substring(1) : '';
         if (!hash) return;
-
         const params = new URLSearchParams(hash);
         const at = params.get('access_token');
         const rt = params.get('refresh_token');
         const uid = params.get('user_id');
         const role = params.get('role');
-
         if (at) localStorage.setItem('skreenit_token', at);
         if (rt) localStorage.setItem('skreenit_refresh_token', rt);
         if (uid) localStorage.setItem('skreenit_user_id', uid);
         if (role) localStorage.setItem('skreenit_role', role);
-
+        // Clean the hash to avoid reprocessing
         history.replaceState(null, document.title, window.location.pathname + window.location.search);
       } catch {}
     })();
   </script>
-
-  <!-- SUPABASE SESSION -->
   <script type="module">
-    import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
+    import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js'
     (async () => {
       try {
-        const at = localStorage.getItem('skreenit_token');
-        const rt = localStorage.getItem('skreenit_refresh_token');
+        const at = localStorage.getItem('skreenit_token')
+        const rt = localStorage.getItem('skreenit_refresh_token')
         if (at && rt) {
-          await supabase.auth.setSession({ access_token: at, refresh_token: rt });
+          await supabase.auth.setSession({ access_token: at, refresh_token: rt })
         }
-      } catch {}
-    })();
+      } catch (e) {
+        console.warn('Failed to set Supabase session', e)
+      }
+    })()
   </script>
-
-  <!-- PROFILE SUBMIT -->
   <script type="module">
-    import { backendFetch } from 'https://auth.skreenit.com/assets/js/backend-client.js';
-
+    import { backendFetch } from 'https://auth.skreenit.com/assets/js/backend-client.js'
     const form = document.getElementById('recruiterProfileForm');
-
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
-
       const userId = localStorage.getItem('skreenit_user_id');
       if (!userId) {
         alert('Not logged in. Please login again.');
@@ -178,17 +119,16 @@
 
       const payload = {
         user_id: userId,
-        company_name: company_name.value.trim(),
-        company_website: company_website.value.trim() || null,
-        contact_name: contact_name.value.trim(),
-        contact_email: contact_email.value.trim(),
-        location: location.value.trim() || null,
-        about: about.value.trim() || null,
+        company_name: document.getElementById('company_name').value.trim(),
+        company_website: document.getElementById('company_website').value.trim() || null,
+        contact_name: document.getElementById('contact_name').value.trim(),
+        contact_email: document.getElementById('contact_email').value.trim(),
+        location: document.getElementById('location').value.trim() || null,
+        about: document.getElementById('about').value.trim() || null,
       };
 
       try {
         const token = localStorage.getItem('skreenit_token');
-
         const resp = await backendFetch('/recruiter/profile', {
           method: 'POST',
           headers: {
@@ -197,21 +137,17 @@
           },
           body: JSON.stringify(payload),
         });
-
         if (!resp.ok) {
           const text = await resp.text();
           throw new Error(text || `Error ${resp.status}`);
         }
-
         alert('Profile saved! Redirecting to Recruiter Dashboard...');
         window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
-
       } catch (err) {
         console.error('Profile save failed:', err);
         alert('Failed to save profile. Please try again.');
       }
     });
   </script>
-
 </body>
 </html>
