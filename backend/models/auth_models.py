@@ -1,21 +1,23 @@
 from pydantic import BaseModel, EmailStr
+from pydantic import ConfigDict
 from typing import Optional
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-class RegisterRequest(BaseModel):
-    fullname: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PasswordResetRequest(BaseModel):
     email: EmailStr
-    mobile: str
-    location: str
-    role: str  # e.g. 'candidate' or 'recruiter'
-    company_id: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class PasswordChangedRequest(BaseModel):
     email: EmailStr
     fullname: Optional[str] = None
 
-class PasswordResetRequest(BaseModel):
-    email: EmailStr
+    model_config = ConfigDict(from_attributes=True)

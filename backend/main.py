@@ -1,39 +1,52 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+
 from routers import auth, applicant, recruiter, dashboard, analytics, notification, video
 
-# Initialize FastAPI app
+from middleware.security_headers import SecurityHeadersMiddleware
+from middleware.rate_limit import RateLimitMiddleware
+from middleware.auth_middleware import AuthMiddleware
+
+
+# ---------------------------------------------------------
+# Initialize FastAPI
+# ---------------------------------------------------------
 app = FastAPI(
     title="Skreenit API",
     description="Backend API for Skreenit recruitment platform",
     version="1.0.0"
 )
 
-# Health check endpoint
+
+# ---------------------------------------------------------
+# Security Middleware
+# ---------------------------------------------------------
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=200, window=900)
+app.add_middleware(AuthMiddleware)
+
+
+# ---------------------------------------------------------
+# Health Check
+# ---------------------------------------------------------
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "Skreenit API is running"}
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "environment": os.getenv("ENVIRONMENT", "development")
+    }
 
-# Include routers
-app.include_router(auth.router, prefix="/auth")
-app.include_router(applicant.router, prefix="/applicant")
-app.include_router(recruiter.router, prefix="/recruiter")
-app.include_router(dashboard.router, prefix="/dashboard")
-app.include_router(analytics.router, prefix="/analytics")
-app.include_router(notification.router, prefix="/notification")
-app.include_router(video.router, prefix="/video")
 
-# Enable CORS for frontend
-# Environment-based CORS configuration for security
+# ---------------------------------------------------------
+# CORS Configuration
+# ---------------------------------------------------------
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 
 if ALLOWED_ORIGINS:
-    # Production: Use explicit allowed origins from environment
     origins = [x.strip() for x in ALLOWED_ORIGINS.split(",")]
 else:
-    # Development: Allow common development URLs
     origins = [
         "http://localhost:3000",
         "http://localhost:8000",
@@ -42,7 +55,8 @@ else:
         "https://localhost:3000",
         "https://127.0.0.1:3000",
         "https://127.0.0.1:5173",
-        # Production skreenit.com subdomains
+
+        # Production domains
         "https://www.skreenit.com",
         "https://skreenit.com",
         "https://login.skreenit.com",
@@ -52,7 +66,8 @@ else:
         "https://dashboard.skreenit.com",
         "https://app.skreenit.com",
         "https://hrms.skreenit.com",
-        # Development subdomains
+
+        # Dev subdomains
         "http://auth.localhost:3000",
         "http://login.localhost:3000",
         "http://dashboard.localhost:3000",
@@ -60,44 +75,35 @@ else:
         "http://recruiter.localhost:3000"
     ]
 
-# Validate origins to prevent security issues
+
 def validate_origins(origins_list):
-    """Validate and filter origins for security"""
-    validated_origins = []
+    validated = []
     for origin in origins_list:
         origin = origin.strip()
         if not origin:
             continue
 
-        # Basic validation - only allow http/https protocols
-        if not origin.startswith(('http://', 'https://')):
+        if not origin.startswith(("http://", "https://")):
             print(f"Warning: Invalid origin format: {origin}")
             continue
 
-        # In production, be more restrictive
         if os.getenv("NODE_ENV") == "production":
-            # Only allow specific production domains
-            allowed_domains = [
-                ".skreenit.com"
-            ]
+            allowed_domains = [".skreenit.com"]
             if not any(domain in origin for domain in allowed_domains):
-                print(f"Warning: Production origin not in allowed domains: {origin}")
+                print(f"Warning: Production origin not allowed: {origin}")
                 continue
 
-        validated_origins.append(origin)
+        validated.append(origin)
 
-    return validated_origins
+    return validated
 
-# Apply validation
+
 origins = validate_origins(origins)
 
-# Ensure we have at least one origin
 if not origins:
-    # Fallback to localhost for development
     origins = ["http://localhost:3000"]
-    print("Warning: No valid origins configured, using localhost fallback")
+    print("Warning: No valid origins configured. Using localhost fallback.")
 
-print(f"CORS enabled for origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -118,3 +124,19 @@ app.add_middleware(
         "If-Modified-Since"
     ],
 )
+
+
+# ---------------------------------------------------------
+# API Versioning + Router Registration
+# ---------------------------------------------------------
+api_router = APIRouter(prefix="/api/v1")
+
+api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(applicant.router, prefix="/applicant", tags=["Applicant"])
+api_router.include_router(recruiter.router, prefix="/recruiter", tags=["Recruiter"])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+api_router.include_router(notification.router, prefix="/notification", tags=["Notification"])
+api_router.include_router(video.router, prefix="/video", tags=["Video"])
+
+app.include_router(api_router)

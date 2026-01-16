@@ -1,19 +1,36 @@
 import uuid
 from datetime import datetime
+from typing import Optional, Dict, Any, List
+
 from supabase import Client
-from typing import Optional, Dict, Any
+from services.supabase_client import get_client
+from utils_others.logger import logger
+
 
 class VideoService:
-    def __init__(self, supabase_client: Client):
-        self.supabase = supabase_client
+    """
+    Handles all video-related operations:
+    - Uploading videos to Supabase storage
+    - Creating signed URLs
+    - Saving per-question video responses
+    - Saving general video interviews
+    - Listing video responses
+    - Listing candidate videos
+    """
+
+    def __init__(self, supabase_client: Optional[Client] = None):
+        self.supabase = supabase_client or get_client()
         self.bucket_name = "videos"
 
     # ---------------------------------------------------------
-    # UPLOAD VIDEO
+    # STORAGE UPLOAD
     # ---------------------------------------------------------
     def upload_video_to_storage(self, file_content: bytes, filename: str, candidate_id: str) -> str:
+        """
+        Upload a video file to Supabase storage and return a public URL.
+        """
         try:
-            file_extension = filename.split('.')[-1] if '.' in filename else 'mp4'
+            file_extension = filename.split(".")[-1] if "." in filename else "mp4"
             unique_filename = f"{candidate_id}/{uuid.uuid4()}.{file_extension}"
 
             storage_response = (
@@ -24,9 +41,8 @@ class VideoService:
             )
 
             if getattr(storage_response, "error", None):
-                raise Exception(f"Storage upload failed: {storage_response.error}")
+                raise RuntimeError(storage_response.error)
 
-            # Public URL (works with your current frontend)
             public_url = (
                 self.supabase
                 .storage
@@ -34,25 +50,45 @@ class VideoService:
                 .get_public_url(unique_filename)
             )
 
+            logger.info(
+                "Video uploaded to storage",
+                extra={"candidate_id": candidate_id, "path": unique_filename},
+            )
+
             return public_url
 
         except Exception as e:
-            raise Exception(f"Video upload failed: {str(e)}")
+            logger.error(
+                f"Video upload failed: {str(e)}",
+                extra={"candidate_id": candidate_id, "filename": filename},
+            )
+            raise RuntimeError("Failed to upload video")
 
     # ---------------------------------------------------------
     # SIGNED URL
     # ---------------------------------------------------------
     def create_signed_url(self, file_path: str, expires_in: int = 3600) -> str:
+        """
+        Create a signed URL for a stored video file.
+        """
         try:
-            signed_url = (
+            signed = (
                 self.supabase
                 .storage
                 .from_(self.bucket_name)
                 .create_signed_url(file_path, expires_in)
             )
-            return signed_url["signedURL"]
+            url = signed.get("signedURL")
+            if not url:
+                raise RuntimeError("Signed URL missing")
+
+            logger.info("Signed video URL created", extra={"file_path": file_path})
+
+            return url
+
         except Exception as e:
-            raise Exception(f"Failed to create signed URL: {str(e)}")
+            logger.error(f"Signed URL creation failed: {str(e)}", extra={"file_path": file_path})
+            raise RuntimeError("Failed to create signed URL")
 
     # ---------------------------------------------------------
     # SAVE VIDEO RESPONSE
@@ -65,10 +101,13 @@ class VideoService:
         transcript: Optional[str] = None,
         duration: Optional[int] = None,
         status: str = "completed",
-        candidate_id: Optional[str] = None
+        candidate_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        """
+        Save a per-question video response for an application.
+        """
         try:
-            payload = {
+            payload: Dict[str, Any] = {
                 "application_id": application_id,
                 "question_id": question_id,
                 "video_url": video_url,
@@ -84,13 +123,32 @@ class VideoService:
             res = self.supabase.table("video_responses").insert(payload).execute()
 
             if getattr(res, "error", None):
-                raise Exception(res.error)
+                raise RuntimeError(res.error)
 
-            data = getattr(res, "data", None)
-            return data[0] if isinstance(data, list) and data else {}
+            data = getattr(res, "data", None) or []
+            row = data[0] if isinstance(data, list) and data else {}
+
+            logger.info(
+                "Video response saved",
+                extra={
+                    "application_id": application_id,
+                    "question_id": question_id,
+                    "candidate_id": candidate_id,
+                },
+            )
+
+            return row
 
         except Exception as e:
-            raise Exception(f"Failed to save video response: {str(e)}")
+            logger.error(
+                f"Save video response failed: {str(e)}",
+                extra={
+                    "application_id": application_id,
+                    "question_id": question_id,
+                    "candidate_id": candidate_id,
+                },
+            )
+            raise RuntimeError("Failed to save video response")
 
     # ---------------------------------------------------------
     # SAVE GENERAL VIDEO
@@ -100,8 +158,11 @@ class VideoService:
         candidate_id: str,
         video_url: str,
         status: str = "completed",
-        ai_analysis: Optional[Dict[str, Any]] = None
+        ai_analysis: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+        """
+        Save or update a general video interview record for a candidate.
+        """
         try:
             payload = {
                 "candidate_id": candidate_id,
@@ -120,52 +181,93 @@ class VideoService:
             )
 
             if getattr(res, "error", None):
-                raise Exception(res.error)
+                raise RuntimeError(res.error)
 
-            data = getattr(res, "data", None)
-            return data[0] if isinstance(data, list) and data else {}
+            data = getattr(res, "data", None) or []
+            row = data[0] if isinstance(data, list) and data else {}
+
+            logger.info(
+                "General video saved",
+                extra={"candidate_id": candidate_id},
+            )
+
+            return row
 
         except Exception as e:
-            raise Exception(f"Failed to save general video: {str(e)}")
+            logger.error(
+                f"Save general video failed: {str(e)}",
+                extra={"candidate_id": candidate_id},
+            )
+            raise RuntimeError("Failed to save general video")
 
     # ---------------------------------------------------------
-    # GET RESPONSES FOR AN APPLICATION
+    # LIST RESPONSES FOR AN APPLICATION
     # ---------------------------------------------------------
-    def get_video_responses(self, application_id: str) -> Dict[str, Any]:
+    def list_video_responses(self, application_id: str) -> List[Dict[str, Any]]:
+        """
+        List all video responses for a given application.
+        """
         try:
             res = (
                 self.supabase
                 .table("video_responses")
                 .select("*")
                 .eq("application_id", application_id)
+                .order("recorded_at", desc=True)
                 .execute()
             )
 
             if getattr(res, "error", None):
-                raise Exception(res.error)
+                raise RuntimeError(res.error)
 
-            return {"responses": res.data}
+            data = res.data or []
+
+            logger.info(
+                "Video responses fetched",
+                extra={"application_id": application_id, "count": len(data)},
+            )
+
+            return data
 
         except Exception as e:
-            raise Exception(f"Failed to fetch video responses: {str(e)}")
+            logger.error(
+                f"Fetch video responses failed: {str(e)}",
+                extra={"application_id": application_id},
+            )
+            raise RuntimeError("Failed to fetch video responses")
 
     # ---------------------------------------------------------
-    # GET ALL VIDEOS FOR A CANDIDATE
+    # LIST ALL VIDEOS FOR A CANDIDATE
     # ---------------------------------------------------------
-    def get_candidate_videos(self, candidate_id: str) -> Dict[str, Any]:
+    def get_candidate_videos(self, candidate_id: str) -> List[Dict[str, Any]]:
+        """
+        List all video responses for a candidate.
+        """
         try:
             res = (
                 self.supabase
                 .table("video_responses")
                 .select("*")
                 .eq("candidate_id", candidate_id)
+                .order("recorded_at", desc=True)
                 .execute()
             )
 
             if getattr(res, "error", None):
-                raise Exception(res.error)
+                raise RuntimeError(res.error)
 
-            return {"videos": res.data}
+            data = res.data or []
+
+            logger.info(
+                "Candidate videos fetched",
+                extra={"candidate_id": candidate_id, "count": len(data)},
+            )
+
+            return data
 
         except Exception as e:
-            raise Exception(f"Failed to fetch candidate videos: {str(e)}")
+            logger.error(
+                f"Fetch candidate videos failed: {str(e)}",
+                extra={"candidate_id": candidate_id},
+            )
+            raise RuntimeError("Failed to fetch candidate videos")

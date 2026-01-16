@@ -1,28 +1,57 @@
-from fastapi import APIRouter, HTTPException
-from supabase import create_client, Client
-import os
-from models.notification_models import NotificationRequest
+from fastapi import APIRouter, Request, HTTPException
 from datetime import datetime
+from typing import Optional
 
-router = APIRouter(tags=["notification"])
+from services.notification_service import NotificationService
+from services.supabase_client import get_client
+from middleware.role_required import require_role
+from models.notification_models import NotificationRequest
+from utils_others.logger import logger
 
-def get_supabase_client() -> Client:
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not supabase_url or not supabase_key:
-        raise RuntimeError("Supabase credentials missing")
-    return create_client(supabase_url, supabase_key)
+router = APIRouter(tags=["Notification"])
 
+_service: Optional[NotificationService] = None
+
+
+def get_notification_service() -> NotificationService:
+    global _service
+    if _service is None:
+        _service = NotificationService(get_client())
+    return _service
+
+
+# ---------------------------------------------------------
+# SEND NOTIFICATION
+# ---------------------------------------------------------
 @router.post("/notify")
-def send_notification(notification: NotificationRequest):
-    client = get_supabase_client()
+@require_role("recruiter")  # or "admin" if needed
+async def send_notification(request: Request, payload: NotificationRequest):
+    user = request.state.user
+    svc = get_notification_service()
 
-    notif = notification.dict()
-    notif["created_at"] = datetime.utcnow().isoformat()
+    try:
+        notif = payload.dict()
+        notif["created_at"] = datetime.utcnow().isoformat()
+        notif["created_by"] = user["id"]
 
-    result = client.table("notifications").insert(notif).execute()
-    err = getattr(result, "error", None)
-    if err:
-        raise HTTPException(status_code=400, detail=f"Notification error: {err}")
+        result = svc.create_notification(notif)
 
-    return {"ok": True, "data": result.data}
+        logger.info(
+            "Notification created",
+            extra={
+                "request_id": request.state.request_id,
+                "user_id": user["id"]
+            }
+        )
+
+        return {"ok": True, "data": result}
+
+    except Exception as e:
+        logger.error(
+            f"Notification error: {str(e)}",
+            extra={
+                "request_id": request.state.request_id,
+                "user_id": user["id"]
+            }
+        )
+        raise HTTPException(status_code=500, detail="Failed to create notification")

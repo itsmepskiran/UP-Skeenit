@@ -1,73 +1,113 @@
 from typing import Dict, Any
 from pathlib import Path
 import os
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from utils_others.logger import logger
+
 
 class EmailTemplates:
+    """
+    Loads and renders HTML email templates using Jinja2.
+    Templates live in backend/utils_others/templates/.
+    """
+
     def __init__(self):
         self.template_dir = Path(__file__).parent / "templates"
         self.template_dir.mkdir(exist_ok=True)
 
         self.env = Environment(
-            loader=FileSystemLoader(str(self.template_dir))
+            loader=FileSystemLoader(str(self.template_dir)),
+            autoescape=True
         )
 
+        self.frontend_url = os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
+
+    # ---------------------------------------------------------
+    # INTERNAL HELPER
+    # ---------------------------------------------------------
+    def _render(self, template_name: str, context: Dict[str, Any]) -> str:
+        """
+        Safely render a template with context.
+        """
+        try:
+            template = self.env.get_template(template_name)
+            return template.render(**context)
+
+        except TemplateNotFound:
+            logger.error(f"Email template not found: {template_name}")
+            raise RuntimeError(f"Email template missing: {template_name}")
+
+        except Exception as e:
+            logger.error(f"Email template render failed: {str(e)}", extra={"template": template_name})
+            raise RuntimeError("Failed to render email template")
+
+    # ---------------------------------------------------------
+    # PUBLIC TEMPLATES
+    # ---------------------------------------------------------
     def registration_confirmation(self, user_data: Dict[str, Any]) -> str:
-        template = self.env.get_template("registration_confirmation.html")
-        return template.render(
-            name=user_data["full_name"],
-            role=user_data["role"],
-            login_url=os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
+        return self._render(
+            "registration_confirmation.html",
+            {
+                "name": user_data.get("full_name"),
+                "role": user_data.get("role"),
+                "login_url": self.frontend_url,
+            }
         )
 
     def recruiter_welcome(self, user_data: Dict[str, Any]) -> str:
-        template = self.env.get_template("recruiter_welcome.html")
-        return template.render(
-            name=user_data["full_name"],
-            email=user_data["email"],
-            company_id=user_data["company_id"],
-            login_url=os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
+        return self._render(
+            "recruiter_welcome.html",
+            {
+                "name": user_data.get("full_name"),
+                "email": user_data.get("email"),
+                "company_id": user_data.get("company_id"),
+                "login_url": self.frontend_url,
+            }
         )
 
     def password_reset(self, user_data: Dict[str, Any]) -> str:
-        template = self.env.get_template("password_reset.html")
-        return template.render(
-            name=user_data["full_name"],
-            reset_url=user_data["reset_url"]
+        return self._render(
+            "password_reset.html",
+            {
+                "name": user_data.get("full_name"),
+                "reset_url": user_data.get("reset_url"),
+            }
         )
 
     def password_updated(self, user_data: Dict[str, Any]) -> str:
-        template = self.env.get_template("password_updated.html")
-        return template.render(
-            name=user_data["full_name"],
-            login_url=os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
+        return self._render(
+            "password_updated.html",
+            {
+                "name": user_data.get("full_name"),
+                "login_url": self.frontend_url,
+            }
         )
 
 
 # ---------------------------------------------------------
-# Only create templates if they do NOT already exist
+# DEFAULT TEMPLATE GENERATOR (RUNS ONLY IF FILES MISSING)
 # ---------------------------------------------------------
-def write_default_templates():
+def write_default_templates() -> None:
+    """
+    Creates default HTML templates only if they do not exist.
+    Safe to run multiple times.
+    """
     template_dir = Path(__file__).parent / "templates"
     template_dir.mkdir(exist_ok=True)
 
     templates = {
-        "registration_confirmation.html": """
-<!DOCTYPE html>
+        "registration_confirmation.html": """<!DOCTYPE html>
 <html>
 <body>
     <h2>Welcome to Skreenit!</h2>
     <p>Dear {{ name }},</p>
     <p>Thank you for registering with Skreenit as a {{ role }}.</p>
     <p>Please click the verification link in your email to confirm your address and set up your password.</p>
-    <p>After verification, you can login here:</p>
     <p><a href="{{ login_url }}">{{ login_url }}</a></p>
-    <p>Best regards,<br>The Skreenit Team</p>
 </body>
-</html>
-""",
-        "recruiter_welcome.html": """
-<!DOCTYPE html>
+</html>""",
+
+        "recruiter_welcome.html": """<!DOCTYPE html>
 <html>
 <body>
     <h2>Welcome to Skreenit!</h2>
@@ -77,42 +117,36 @@ def write_default_templates():
         <li><strong>Login Email:</strong> {{ email }}</li>
         <li><strong>Company ID:</strong> {{ company_id }}</li>
     </ul>
-    <p>You'll need your Company ID for future logins.</p>
-    <p>Please click the verification link in your email to confirm your address and set up your password.</p>
     <p><a href="{{ login_url }}">{{ login_url }}</a></p>
 </body>
-</html>
-""",
-        "password_reset.html": """
-<!DOCTYPE html>
+</html>""",
+
+        "password_reset.html": """<!DOCTYPE html>
 <html>
 <body>
     <h2>Reset Your Password</h2>
     <p>Dear {{ name }},</p>
-    <p>Click the link below to reset your password:</p>
     <p><a href="{{ reset_url }}">Reset Password</a></p>
 </body>
-</html>
-""",
-        "password_updated.html": """
-<!DOCTYPE html>
+</html>""",
+
+        "password_updated.html": """<!DOCTYPE html>
 <html>
 <body>
     <h2>Password Updated Successfully</h2>
     <p>Dear {{ name }},</p>
-    <p>Your password has been updated successfully.</p>
     <p><a href="{{ login_url }}">{{ login_url }}</a></p>
 </body>
-</html>
-"""
+</html>""",
     }
 
     for filename, content in templates.items():
         file_path = template_dir / filename
         if not file_path.exists():
-            with open(file_path, "w") as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
+            logger.info(f"Created default email template: {filename}")
 
 
-# Run once
+# Run once safely
 write_default_templates()
