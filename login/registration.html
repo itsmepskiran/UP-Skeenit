@@ -5,213 +5,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skreenit - Registration</title>
 
-  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
+  <!-- Branding -->
+  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/auth.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-  <style>
-    .alert {
-      padding: 12px 15px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-      font-size: 14px;
-    }
-    .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-    .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-    .hidden { display:none !important; }
-    .btn-loading { opacity:0.7; cursor:not-allowed; }
-  </style>
-
+  <!-- Supabase -->
   <script>
-    window.__SKREENIT_BACKEND_URL__ = "https://aiskreenit.onrender.com/api/v1";
     window.SKREENIT_SUPABASE_URL = "https://gfkbqhniopgcaapolzbu.supabase.co";
     window.SKREENIT_SUPABASE_ANON_KEY = "sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX";
   </script>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .hidden { display: none; }
+    .alert { padding: 12px; border-radius: 4px; margin-bottom: 15px; display: none; }
+    .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+
+    .password-strength { height: 4px; background:#e0e0e0; border-radius:2px; margin:8px 0; }
+    .password-strength-fill { height:100%; width:0; transition:0.3s; }
+    .password-requirements ul { list-style:none; padding-left:5px; }
+    .password-requirements li.valid { color:#10B981; }
+  </style>
 </head>
 
 <body>
-
-<div class="floating-elements" style="pointer-events:none;">
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-</div>
-
-<a href="https://skreenit.com" class="logo-link">
-  <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
-</a>
-
-<div class="auth-wrapper">
-  <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand-image" />
-
-  <div class="auth-header">
-    <h1><i class="fas fa-user-plus"></i> Join Skreenit</h1>
-    <p>Create your account and start your journey</p>
+  <div class="floating-elements">
+    <div class="floating-circle"></div>
+    <div class="floating-circle"></div>
+    <div class="floating-circle"></div>
+    <div class="floating-circle"></div>
   </div>
 
-  <div class="auth-body">
-    <div id="formError" class="alert alert-error hidden"></div>
-    <div id="successMessage" class="alert alert-success hidden"></div>
+  <a href="https://www.skreenit.com" class="logo-link">
+    <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
+  </a>
+
+  <div class="auth-wrapper animate-slideInScale">
+    <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand-image" />
+
+    <div class="auth-header">
+      <h1><i class="fas fa-user-plus"></i> Join Skreenit</h1>
+      <p>Create your account and start your journey</p>
+    </div>
+
+    <!-- Alerts -->
+    <div id="error-message" class="alert alert-error"><span id="error-text"></span></div>
+    <div id="success-message" class="alert alert-success"><span id="success-text"></span></div>
 
     <form id="registrationForm">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Full Name*</label>
-          <input type="text" name="full_name" required />
-        </div>
-        <div class="form-group">
-          <label>Mobile*</label>
-          <input type="tel" name="mobile" required />
-        </div>
+      <div class="form-group">
+        <label>Full Name*</label>
+        <input type="text" id="fullName" required />
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Email*</label>
-          <input type="email" name="email" required />
-        </div>
-        <div class="form-group">
-          <label>Location*</label>
-          <input type="text" name="location" required />
-        </div>
+      <div class="form-group">
+        <label>Mobile*</label>
+        <input type="text" id="mobile" required />
+      </div>
+
+      <div class="form-group">
+        <label>Email*</label>
+        <input type="email" id="email" required />
+      </div>
+
+      <div class="form-group">
+        <label>Location*</label>
+        <input type="text" id="location" required />
       </div>
 
       <div class="form-group">
         <label>Register as*</label>
-        <select id="role" name="role" required>
-          <option value="">Select your role</option>
-          <option value="candidate">🎯 Candidate</option>
-          <option value="recruiter">🏢 Recruiter</option>
-        </select>
-      </div>
-
-      <div id="recruiterFields" class="hidden">
-        <div class="form-group">
-          <label>🏢 Company Name*</label>
-          <input type="text" name="company_name" />
+        <div>
+          <label><input type="radio" name="role" value="candidate" checked /> Candidate</label>
+          <label><input type="radio" name="role" value="recruiter" /> Recruiter</label>
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-large" style="width:100%;">
-        <i class="fas fa-rocket"></i> Create Account
+      <div class="form-group hidden" id="companyField">
+        <label>Company Name*</label>
+        <input type="text" id="companyName" />
+      </div>
+
+      <div class="form-group">
+        <label>Password*</label>
+        <input type="password" id="password" required minlength="8" />
+      </div>
+
+      <div class="password-strength">
+        <div id="password-strength-fill" class="password-strength-fill"></div>
+      </div>
+
+      <div class="password-requirements">
+        <p>Password must contain:</p>
+        <ul>
+          <li id="req-length">At least 8 characters</li>
+          <li id="req-uppercase">1 uppercase letter</li>
+          <li id="req-lowercase">1 lowercase letter</li>
+          <li id="req-number">1 number</li>
+          <li id="req-special">1 special character</li>
+        </ul>
+      </div>
+
+      <button type="submit" class="btn" id="submitBtn">
+        <i class="fas fa-user-plus"></i> Create Account
       </button>
     </form>
+
+    <div class="auth-footer">
+      <p>Already have an account? <a href="login.html">Sign in</a></p>
+    </div>
   </div>
-</div>
 
-<script type="module">
-document.addEventListener("DOMContentLoaded", () => {
-  const { createClient } = supabase;
-  const supabaseClient = createClient(
-    window.SKREENIT_SUPABASE_URL,
-    window.SKREENIT_SUPABASE_ANON_KEY
-  );
+  <script type="module">
+    const { createClient } = supabase;
+    const supabaseClient = createClient(
+      window.SKREENIT_SUPABASE_URL,
+      window.SKREENIT_SUPABASE_ANON_KEY
+    );
 
-  const form = document.getElementById("registrationForm");
-  const errorDiv = document.getElementById("formError");
-  const successDiv = document.getElementById("successMessage");
-  const roleSelect = document.getElementById("role");
-  const recruiterFields = document.getElementById("recruiterFields");
+    const BACKEND_URL = "https://aiskreenit.onrender.com/api/v1/auth/register";
 
-  roleSelect.addEventListener("change", () => {
-    recruiterFields.classList.toggle("hidden", roleSelect.value !== "recruiter");
-  });
+    const form = document.getElementById("registrationForm");
+    const companyField = document.getElementById("companyField");
 
-  function showError(msg) {
-    errorDiv.textContent = msg;
-    errorDiv.classList.remove("hidden");
-    setTimeout(() => errorDiv.classList.add("hidden"), 5000);
-  }
+    const errorBox = document.getElementById("error-message");
+    const errorText = document.getElementById("error-text");
+    const successBox = document.getElementById("success-message");
+    const successText = document.getElementById("success-text");
 
-  function showSuccess(msg) {
-    successDiv.textContent = msg;
-    successDiv.classList.remove("hidden");
-    form.style.opacity = "0.6";
-    form.style.pointerEvents = "none";
+    function showError(msg) {
+      errorText.textContent = msg;
+      errorBox.style.display = "block";
+    }
 
-    setTimeout(() => {
-      window.location.href = "login.html?registered=true";
-    }, 5000);
-  }
+    function showSuccess(msg) {
+      successText.textContent = msg;
+      successBox.style.display = "block";
+    }
 
-  function generateTempPassword() {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-    return Array.from(crypto.getRandomValues(new Uint32Array(16)))
-      .map(v => chars[v % chars.length])
-      .join("");
-  }
+    // Role-based UI
+    document.querySelectorAll("input[name='role']").forEach(radio => {
+      radio.addEventListener("change", () => {
+        companyField.classList.toggle("hidden", radio.value !== "recruiter");
+      });
+    });
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const submitBtn = form.querySelector("button[type='submit']");
-    const originalText = submitBtn.innerHTML;
-
-    try {
-      submitBtn.disabled = true;
-      submitBtn.classList.add("btn-loading");
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-
-      const formData = new FormData(form);
-      const email = formData.get("email").trim();
-      const role = formData.get("role");
-
-      const userMetadata = {
-        full_name: formData.get("full_name").trim(),
-        mobile: formData.get("mobile").trim(),
-        location: formData.get("location").trim(),
-        role,
-        ...(role === "recruiter" && { company_name: formData.get("company_name").trim() })
+    // Password strength
+    function checkPasswordStrength(password) {
+      return {
+        hasMinLength: password.length >= 8,
+        hasUppercase: /[A-Z]/.test(password),
+        hasLowercase: /[a-z]/.test(password),
+        hasNumber: /[0-9]/.test(password),
+        hasSpecialChar: /[!@#$%^&*(),.?\":{}|<>]/.test(password)
       };
+    }
 
-      const tempPassword = generateTempPassword();
+    document.getElementById("password").addEventListener("input", e => {
+      const p = e.target.value;
+      const s = checkPasswordStrength(p);
 
-      const { error: supabaseError } = await supabaseClient.auth.signUp({
+      document.getElementById("req-length").classList.toggle("valid", s.hasMinLength);
+      document.getElementById("req-uppercase").classList.toggle("valid", s.hasUppercase);
+      document.getElementById("req-lowercase").classList.toggle("valid", s.hasLowercase);
+      document.getElementById("req-number").classList.toggle("valid", s.hasNumber);
+      document.getElementById("req-special").classList.toggle("valid", s.hasSpecialChar);
+
+      const score = Object.values(s).filter(Boolean).length * 20;
+      const bar = document.getElementById("password-strength-fill");
+      bar.style.width = score + "%";
+      bar.style.backgroundColor =
+        score >= 80 ? "#10B981" :
+        score >= 60 ? "#F59E0B" :
+        score >= 40 ? "#3B82F6" : "#ef4444";
+    });
+
+    // Submit
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      errorBox.style.display = "none";
+      successBox.style.display = "none";
+
+      const full_name = document.getElementById("fullName").value.trim();
+      const mobile = document.getElementById("mobile").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const location = document.getElementById("location").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const role = document.querySelector("input[name='role']:checked").value;
+      const company_name = role === "recruiter"
+        ? document.getElementById("companyName").value.trim()
+        : null;
+
+      // Supabase signup
+      const { data, error } = await supabaseClient.auth.signUp({
         email,
-        password: tempPassword,
+        password,
         options: {
-          data: userMetadata,
-          emailRedirectTo: `${window.location.origin}/update-password.html`
+          data: { full_name, role },
+          emailRedirectTo: "https://login.skreenit.com/login.html"
         }
       });
 
-      if (supabaseError) throw supabaseError;
-
-      const backendForm = new FormData();
-      backendForm.append("full_name", userMetadata.full_name);
-      backendForm.append("email", email);
-      backendForm.append("mobile", userMetadata.mobile);
-      backendForm.append("location", userMetadata.location);
-      backendForm.append("role", role);
-      if (role === "recruiter") backendForm.append("company_name", userMetadata.company_name);
-
-      const backendResponse = await fetch(
-        `${window.__SKREENIT_BACKEND_URL__}/auth/register`,
-        { method: "POST", body: backendForm }
-      );
-
-      if (!backendResponse.ok) {
-        const err = await backendResponse.json().catch(() => ({}));
-        throw new Error(err.message || "Backend registration failed");
+      if (error) {
+        showError(error.message);
+        return;
       }
 
+      // Backend profile creation
+      await fetch(BACKEND_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          mobile,
+          location,
+          role,
+          company_name
+        })
+      });
+
       showSuccess("Registration successful! Please check your email to confirm your account.");
-
-    } catch (err) {
-      console.error(err);
-      showError(err.message || "Registration failed. Please try again.");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("btn-loading");
-      submitBtn.innerHTML = originalText;
-    }
-  });
-});
-</script>
-
+    });
+  </script>
 </body>
 </html>
