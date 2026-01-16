@@ -1,9 +1,3 @@
-<<<<<<< D:\Official\UP Skeenit\backend\utils_others\security.py
-from fastapi import Request
-from utils_others.logger import logger
-from utils_others.error_handler import UnauthorizedError, ForbiddenError
-
-=======
 from fastapi import Request, HTTPException
 from typing import Optional, Dict, Any
 import jwt
@@ -61,7 +55,78 @@ def validate_supabase_token(token: str) -> Optional[Dict[str, Any]]:
         logger.error(f"Error validating token: {str(e)}")
         raise HTTPException(status_code=500, detail="Error validating token")
 
->>>>>>> c:\Users\Sheetal Paidimarri\.windsurf\worktrees\UP Skeenit\UP Skeenit-1dbe3ff5\backend\utils_others\security.py
+def ensure_role(request: Request, required_role: str) -> None:
+    """
+    Ensures the authenticated user has the required role.
+    
+    Args:
+        request: FastAPI request object
+        required_role: The role required to access the endpoint
+        
+    Raises:
+        UnauthorizedError: If user is not authenticated
+        ForbiddenError: If user doesn't have the required role
+    """
+    user = getattr(request.state, "user", None)
+
+    if not user:
+        logger.warning("Unauthorized: No user found in request")
+        raise UnauthorizedError("Authentication required")
+
+    user_role = user.get("role")
+    if user_role != required_role:
+        logger.warning("Forbidden: User role does not have permission", 
+                      extra={"user_role": user_role, "required_role": required_role})
+        raise ForbiddenError("Insufficient permissions")
+
+<<<<<<< D:\Official\UP Skeenit\backend\utils_others\security.py
+# Load environment variables
+load_dotenv()
+
+# Get JWT secret from environment variables
+JWT_SECRET = os.getenv('SUPABASE_JWT_SECRET')
+if not JWT_SECRET:
+    raise ValueError("SUPABASE_JWT_SECRET environment variable not set")
+
+def validate_supabase_token(token: str) -> Optional[Dict[str, Any]]:
+    """
+    Validates a Supabase JWT token and returns the decoded user data if valid.
+    
+    Args:
+        token: JWT token from Authorization header
+        
+    Returns:
+        dict: Decoded token payload if valid, None otherwise
+        
+    Raises:
+        HTTPException: If token is invalid or expired
+    """
+    try:
+        # Decode the token
+        payload = jwt.decode(
+            token,
+            JWT_SECRET,
+            algorithms=["HS256"],
+            options={"verify_aud": False}  # Supabase tokens don't include aud claim
+        )
+        
+        # Check if token is expired
+        exp = payload.get('exp')
+        if exp and datetime.utcnow().timestamp() > exp:
+            raise jwt.ExpiredSignatureError("Token has expired")
+            
+        return payload
+        
+    except jwt.ExpiredSignatureError:
+        logger.warning("Token has expired")
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.PyJWTError as e:
+        logger.warning(f"Invalid token: {str(e)}")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error validating token: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error validating token")
+
 
 def ensure_role(request: Request, required_role: str) -> None:
     """
@@ -72,6 +137,8 @@ def ensure_role(request: Request, required_role: str) -> None:
         ForbiddenError – if user role does not match required_role
     """
 
+=======
+>>>>>>> c:\Users\Sheetal Paidimarri\.windsurf\worktrees\UP Skeenit\UP Skeenit-1dbe3ff5\backend\utils_others\security.py
     user = getattr(request.state, "user", None)
 
     if not user:
