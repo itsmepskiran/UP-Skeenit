@@ -48,6 +48,7 @@ if ALLOWED_ORIGINS:
     origins = [x.strip() for x in ALLOWED_ORIGINS.split(",")]
 else:
     origins = [
+        # Local development
         "http://localhost:3000",
         "http://localhost:8000",
         "http://127.0.0.1:3000",

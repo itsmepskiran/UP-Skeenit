@@ -4,6 +4,9 @@ from pydantic import BaseModel, ConfigDict
 T = TypeVar("T")
 
 
+# ---------------------------------------------------------
+# STANDARD ERROR RESPONSE
+# ---------------------------------------------------------
 class ErrorResponse(BaseModel):
     ok: bool = False
     error: Dict[str, Any]
@@ -11,6 +14,9 @@ class ErrorResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ---------------------------------------------------------
+# STANDARD SUCCESS RESPONSE (Generic)
+# ---------------------------------------------------------
 class StandardResponse(BaseModel, Generic[T]):
     ok: bool = True
     data: Optional[T] = None
@@ -18,6 +24,9 @@ class StandardResponse(BaseModel, Generic[T]):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ---------------------------------------------------------
+# SCORECARD MODEL (Used for AI scoring)
+# ---------------------------------------------------------
 class ScoreCard(BaseModel):
     communication: int
     appearance: int

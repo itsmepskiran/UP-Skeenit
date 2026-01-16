@@ -1,7 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 
 
+# ---------------------------------------------------------
+# JOB ITEM FOR DASHBOARD
+# ---------------------------------------------------------
 class DashboardJob(BaseModel):
     id: str
     title: str
@@ -14,6 +17,9 @@ class DashboardJob(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ---------------------------------------------------------
+# APPLICATION ITEM FOR DASHBOARD
+# ---------------------------------------------------------
 class DashboardApplication(BaseModel):
     id: str
     status: Optional[str] = None
@@ -25,9 +31,12 @@ class DashboardApplication(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ---------------------------------------------------------
+# DASHBOARD SUMMARY (MAIN RESPONSE MODEL)
+# ---------------------------------------------------------
 class DashboardSummary(BaseModel):
     role: str
-    jobs: List[DashboardJob] = []
-    applications: List[DashboardApplication] = []
+    jobs: List[DashboardJob] = Field(default_factory=list)
+    applications: List[DashboardApplication] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)

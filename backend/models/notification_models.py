@@ -2,10 +2,13 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 
+# ---------------------------------------------------------
+# REQUEST MODEL (from frontend)
+# ---------------------------------------------------------
 class NotificationRequest(BaseModel):
     title: str
     message: str
-    category: str  # renamed from "type"
+    category: str  # e.g., "system", "job_update", "application_update"
     related_id: Optional[str] = None
     is_read: Optional[bool] = False
 
@@ -13,6 +16,9 @@ class NotificationRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ---------------------------------------------------------
+# RESPONSE MODEL (to frontend)
+# ---------------------------------------------------------
 class NotificationResponse(BaseModel):
     id: str
     title: str
