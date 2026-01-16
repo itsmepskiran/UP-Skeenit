@@ -10,19 +10,30 @@
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/auth.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
+  <style>
+    .alert {
+      padding: 12px 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+    .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    .hidden { display:none !important; }
+    .btn-loading { opacity:0.7; cursor:not-allowed; }
+  </style>
+
   <script>
-    window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com';
-    // Supabase configuration
-    window.SKREENIT_SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co';
-    window.SKREENIT_SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX';
+    window.__SKREENIT_BACKEND_URL__ = "https://aiskreenit.onrender.com/api/v1";
+    window.SKREENIT_SUPABASE_URL = "https://gfkbqhniopgcaapolzbu.supabase.co";
+    window.SKREENIT_SUPABASE_ANON_KEY = "sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX";
   </script>
-  <!-- Supabase Client Library -->
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
 
-<!-- Decorative elements (safe) -->
 <div class="floating-elements" style="pointer-events:none;">
   <div class="floating-circle"></div>
   <div class="floating-circle"></div>
@@ -43,11 +54,10 @@
   </div>
 
   <div class="auth-body">
-    <div id="formError" class="error-message"></div>
+    <div id="formError" class="alert alert-error hidden"></div>
+    <div id="successMessage" class="alert alert-success hidden"></div>
 
     <form id="registrationForm">
-
-      <!-- BASIC INFO -->
       <div class="form-row">
         <div class="form-group">
           <label>Full Name*</label>
@@ -55,7 +65,7 @@
         </div>
         <div class="form-group">
           <label>Mobile*</label>
-          <input type="text" name="mobile" required />
+          <input type="tel" name="mobile" required />
         </div>
       </div>
 
@@ -70,7 +80,6 @@
         </div>
       </div>
 
-      <!-- ROLE -->
       <div class="form-group">
         <label>Register as*</label>
         <select id="role" name="role" required>
@@ -80,91 +89,88 @@
         </select>
       </div>
 
-      <!-- ROLE BASED FIELDS (HIDDEN INITIALLY) -->
-      <div id="roleBasedFields" style="display:none;">
-
-        <!-- Recruiter -->
-        <div id="recruiterFields" class="hidden">
-          <div class="form-group">
-            <label>🏢 Company Name*</label>
-            <input type="text" name="company_name" />
-          </div>
+      <div id="recruiterFields" class="hidden">
+        <div class="form-group">
+          <label>🏢 Company Name*</label>
+          <input type="text" name="company_name" />
         </div>
-
-        <!-- Candidate -->
-        <div id="candidateFields" class="hidden">
-          <div class="form-group">
-            <label>📄 Resume</label>
-            <input type="file" name="resume" />
-            <div class="password-hint">Upload your resume for better matches</div>
-          </div>
-        </div>
-
       </div>
 
       <button type="submit" class="btn btn-primary btn-large" style="width:100%;">
         <i class="fas fa-rocket"></i> Create Account
       </button>
-
     </form>
   </div>
 </div>
 
-<!-- ROLE TOGGLE LOGIC -->
 <script type="module">
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('registrationForm');
-  const errorDiv = document.getElementById('formError');
-  const roleSelect = document.getElementById('role');
-
-  // Initialize Supabase client
+document.addEventListener("DOMContentLoaded", () => {
   const { createClient } = supabase;
   const supabaseClient = createClient(
     window.SKREENIT_SUPABASE_URL,
     window.SKREENIT_SUPABASE_ANON_KEY
   );
 
-  // Generate temporary password for Supabase signup
-  function generateTempPassword() {
-    return Math.random().toString(36).slice(-10);
+  const form = document.getElementById("registrationForm");
+  const errorDiv = document.getElementById("formError");
+  const successDiv = document.getElementById("successMessage");
+  const roleSelect = document.getElementById("role");
+  const recruiterFields = document.getElementById("recruiterFields");
+
+  roleSelect.addEventListener("change", () => {
+    recruiterFields.classList.toggle("hidden", roleSelect.value !== "recruiter");
+  });
+
+  function showError(msg) {
+    errorDiv.textContent = msg;
+    errorDiv.classList.remove("hidden");
+    setTimeout(() => errorDiv.classList.add("hidden"), 5000);
   }
 
-  // Show message helper
-  function showMessage(message, type = 'error') {
-    errorDiv.textContent = message;
-    errorDiv.className = `alert alert-${type}`;
-    errorDiv.style.display = 'block';
+  function showSuccess(msg) {
+    successDiv.textContent = msg;
+    successDiv.classList.remove("hidden");
+    form.style.opacity = "0.6";
+    form.style.pointerEvents = "none";
 
     setTimeout(() => {
-      errorDiv.style.display = 'none';
+      window.location.href = "login.html?registered=true";
     }, 5000);
   }
 
-  form.addEventListener('submit', async (e) => {
+  function generateTempPassword() {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+    return Array.from(crypto.getRandomValues(new Uint32Array(16)))
+      .map(v => chars[v % chars.length])
+      .join("");
+  }
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const formData = new FormData(form);
-
-    const email = formData.get('email');
-    const role = roleSelect.value;
-
-    const userMetadata = {
-      full_name: formData.get('full_name'),
-      mobile: formData.get('mobile'),
-      location: formData.get('location'),
-      role,
-      ...(role === 'recruiter' && { company_name: formData.get('company_name') })
-    };
-
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+    const submitBtn = form.querySelector("button[type='submit']");
+    const originalText = submitBtn.innerHTML;
 
     try {
-      // 1️⃣ CREATE USER IN SUPABASE (with temp password)
+      submitBtn.disabled = true;
+      submitBtn.classList.add("btn-loading");
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+
+      const formData = new FormData(form);
+      const email = formData.get("email").trim();
+      const role = formData.get("role");
+
+      const userMetadata = {
+        full_name: formData.get("full_name").trim(),
+        mobile: formData.get("mobile").trim(),
+        location: formData.get("location").trim(),
+        role,
+        ...(role === "recruiter" && { company_name: formData.get("company_name").trim() })
+      };
+
       const tempPassword = generateTempPassword();
 
-      const { data, error } = await supabaseClient.auth.signUp({
+      const { error: supabaseError } = await supabaseClient.auth.signUp({
         email,
         password: tempPassword,
         options: {
@@ -173,44 +179,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      if (error) throw error;
+      if (supabaseError) throw supabaseError;
 
-      // 2️⃣ REGISTER USER IN BACKEND
-      await fetch(`${window.__SKREENIT_BACKEND_URL__}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          full_name: userMetadata.full_name,
-          mobile: userMetadata.mobile,
-          location: userMetadata.location,
-          role,
-          company_name: userMetadata.company_name || null
-        })
-      });
+      const backendForm = new FormData();
+      backendForm.append("full_name", userMetadata.full_name);
+      backendForm.append("email", email);
+      backendForm.append("mobile", userMetadata.mobile);
+      backendForm.append("location", userMetadata.location);
+      backendForm.append("role", role);
+      if (role === "recruiter") backendForm.append("company_name", userMetadata.company_name);
 
-      // 3️⃣ SUCCESS MESSAGE
-      showMessage(
-        'Registration successful! Please check your email to confirm your account and set your password.',
-        'success'
+      const backendResponse = await fetch(
+        `${window.__SKREENIT_BACKEND_URL__}/auth/register`,
+        { method: "POST", body: backendForm }
       );
 
-      form.reset();
+      if (!backendResponse.ok) {
+        const err = await backendResponse.json().catch(() => ({}));
+        throw new Error(err.message || "Backend registration failed");
+      }
 
-      // 4️⃣ REDIRECT TO LOGIN
-      setTimeout(() => {
-        window.location.href = 'login.html';
-      }, 3000);
+      showSuccess("Registration successful! Please check your email to confirm your account.");
 
     } catch (err) {
-      console.error('Registration error:', err);
-      showMessage(err.message || 'Registration failed. Please try again.', 'error');
+      console.error(err);
+      showError(err.message || "Registration failed. Please try again.");
     } finally {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-rocket"></i> Create Account';
+      submitBtn.classList.remove("btn-loading");
+      submitBtn.innerHTML = originalText;
     }
   });
 });
 </script>
+
 </body>
 </html>
