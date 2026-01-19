@@ -107,29 +107,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* ---------------------------------------------------------
-     1️⃣ HANDLE EMAIL CONFIRMATION REDIRECT
-     --------------------------------------------------------- */
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const type = urlParams.get("type");
-
-    if (token && type === "signup") {
-      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(token);
-
-      if (error) {
-        console.error("Confirmation error:", error);
-        showError("Email confirmation failed. Try logging in.");
-      } else {
-        showSuccess("Your email has been confirmed. You can now log in.");
-      }
-    }
-  } catch (err) {
-    console.error("Confirmation handling error:", err);
-  }
-
-  /* ---------------------------------------------------------
-     2️⃣ LOGIN HANDLER
+     1️⃣ LOGIN HANDLER
      --------------------------------------------------------- */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
