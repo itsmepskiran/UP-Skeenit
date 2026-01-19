@@ -1,163 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Skreenit</title>
-    <link rel="stylesheet" href="../auth/assets/css/shared-styles.css">
-    <link rel="stylesheet" href="../auth/assets/css/auth.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <img src="../auth/assets/images/logo.png" alt="Skreenit Logo" class="logo">
-                <h2>Create Account</h2>
-                <p>Join Skreenit to find or post jobs</p>
-            </div>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skreenit - Create Account</title>
 
-            <div class="auth-body">
-                <form id="registrationForm" class="auth-form">
-                    
-                    <div class="form-group">
-                        <label class="form-label">I am a...</label>
-                        <div class="role-selector">
-                            <label class="role-option">
-                                <input type="radio" name="role" value="candidate" checked onchange="toggleFields()">
-                                <span class="role-box">
-                                    <i class="fas fa-user"></i>
-                                    Candidate
-                                </span>
-                            </label>
-                            <label class="role-option">
-                                <input type="radio" name="role" value="recruiter" onchange="toggleFields()">
-                                <span class="role-box">
-                                    <i class="fas fa-briefcase"></i>
-                                    Recruiter
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="full_name">Full Name</label>
-                        <div class="input-group">
-                            <span class="input-icon"><i class="fas fa-user"></i></span>
-                            <input type="text" id="full_name" name="full_name" placeholder="John Doe" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <div class="input-group">
-                            <span class="input-icon"><i class="fas fa-envelope"></i></span>
-                            <input type="email" id="email" name="email" placeholder="john@example.com" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <div class="input-group">
-                            <span class="input-icon"><i class="fas fa-lock"></i></span>
-                            <input type="password" id="password" name="password" placeholder="Create a strong password" required minlength="6">
-                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="mobile">Mobile Number</label>
-                            <div class="input-group">
-                                <span class="input-icon"><i class="fas fa-phone"></i></span>
-                                <input type="tel" id="mobile" name="mobile" placeholder="+1 234 567 8900" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="location">Location</label>
-                            <div class="input-group">
-                                <span class="input-icon"><i class="fas fa-map-marker-alt"></i></span>
-                                <input type="text" id="location" name="location" placeholder="City, Country" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group hidden" id="companyField">
-                        <label for="company_name">Company Name</label>
-                        <div class="input-group">
-                            <span class="input-icon"><i class="fas fa-building"></i></span>
-                            <input type="text" id="company_name" name="company_name" placeholder="Enter Company Name">
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="resumeField">
-                        <label for="resume">Upload Resume (PDF/DOCX)</label>
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx">
-                            <div class="file-upload-placeholder">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Click to upload resume</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Register</button>
-                    
-                    <p class="auth-footer">
-                        Already have an account? <a href="login.html">Login here</a>
-                    </p>
-                    <p class="legal-links" style="margin-top: 1rem; font-size: 0.85rem; color: #6b7280; text-align: center;">
-                        By registering, you agree to our 
-                        <a href="/legal/terms-conditions.html" style="color: #4f46e5; text-decoration: none;">Terms & Conditions</a> 
-                        and 
-                        <a href="/legal/privacy-policy.html" style="color: #4f46e5; text-decoration: none;">Privacy Policy</a>.
-                    </p>
-                </form>
-            </div>
-        </div>
-    </div>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
+  <link rel="stylesheet" href="../auth/assets/css/shared-styles.css">
+  <link rel="stylesheet" href="../auth/assets/css/auth.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
     <script>
-        // Toggle fields based on Role
-        function toggleFields() {
-            const role = document.querySelector('input[name="role"]:checked').value;
-            const companyField = document.getElementById('companyField');
-            const resumeField = document.getElementById('resumeField');
-            const companyInput = document.getElementById('company_name');
+    window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com';
+    // Supabase configuration
+    window.SKREENIT_SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co';
+    window.SKREENIT_SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX';
+  </script>
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
 
-            if (role === 'recruiter') {
-                companyField.classList.remove('hidden');
-                resumeField.classList.add('hidden');
-                companyInput.setAttribute('required', 'required');
-            } else {
-                companyField.classList.add('hidden');
-                resumeField.classList.remove('hidden');
-                companyInput.removeAttribute('required');
-            }
-        }
+<div class="floating-elements">
+  <div class="floating-circle"></div>
+  <div class="floating-circle"></div>
+  <div class="floating-circle"></div>
+  <div class="floating-circle"></div>
+</div>
 
-        // Toggle Password Visibility
-        function togglePasswordVisibility() {
-            const input = document.getElementById('password');
-            const icon = document.querySelector('.toggle-password i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-    </script>
+<a href="https://skreenit.com" class="logo-link">
+  <img src="../auth/assets/images/logo.png" alt="Skreenit" />
+</a>
 
-    <script type="module">
-        import { handleRegistrationSubmit } from '../auth/assets/js/auth-pages.js';
+<div class="auth-wrapper animate-slideInScale">
+  <img src="../auth/assets/images/logobrand.png" class="brand-image" style="display: block; margin: 0 auto 1rem; height: 40px;" alt="Skreenit Brand" />
+
+  <div class="auth-header">
+    <h1><i class="fas fa-user-plus"></i> Create Account</h1>
+    <p>Join Skreenit to find or post jobs</p>
+  </div>
+
+  <div class="auth-body">
+    <form id="registrationForm" class="auth-form">
+      
+      <label class="form-label" style="font-weight:600; margin-bottom: 0.5rem; display:block;">I am a...</label>
+      <div class="role-selection">
+        <label class="role-card active" id="card-candidate">
+          <input type="radio" name="role" value="candidate" checked onchange="toggleFields()">
+          <div class="role-icon"><i class="fas fa-user"></i></div>
+          <h3>Candidate</h3>
+          <p>I want to find a job</p>
+        </label>
         
-        document.getElementById('registrationForm').addEventListener('submit', handleRegistrationSubmit);
-    </script>
+        <label class="role-card" id="card-recruiter">
+          <input type="radio" name="role" value="recruiter" onchange="toggleFields()">
+          <div class="role-icon"><i class="fas fa-briefcase"></i></div>
+          <h3>Recruiter</h3>
+          <p>I want to hire talent</p>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="full_name"><i class="fas fa-user"></i> Full Name</label>
+        <input type="text" id="full_name" name="full_name" placeholder="John Doe" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+        <input type="email" id="email" name="email" placeholder="john@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password"><i class="fas fa-lock"></i> Password</label>
+        <div class="input-group">
+          <input type="password" id="password" name="password" placeholder="Create a strong password" required minlength="6">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+              <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <div class="password-strength"><div class="password-strength-fill"></div></div>
+      </div>
+
+      <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+              <label for="mobile"><i class="fas fa-phone"></i> Mobile</label>
+              <input type="tel" id="mobile" name="mobile" placeholder="+1 234 567 890" required>
+          </div>
+          <div class="form-group">
+              <label for="location"><i class="fas fa-map-marker-alt"></i> Location</label>
+              <input type="text" id="location" name="location" placeholder="City, Country" required>
+          </div>
+      </div>
+
+      <div class="form-group hidden" id="companyField" style="display:none;">
+          <label for="company_name"><i class="fas fa-building"></i> Company Name</label>
+          <input type="text" id="company_name" name="company_name" placeholder="Enter Company Name">
+      </div>
+
+      <div class="form-group" id="resumeField">
+          <label for="resume"><i class="fas fa-file-upload"></i> Upload Resume</label>
+          <div class="file-upload-wrapper" style="border: 2px dashed #e5e7eb; padding: 1.5rem; text-align: center; border-radius: 8px; cursor: pointer; position: relative;">
+              <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" style="position: absolute; inset:0; opacity:0; cursor:pointer;">
+              <div class="file-upload-placeholder" style="pointer-events: none;">
+                  <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; color: #6b7280; margin-bottom: 0.5rem;"></i>
+                  <span style="display: block; color: #6b7280; font-size: 0.9rem;">Click to upload PDF/DOCX</span>
+              </div>
+          </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-large" style="width:100%; margin-top: 1rem;">
+        <span class="btn-text">Register</span>
+        <span class="btn-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Processing...</span>
+      </button>
+      
+      <div class="auth-actions" style="justify-content: center; margin-top: 1.5rem;">
+          <span>Already have an account? <a href="login.html">Sign In</a></span>
+      </div>
+
+      <p class="legal-links" style="margin-top: 1.5rem; font-size: 0.8rem; color: #6b7280; text-align: center;">
+          By registering, you agree to our 
+          <a href="/legal/terms-conditions.html" style="color: #4f46e5; text-decoration: none;">Terms & Conditions</a> 
+          and 
+          <a href="/legal/privacy-policy.html" style="color: #4f46e5; text-decoration: none;">Privacy Policy</a>.
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+    // 1. Toggle Fields and Card Styles
+    function toggleFields() {
+        const role = document.querySelector('input[name="role"]:checked').value;
+        const companyField = document.getElementById('companyField');
+        const resumeField = document.getElementById('resumeField');
+        const companyInput = document.getElementById('company_name');
+        
+        // Card Styling Logic
+        document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
+        if(role === 'candidate') document.getElementById('card-candidate').classList.add('active');
+        if(role === 'recruiter') document.getElementById('card-recruiter').classList.add('active');
+
+        // Field Visibility Logic
+        if (role === 'recruiter') {
+            companyField.style.display = 'block';
+            resumeField.style.display = 'none';
+            companyInput.setAttribute('required', 'required');
+        } else {
+            companyField.style.display = 'none';
+            resumeField.style.display = 'block';
+            companyInput.removeAttribute('required');
+        }
+    }
+
+    // 2. Password Toggle
+    function togglePasswordVisibility() {
+        const input = document.getElementById('password');
+        const icon = document.querySelector('.toggle-password i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Initialize toggles on load
+    document.addEventListener("DOMContentLoaded", () => toggleFields());
+</script>
+
+<script type="module">
+    import { handleRegistrationSubmit } from '../auth/assets/js/auth-pages.js';
+    document.getElementById('registrationForm').addEventListener('submit', handleRegistrationSubmit);
+</script>
+
 </body>
 </html>
