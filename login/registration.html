@@ -1,221 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skreenit - Registration</title>
-
-  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/auth.css" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
-  <script>
-    window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com';
-    window.SKREENIT_SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co';
-    window.SKREENIT_SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX';
-  </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Skreenit</title>
+    <link rel="stylesheet" href="../auth/assets/css/shared-styles.css">
+    <link rel="stylesheet" href="../auth/assets/css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-
 <body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <img src="../auth/assets/images/logo.png" alt="Skreenit Logo" class="logo">
+                <h2>Create Account</h2>
+                <p>Join Skreenit to find or post jobs</p>
+            </div>
 
-<div class="floating-elements" style="pointer-events:none;">
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-  <div class="floating-circle"></div>
-</div>
+            <div class="auth-body">
+                <form id="registrationForm" class="auth-form">
+                    
+                    <div class="form-group">
+                        <label class="form-label">I am a...</label>
+                        <div class="role-selector">
+                            <label class="role-option">
+                                <input type="radio" name="role" value="candidate" checked onchange="toggleFields()">
+                                <span class="role-box">
+                                    <i class="fas fa-user"></i>
+                                    Candidate
+                                </span>
+                            </label>
+                            <label class="role-option">
+                                <input type="radio" name="role" value="recruiter" onchange="toggleFields()">
+                                <span class="role-box">
+                                    <i class="fas fa-briefcase"></i>
+                                    Recruiter
+                                </span>
+                            </label>
+                        </div>
+                    </div>
 
-<a href="https://skreenit.com" class="logo-link">
-  <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
-</a>
+                    <div class="form-group">
+                        <label for="full_name">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-icon"><i class="fas fa-user"></i></span>
+                            <input type="text" id="full_name" name="full_name" placeholder="John Doe" required>
+                        </div>
+                    </div>
 
-<div class="auth-wrapper">
-  <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand-image" />
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                            <input type="email" id="email" name="email" placeholder="john@example.com" required>
+                        </div>
+                    </div>
 
-  <div class="auth-header">
-    <h1><i class="fas fa-user-plus"></i> Join Skreenit</h1>
-    <p>Create your account and start your journey</p>
-  </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-group">
+                            <span class="input-icon"><i class="fas fa-lock"></i></span>
+                            <input type="password" id="password" name="password" placeholder="Create a strong password" required minlength="6">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
 
-  <div class="auth-body">
-    <div id="formError" class="error-message"></div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="mobile">Mobile Number</label>
+                            <div class="input-group">
+                                <span class="input-icon"><i class="fas fa-phone"></i></span>
+                                <input type="tel" id="mobile" name="mobile" placeholder="+1 234 567 8900" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <div class="input-group">
+                                <span class="input-icon"><i class="fas fa-map-marker-alt"></i></span>
+                                <input type="text" id="location" name="location" placeholder="City, Country" required>
+                            </div>
+                        </div>
+                    </div>
 
-    <form id="registrationForm">
+                    <div class="form-group hidden" id="companyField">
+                        <label for="company_name">Company Name</label>
+                        <div class="input-group">
+                            <span class="input-icon"><i class="fas fa-building"></i></span>
+                            <input type="text" id="company_name" name="company_name" placeholder="Enter Company Name">
+                        </div>
+                    </div>
 
-      <!-- BASIC INFO -->
-      <div class="form-row">
-        <div class="form-group">
-          <label>Full Name*</label>
-          <input type="text" name="full_name" required />
+                    <div class="form-group" id="resumeField">
+                        <label for="resume">Upload Resume (PDF/DOCX)</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx">
+                            <div class="file-upload-placeholder">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Click to upload resume</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Register</button>
+                    
+                    <p class="auth-footer">
+                        Already have an account? <a href="login.html">Login here</a>
+                    </p>
+                    <p class="legal-links" style="margin-top: 1rem; font-size: 0.85rem; color: #6b7280; text-align: center;">
+                        By registering, you agree to our 
+                        <a href="/legal/terms-conditions.html" style="color: #4f46e5; text-decoration: none;">Terms & Conditions</a> 
+                        and 
+                        <a href="/legal/privacy-policy.html" style="color: #4f46e5; text-decoration: none;">Privacy Policy</a>.
+                    </p>
+                </form>
+            </div>
         </div>
-        <div class="form-group">
-          <label>Mobile*</label>
-          <input type="text" name="mobile" required />
-        </div>
-      </div>
+    </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Email*</label>
-          <input type="email" name="email" required />
-        </div>
-        <div class="form-group">
-          <label>Location*</label>
-          <input type="text" name="location" required />
-        </div>
-      </div>
+    <script>
+        // Toggle fields based on Role
+        function toggleFields() {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const companyField = document.getElementById('companyField');
+            const resumeField = document.getElementById('resumeField');
+            const companyInput = document.getElementById('company_name');
 
-      <!-- PASSWORD FIELDS -->
-      <div class="form-row">
-        <div class="form-group">
-          <label>Password*</label>
-          <input type="password" name="password" required />
-        </div>
-        <div class="form-group">
-          <label>Confirm Password*</label>
-          <input type="password" name="confirm_password" required />
-        </div>
-      </div>
-
-      <!-- ROLE -->
-      <div class="form-group">
-        <label>Register as*</label>
-        <select id="role" name="role" required>
-          <option value="">Select your role</option>
-          <option value="candidate">🎯 Candidate</option>
-          <option value="recruiter">🏢 Recruiter</option>
-        </select>
-      </div>
-
-      <!-- ROLE BASED FIELDS -->
-      <div id="roleBasedFields" style="display:none;">
-
-        <div id="recruiterFields" class="hidden">
-          <div class="form-group">
-            <label>🏢 Company Name*</label>
-            <input type="text" name="company_name" />
-          </div>
-        </div>
-
-        <div id="candidateFields" class="hidden">
-          <div class="form-group">
-            <label>📄 Resume</label>
-            <input type="file" name="resume" />
-            <div class="password-hint">Upload your resume for better matches</div>
-          </div>
-        </div>
-
-      </div>
-
-      <button type="submit" class="btn btn-primary btn-large" style="width:100%;">
-        <i class="fas fa-rocket"></i> Create Account
-      </button>
-
-    </form>
-  </div>
-</div>
-
-<script type="module">
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('registrationForm');
-  const errorDiv = document.getElementById('formError');
-  const roleSelect = document.getElementById('role');
-
-  const { createClient } = supabase;
-  const supabaseClient = createClient(
-    window.SKREENIT_SUPABASE_URL,
-    window.SKREENIT_SUPABASE_ANON_KEY
-  );
-
-  function showMessage(message, type = 'error') {
-    errorDiv.textContent = message;
-    errorDiv.className = `alert alert-${type}`;
-    errorDiv.style.display = 'block';
-
-    setTimeout(() => {
-      errorDiv.style.display = 'none';
-    }, 5000);
-  }
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(form);
-
-    const email = formData.get('email');
-    const password = formData.get('password');
-    const confirmPassword = formData.get('confirm_password');
-    const role = roleSelect.value;
-
-    if (password !== confirmPassword) {
-      showMessage("Passwords do not match.");
-      return;
-    }
-
-    const userMetadata = {
-      full_name: formData.get('full_name'),
-      mobile: formData.get('mobile'),
-      location: formData.get('location'),
-      role,
-      ...(role === 'recruiter' && { company_name: formData.get('company_name') })
-    };
-
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-
-    try {
-      // 1️⃣ CREATE USER IN SUPABASE WITH REAL PASSWORD
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userMetadata,
-        //  emailRedirectTo: `${window.location.origin}/login.html`
+            if (role === 'recruiter') {
+                companyField.classList.remove('hidden');
+                resumeField.classList.add('hidden');
+                companyInput.setAttribute('required', 'required');
+            } else {
+                companyField.classList.add('hidden');
+                resumeField.classList.remove('hidden');
+                companyInput.removeAttribute('required');
+            }
         }
-      });
 
-      if (error) throw error;
+        // Toggle Password Visibility
+        function togglePasswordVisibility() {
+            const input = document.getElementById('password');
+            const icon = document.querySelector('.toggle-password i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 
-      // 2️⃣ REGISTER USER IN BACKEND
-      await fetch(`${window.__SKREENIT_BACKEND_URL__}/api/v1/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          full_name: userMetadata.full_name,
-          mobile: userMetadata.mobile,
-          location: userMetadata.location,
-          role,
-          company_name: userMetadata.company_name || null
-        })
-      });
-
-      // 3️⃣ SUCCESS MESSAGE
-      showMessage(
-        'Registration successful! Please check your email to confirm your account.',
-        'success'
-      );
-
-      form.reset();
-
-      setTimeout(() => {
-        window.location.href = 'login.html';
-      }, 3000);
-
-    } catch (err) {
-      console.error('Registration error:', err);
-      showMessage(err.message || 'Registration failed. Please try again.', 'error');
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-rocket"></i> Create Account';
-    }
-  });
-});
-</script>
-
+    <script type="module">
+        import { handleRegistrationSubmit } from '../auth/assets/js/auth-pages.js';
+        
+        document.getElementById('registrationForm').addEventListener('submit', handleRegistrationSubmit);
+    </script>
 </body>
 </html>
