@@ -128,69 +128,87 @@ document.addEventListener("DOMContentLoaded", async () => {
     const password = formData.get("password").trim();
 
     try {
-      submitBtn.disabled = true;
-      submitBtn.classList.add("btn-loading");
-      btnText.style.display = "none";
-      btnLoader.style.display = "inline-flex";
+        submitBtn.disabled = true;
+        submitBtn.classList.add("btn-loading");
+        btnText.style.display = "none";
+        btnLoader.style.display = "inline-flex";
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+        console.log("Attempting to sign in with:", { email });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
 
-      if (error) {
-        if (error.message.includes("Email not confirmed")) {
-          throw new Error("Please confirm your email before logging in.");
+        console.log("Sign in response:", { data, error });
+
+        if (error) {
+            console.error("Login error details:", {
+                status: error.status,
+                message: error.message,
+                name: error.name,
+                stack: error.stack
+            });
+            
+            if (error.message.includes("Email not confirmed")) {
+                throw new Error("Please confirm your email before logging in.");
+            }
+            if (error.message.includes("Invalid login credentials")) {
+                throw new Error("Incorrect email or password.");
+            }
+            throw new Error(error.message);
         }
-        if (error.message.includes("Invalid login credentials")) {
-          throw new Error("Incorrect email or password.");
+
+        console.log("Auth session:", data.session);
+        const session = data.session;
+        if (!session?.access_token) {
+            throw new Error("Authentication failed. No session token.");
         }
-        throw new Error(error.message);
-      }
 
-      const session = data.session;
-      if (!session?.access_token) {
-        throw new Error("Authentication failed. No session token.");
-      }
+        console.log("Calling backend login endpoint...");
+        const backendResponse = await fetch(
+            `${window.__SKREENIT_BACKEND_URL__}/auth/login`,
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${session.access_token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({})
+            }
+        );
 
-      const backendResponse = await fetch(
-        `${window.__SKREENIT_BACKEND_URL__}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${session.access_token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({})
+        console.log("Backend response status:", backendResponse.status);
+        const backendData = await backendResponse.json().catch(e => {
+            console.error("Failed to parse backend response:", e);
+            return { error: "Invalid response from server" };
+        });
+        console.log("Backend response data:", backendData);
+
+        if (!backendResponse.ok) {
+            throw new Error(backendData.message || "Login failed");
         }
-      );
 
-      const backendData = await backendResponse.json();
+        console.log("Login successful, role:", backendData.role);
+        const role = backendData.role;
 
-      if (!backendResponse.ok) {
-        throw new Error(backendData.message || "Login failed");
-      }
-
-      const role = backendData.role;
-
-      if (role === "candidate") {
-        window.location.href = "https://applicant.skreenit.com";
-      } else if (role === "recruiter") {
-        window.location.href = "https://recruiter.skreenit.com";
-      } else {
-        throw new Error("Unknown role. Contact support.");
-      }
+        if (role === "candidate") {
+            window.location.href = "https://applicant.skreenit.com";
+        } else if (role === "recruiter") {
+            window.location.href = "https://recruiter.skreenit.com";
+        } else {
+            throw new Error("Unknown role. Contact support.");
+        }
 
     } catch (err) {
-      console.error(err);
-      showError(err.message || "Login failed");
+        console.error("Login failed:", err);
+        showError(err.message || "Login failed");
     } finally {
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("btn-loading");
-      btnText.style.display = "inline";
-      btnLoader.style.display = "none";
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("btn-loading");
+        btnText.style.display = "inline";
+        btnLoader.style.display = "none";
     }
-  });
+});
 
 });
 </script>
