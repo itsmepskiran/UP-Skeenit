@@ -15,25 +15,25 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Skip public routes
+        # ✅ Skip OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
+        # ✅ Skip public paths
         if any(path.startswith(p) for p in PUBLIC_PATHS):
             return await call_next(request)
 
-        # Extract token
+        # 🔐 Auth check for protected routes
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             raise HTTPException(status_code=401, detail="Missing Authorization header")
 
         token = auth_header.replace("Bearer ", "").strip()
-
-        # Validate token
         user = validate_supabase_token(token)
         if not user:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-        # Attach user to request
         request.state.user = user
-
         return await call_next(request)
 
 

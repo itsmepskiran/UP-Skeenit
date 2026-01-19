@@ -5,19 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skreenit - Login</title>
 
-  <!-- Branding -->
   <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-  <!-- Config -->
   <script>
     window.__SKREENIT_BACKEND_URL__ = "https://aiskreenit.onrender.com/api/v1";
     window.SKREENIT_SUPABASE_URL = "https://gfkbqhniopgcaapolzbu.supabase.co";
     window.SKREENIT_SUPABASE_ANON_KEY = "sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX";
   </script>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -29,13 +26,13 @@
       display: none;
     }
     .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
     .btn-loading { opacity:0.7; cursor:not-allowed; }
   </style>
 </head>
 
 <body>
 
-<!-- Floating UI -->
 <div class="floating-elements">
   <div class="floating-circle"></div>
   <div class="floating-circle"></div>
@@ -58,6 +55,7 @@
   <div class="auth-body">
 
     <div id="errorBox" class="alert alert-error"></div>
+    <div id="successBox" class="alert alert-success"></div>
 
     <form id="loginForm">
 
@@ -86,7 +84,7 @@
 </div>
 
 <script type="module">
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   const { createClient } = supabase;
   const supabaseClient = createClient(
@@ -96,12 +94,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById("loginForm");
   const errorBox = document.getElementById("errorBox");
+  const successBox = document.getElementById("successBox");
 
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.style.display = "block";
   }
 
+  function showSuccess(msg) {
+    successBox.textContent = msg;
+    successBox.style.display = "block";
+  }
+
+  /* ---------------------------------------------------------
+     1️⃣ HANDLE EMAIL CONFIRMATION REDIRECT
+     --------------------------------------------------------- */
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    const type = urlParams.get("type");
+
+    if (token && type === "signup") {
+      const { data, error } = await supabaseClient.auth.exchangeCodeForSession(token);
+
+      if (error) {
+        console.error("Confirmation error:", error);
+        showError("Email confirmation failed. Try logging in.");
+      } else {
+        showSuccess("Your email has been confirmed. You can now log in.");
+      }
+    }
+  } catch (err) {
+    console.error("Confirmation handling error:", err);
+  }
+
+  /* ---------------------------------------------------------
+     2️⃣ LOGIN HANDLER
+     --------------------------------------------------------- */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -114,13 +143,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = formData.get("password").trim();
 
     try {
-      // UI loading state
       submitBtn.disabled = true;
       submitBtn.classList.add("btn-loading");
       btnText.style.display = "none";
       btnLoader.style.display = "inline-flex";
 
-      // 1️⃣ LOGIN WITH SUPABASE
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
@@ -141,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("Authentication failed. No session token.");
       }
 
-      // 2️⃣ CALL BACKEND LOGIN
       const backendResponse = await fetch(
         `${window.__SKREENIT_BACKEND_URL__}/auth/login`,
         {
@@ -160,14 +186,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const role = backendData.role;
 
-      // 3️⃣ REDIRECT BASED ON ROLE
       if (role === "candidate") {
         window.location.href = "https://applicant.skreenit.com";
-      } 
-      else if (role === "recruiter") {
+      } else if (role === "recruiter") {
         window.location.href = "https://recruiter.skreenit.com";
-      } 
-      else {
+      } else {
         throw new Error("Unknown role. Contact support.");
       }
 
