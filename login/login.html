@@ -151,8 +151,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${session.access_token}`
-          }
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({})
         }
       );
 
