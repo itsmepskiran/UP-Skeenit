@@ -26,26 +26,49 @@ def get_auth_service() -> AuthService:
 # ---------------------------------------------------------
 # LOGIN
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# LOGIN (Supabase Token Based)
+# ---------------------------------------------------------
 @router.post("/login")
-async def login(request: Request, payload: LoginRequest):
+async def login(request: Request):
+    """
+    Login endpoint that relies entirely on Supabase JWT.
+    The frontend sends: Authorization: Bearer <access_token>
+    Middleware validates token and attaches user to request.state.user
+    """
+
+    # Supabase user injected by AuthMiddleware
+    user = getattr(request.state, "user", None)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+    # Extract email from Supabase JWT
+    email = user.get("email")
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    # Fetch user from DB
     service = get_auth_service()
+    db_user = service.get_user_by_email(email)
 
-    try:
-        result = service.login(payload.email, payload.password)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found in system")
 
-        logger.info(
-            "User login successful",
-            extra={"request_id": getattr(request.state, "request_id", None)}
-        )
+    logger.info(
+        "User login successful",
+        extra={"request_id": getattr(request.state, "request_id", None)}
+    )
 
-        return {"ok": True, "data": result}
-
-    except Exception:
-        logger.error(
-            "Login failed",
-            extra={"request_id": getattr(request.state, "request_id", None)}
-        )
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    return {
+        "ok": True,
+        "role": db_user.role,
+        "data": {
+            "email": db_user.email,
+            "full_name": db_user.full_name,
+            "role": db_user.role
+        }
+    }
 
 
 # ---------------------------------------------------------
