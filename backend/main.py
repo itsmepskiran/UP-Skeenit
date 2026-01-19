@@ -1,5 +1,10 @@
 import os
-from fastapi import FastAPI, APIRouter
+from dotenv import load_dotenv
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from utils_others.logger import logger
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import auth, applicant, recruiter, dashboard, analytics, notification, video
@@ -18,23 +23,29 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ---------------------------------------------------------
-# CORS MUST BE FIRST
-# ---------------------------------------------------------
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Load .env from the backend directory so env vars are available
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
+# Masking helper for logs
+def _mask(v: str | None) -> str | None:
+    if not v:
+        return None
+    v = str(v)
+    return (v[:8] + '...') if len(v) > 12 else '***'
+
+# Startup masked env log
+logger.info("Startup env", extra={
+    "SUPABASE_URL": _mask(os.getenv("SUPABASE_URL")),
+    "SUPABASE_SERVICE_ROLE_KEY_set": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY")),
+    "SUPABASE_REDIRECT_URL": os.getenv("SUPABASE_REDIRECT_URL")
+})
+
+# Note: CORS middleware is added after origins are computed below
 # ---------------------------------------------------------
-# Security Middleware
+# Security Middleware (will be registered after CORS below)
 # ---------------------------------------------------------
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RateLimitMiddleware, max_requests=200, window=900)
-app.add_middleware(AuthMiddleware)
+# We'll add CORS once (see CORS Configuration section) and ensure
+# it is registered before these security middlewares.
 
 
 # ---------------------------------------------------------
@@ -115,7 +126,7 @@ if not origins:
     origins = ["http://localhost:3000"]
     print("Warning: No valid origins configured. Using localhost fallback.")
 
-
+# Register CORS middleware first (must be before other middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -135,6 +146,41 @@ app.add_middleware(
         "If-Modified-Since"
     ],
 )
+
+# Now register the security-related middlewares after CORS
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=200, window=900)
+app.add_middleware(AuthMiddleware)
+
+
+# -----------------------------
+# Global Exception Handlers
+# -----------------------------
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error("Request validation error", extra={"path": request.url.path, "method": request.method, "errors": exc.errors()})
+    return JSONResponse(
+        status_code=422,
+        content={"ok": False, "error": {"message": "Validation error", "details": exc.errors()}},
+    )
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    logger.error("ValueError", extra={"path": request.url.path, "method": request.method, "error": str(exc)})
+    return JSONResponse(status_code=400, content={"ok": False, "error": {"message": str(exc)}})
+
+
+@app.exception_handler(RuntimeError)
+async def runtime_error_handler(request: Request, exc: RuntimeError):
+    logger.error("RuntimeError", extra={"path": request.url.path, "method": request.method, "error": str(exc)})
+    return JSONResponse(status_code=500, content={"ok": False, "error": {"message": "Internal server error"}})
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled Exception", exc_info=exc, extra={"path": request.url.path, "method": request.method})
+    return JSONResponse(status_code=500, content={"ok": False, "error": {"message": "Internal server error"}})
 
 
 # ---------------------------------------------------------
