@@ -5,11 +5,14 @@ from utils_others.security import validate_supabase_token
 
 PUBLIC_PATHS = [
     "/auth/login",
+    "/api/v1/auth/login",
     "/auth/register",
+    "/api/v1/auth/register",
     "/auth/verify",
     "/auth/update-password",
     "/health"
 ]
+
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
