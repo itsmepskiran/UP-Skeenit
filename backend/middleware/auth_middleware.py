@@ -4,13 +4,17 @@ from fastapi import Request, HTTPException
 from utils_others.security import validate_supabase_token
 
 PUBLIC_PATHS = [
-    "/auth/login",
-    "/api/v1/auth/login",
-    "/auth/register",
-    "/api/v1/auth/register",
-    "/auth/verify",
-    "/auth/update-password",
-    "/health"
+    "/",                    # Root path
+    "/favicon.ico",         # Browser icon
+    "/docs",                # Swagger UI
+    "/openapi.json",        # API schema
+    "/redoc",               # Optional docs
+    "/health",              # Health check
+    "/static",              # Static files (if any)
+
+    # Auth routes
+    "/auth",
+    "/api/v1/auth",
 ]
 
 
@@ -18,15 +22,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # ✅ Skip OPTIONS requests (CORS preflight)
+        # Allow CORS preflight
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        # ✅ Skip public paths
+        # Allow public paths
         if any(path.startswith(p) for p in PUBLIC_PATHS):
             return await call_next(request)
 
-        # 🔐 Auth check for protected routes
+        # Require Authorization header
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             raise HTTPException(status_code=401, detail="Missing Authorization header")
