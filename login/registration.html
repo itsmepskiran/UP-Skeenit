@@ -4,229 +4,177 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skreenit - Registration</title>
-
-  <!-- Branding -->
-  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
+  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
-  <!-- Supabase -->
-  <script>
-    window.SKREENIT_SUPABASE_URL = "https://gfkbqhniopgcaapolzbu.supabase.co";
-    window.SKREENIT_SUPABASE_ANON_KEY = "sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX";
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
+    .auth-wrapper { max-width: 640px; margin: 4rem auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.1); }
+    .auth-header { padding: 1.5rem 2rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.75rem; }
+    .auth-header h1 { font-size: 1.5rem; margin: 0; color: #2d3748; }
+    .auth-body { padding: 2rem; }
     .hidden { display: none; }
-    .alert { padding: 12px; border-radius: 4px; margin-bottom: 15px; display: none; }
-    .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-    .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-
-    .password-strength { height: 4px; background:#e0e0e0; border-radius:2px; margin:8px 0; }
-    .password-strength-fill { height:100%; width:0; transition:0.3s; }
-    .password-requirements ul { list-style:none; padding-left:5px; }
-    .password-requirements li.valid { color:#10B981; }
+    .notice { background:#f0fff4; border:1px solid #9ae6b4; color:#22543d; padding:1rem; border-radius:8px; margin-bottom:1rem; }
+    .error-message { color: #e53e3e; margin-bottom: 1rem; font-size: 0.95rem; }
+    .role-cards { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .role-card { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+    .role-card.selected { border-color: #3182ce; background-color: #ebf8ff; }
+    .role-card input[type="radio"] { display: none; }
+    .role-card label { font-weight: bold; cursor: pointer; }
   </style>
 </head>
-
 <body>
-  <div class="floating-elements">
-    <div class="floating-circle"></div>
-    <div class="floating-circle"></div>
-    <div class="floating-circle"></div>
-    <div class="floating-circle"></div>
-  </div>
-
-  <a href="https://www.skreenit.com" class="logo-link">
-    <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
+  <a href="https://skreenit.com" style="position:fixed;left:16px;top:16px;z-index:10;display:inline-block;">
+    <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" style="height:48px;width:auto;" />
   </a>
-
-  <div class="auth-wrapper animate-slideInScale">
-    <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand-image" />
-
+  <div class="auth-wrapper">
+    <img src="https://auth.skreenit.com/assets/images/logobrand.png" alt="Skreenit" style="width:100%;height:auto;display:block;border-top-left-radius:12px;border-top-right-radius:12px;" />
     <div class="auth-header">
-      <h1><i class="fas fa-user-plus"></i> Join Skreenit</h1>
-      <p>Create your account and start your journey</p>
+      <i class="fas fa-user-plus"></i>
+      <h1>Create Your Account</h1>
     </div>
-
-    <!-- Alerts -->
-    <div id="error-message" class="alert alert-error"><span id="error-text"></span></div>
-    <div id="success-message" class="alert alert-success"><span id="success-text"></span></div>
-
-    <form id="registrationForm">
-      <div class="form-group">
-        <label>Full Name*</label>
-        <input type="text" id="fullName" required />
-      </div>
-
-      <div class="form-group">
-        <label>Mobile*</label>
-        <input type="text" id="mobile" required />
-      </div>
-
-      <div class="form-group">
-        <label>Email*</label>
-        <input type="email" id="email" required />
-      </div>
-
-      <div class="form-group">
-        <label>Location*</label>
-        <input type="text" id="location" required />
-      </div>
-
-      <div class="form-group">
-        <label>Register as*</label>
-        <div>
-          <label><input type="radio" name="role" value="candidate" checked /> Candidate</label>
-          <label><input type="radio" name="role" value="recruiter" /> Recruiter</label>
+    <div class="auth-body">
+      <div id="formError" class="error-message"></div>
+      <form id="registrationForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="full_name">Full Name*</label>
+            <input type="text" id="full_name" name="full_name" required />
+          </div>
+          <div class="form-group">
+            <label for="mobile">Mobile*</label>
+            <input type="text" id="mobile" name="mobile" required />
+          </div>
         </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email*</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="location">Location*</label>
+            <input type="text" id="location" name="location" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">Password*</label>
+            <input type="password" id="password" name="password" required minlength="8" />
+          </div>
+          <div class="form-group">
+            <label for="confirm_password">Confirm Password*</label>
+            <input type="password" id="confirm_password" name="confirm_password" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Register as*</label>
+          <div class="role-cards">
+            <div class="role-card" data-role="candidate">
+              <input type="radio" id="candidate" name="role" value="candidate" required />
+              <label for="candidate">Candidate</label>
+            </div>
+            <div class="role-card" data-role="recruiter">
+              <input type="radio" id="recruiter" name="role" value="recruiter" required />
+              <label for="recruiter">Recruiter</label>
+            </div>
+          </div>
+        </div>
+
+        <div id="recruiterFields" class="hidden">
+          <div class="form-group">
+            <label for="company_name">Company Name</label>
+            <input type="text" id="company_name" name="company_name" placeholder="Enter your company name" />
+          </div>
+        </div>
+
+        <div id="candidateFields" class="hidden">
+          <div class="form-group">
+            <label for="resume">Resume (PDF, DOC, DOCX, RTF, TXT, ODT)</label>
+            <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx,.rtf,.txt,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/rtf,text/plain,application/vnd.oasis.opendocument.text" />
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding:0; margin-top: 1rem;">
+          <button type="submit" class="btn btn-primary">Register</button>
+        </div>
+      </form>
+      <div id="thankYou" class="hidden">
+        <div class="notice">
+          <strong>Thank you for registering with us.</strong>
+          <p>We’ve sent a confirmation email to your registered address. Please verify your email to continue. After verification, you’ll be redirected to set your password.</p>
+        </div>
+        <a class="btn btn-primary" id="goLoginBtn" href="https://login.skreenit.com/login.html">Go to Login</a>
       </div>
-
-      <div class="form-group hidden" id="companyField">
-        <label>Company Name*</label>
-        <input type="text" id="companyName" />
-      </div>
-
-      <div class="form-group">
-        <label>Password*</label>
-        <input type="password" id="password" required minlength="8" />
-      </div>
-
-      <div class="password-strength">
-        <div id="password-strength-fill" class="password-strength-fill"></div>
-      </div>
-
-      <div class="password-requirements">
-        <p>Password must contain:</p>
-        <ul>
-          <li id="req-length">At least 8 characters</li>
-          <li id="req-uppercase">1 uppercase letter</li>
-          <li id="req-lowercase">1 lowercase letter</li>
-          <li id="req-number">1 number</li>
-          <li id="req-special">1 special character</li>
-        </ul>
-      </div>
-
-      <button type="submit" class="btn" id="submitBtn">
-        <i class="fas fa-user-plus"></i> Create Account
-      </button>
-    </form>
-
-    <div class="auth-footer">
-      <p>Already have an account? <a href="login.html">Sign in</a></p>
     </div>
   </div>
 
-  <script type="module">
-    const { createClient } = supabase;
-    const supabaseClient = createClient(
-      window.SKREENIT_SUPABASE_URL,
-      window.SKREENIT_SUPABASE_ANON_KEY
-    );
-
-    const BACKEND_URL = "https://aiskreenit.onrender.com/api/v1/auth/register";
-
-    const form = document.getElementById("registrationForm");
-    const companyField = document.getElementById("companyField");
-
-    const errorBox = document.getElementById("error-message");
-    const errorText = document.getElementById("error-text");
-    const successBox = document.getElementById("success-message");
-    const successText = document.getElementById("success-text");
-
-    function showError(msg) {
-      errorText.textContent = msg;
-      errorBox.style.display = "block";
+  <!-- EmailJS removed: emails are handled server-side via Resend -->
+  <script>
+    function envUrl(localPath, prodUrl) {
+      const host = window.location.hostname || ''
+      const isLocal = host === 'localhost' || host === '127.0.0.1' || host === ''
+      return isLocal ? localPath : prodUrl
     }
-
-    function showSuccess(msg) {
-      successText.textContent = msg;
-      successBox.style.display = "block";
-    }
-
-    // Role-based UI
-    document.querySelectorAll("input[name='role']").forEach(radio => {
-      radio.addEventListener("change", () => {
-        companyField.classList.toggle("hidden", radio.value !== "recruiter");
-      });
-    });
-
-    // Password strength
-    function checkPasswordStrength(password) {
-      return {
-        hasMinLength: password.length >= 8,
-        hasUppercase: /[A-Z]/.test(password),
-        hasLowercase: /[a-z]/.test(password),
-        hasNumber: /[0-9]/.test(password),
-        hasSpecialChar: /[!@#$%^&*(),.?\":{}|<>]/.test(password)
-      };
-    }
-
-    document.getElementById("password").addEventListener("input", e => {
-      const p = e.target.value;
-      const s = checkPasswordStrength(p);
-
-      document.getElementById("req-length").classList.toggle("valid", s.hasMinLength);
-      document.getElementById("req-uppercase").classList.toggle("valid", s.hasUppercase);
-      document.getElementById("req-lowercase").classList.toggle("valid", s.hasLowercase);
-      document.getElementById("req-number").classList.toggle("valid", s.hasNumber);
-      document.getElementById("req-special").classList.toggle("valid", s.hasSpecialChar);
-
-      const score = Object.values(s).filter(Boolean).length * 20;
-      const bar = document.getElementById("password-strength-fill");
-      bar.style.width = score + "%";
-      bar.style.backgroundColor =
-        score >= 80 ? "#10B981" :
-        score >= 60 ? "#F59E0B" :
-        score >= 40 ? "#3B82F6" : "#ef4444";
-    });
-
-    // Submit
-    form.addEventListener("submit", async e => {
-      e.preventDefault();
-      errorBox.style.display = "none";
-      successBox.style.display = "none";
-
-      const full_name = document.getElementById("fullName").value.trim();
-      const mobile = document.getElementById("mobile").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const location = document.getElementById("location").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const role = document.querySelector("input[name='role']:checked").value;
-      const company_name = role === "recruiter"
-        ? document.getElementById("companyName").value.trim()
-        : null;
-
-      // Supabase signup
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name, role },
-          emailRedirectTo: "https://login.skreenit.com/login.html"
+    // Set backend base URL: local => http://localhost:8000, prod => public API
+    window.SKREENIT_BACKEND_URL = envUrl('http://localhost:8001', 'https://skreenit-api.onrender.com');
+    // Show/hide recruiter/candidate fields based on role
+    document.addEventListener('DOMContentLoaded', function() {
+      const roleCards = document.querySelectorAll('.role-card');
+      const recruiterFields = document.getElementById('recruiterFields');
+      const candidateFields = document.getElementById('candidateFields');
+      const goLoginBtn = document.getElementById('goLoginBtn')
+      if (goLoginBtn) goLoginBtn.href = 'https://login.skreenit.com/login.html'
+      function updateFields() {
+        const selectedRole = document.querySelector('input[name="role"]:checked');
+        if (selectedRole) {
+          if (selectedRole.value === 'recruiter') {
+            recruiterFields.classList.remove('hidden');
+            candidateFields.classList.add('hidden');
+          } else {
+            recruiterFields.classList.add('hidden');
+            candidateFields.classList.remove('hidden');
+          }
         }
+      }
+      roleCards.forEach(card => {
+        card.addEventListener('click', function() {
+          const radio = this.querySelector('input[type="radio"]');
+          radio.checked = true;
+          roleCards.forEach(c => c.classList.remove('selected'));
+          this.classList.add('selected');
+          updateFields();
+        });
       });
-
-      if (error) {
-        showError(error.message);
+      updateFields();
+    });
+  </script>
+  <script type="module">
+    import { handleRegistrationSubmit } from 'https://auth.skreenit.com/assets/js/auth-pages.js'
+    const form = document.getElementById('registrationForm')
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      // Hide error and thank you
+      document.getElementById('formError').textContent = '';
+      document.getElementById('thankYou').classList.add('hidden');
+      // Validate passwords match
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm_password').value;
+      if (password !== confirmPassword) {
+        document.getElementById('formError').textContent = 'Passwords do not match.';
         return;
       }
-
-      // Backend profile creation
-      await fetch(BACKEND_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          mobile,
-          location,
-          role,
-          company_name
-        })
-      });
-
-      showSuccess("Registration successful! Please check your email to confirm your account.");
+      // Call registration logic
+      const result = await handleRegistrationSubmit(e);
+      if (result === true) {
+        // Hide form, show thank you
+        form.classList.add('hidden');
+        document.getElementById('thankYou').classList.remove('hidden');
+        // Auto-redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = 'https://login.skreenit.com/login.html';
+        }, 3000);
+      }
     });
   </script>
 </body>
