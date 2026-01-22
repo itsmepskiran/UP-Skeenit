@@ -1,65 +1,64 @@
-# Environment variables
-backend/.env
+# ============================
+# ENVIRONMENT VARIABLES
+# ============================
 *.env
+backend/.env
+login/.env
+auth/.env
+applicant/.env
+dashboard/.env
+hrms/.env
 !.env.example
 
-# Python
+# ============================
+# PYTHON BACKEND
+# ============================
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
-# Virtual Environment
+# Virtual environments
+.venv/
 venv/
 env/
 ENV/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
+# Python build artifacts
+*.egg-info/
+dist/
+build/
 
-# Logs
-logs/
-*.log
+# ============================
+# NODE / FRONTEND
+# ============================
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Dependencies
-node_modules/
+# ============================
+# LOGS
+# ============================
+logs/
+*.log
 
-# Build
-dist/
-build/
-
-# Local development
+# ============================
+# SYSTEM / OS FILES
+# ============================
 .DS_Store
 Thumbs.db
 
-# Supabase
-.supabase/
-
-# VS Code
+# ============================
+# IDE / EDITOR
+# ============================
+.idea/
+.vscode/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
 
-# Local Netlify folder
-.netlify
+# ============================
+# SUPABASE
+# ============================
+.supabase/
+
