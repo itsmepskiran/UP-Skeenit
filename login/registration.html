@@ -10,46 +10,16 @@
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/auth.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-  <script>
-    window.__SKREENIT_BACKEND_URL__ = 'https://aiskreenit.onrender.com/api/v1';
-    window.SKREENIT_SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co';
-    window.SKREENIT_SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX';
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    .form-row {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-    .form-row .form-group {
-      flex: 1;
-    }
-    .password-hint {
-      font-size: 12px;
-      color: #666;
-      margin-top: 4px;
-    }
-    .auth-actions {
-      text-align: center;
-      margin-top: 20px;
-      color: #666;
-    }
-    .auth-actions a {
-      color: #1976d2;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .auth-actions a:hover {
-      text-decoration: underline;
-    }
+    .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+    .form-row .form-group { flex: 1; }
+    .password-hint { font-size: 12px; color: #666; margin-top: 4px; }
+    .auth-actions { text-align: center; margin-top: 20px; color: #666; }
+    .auth-actions a { color: #1976d2; text-decoration: none; font-weight: 500; }
+    .auth-actions a:hover { text-decoration: underline; }
     .form-group select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
+      width: 100%; padding: 10px; border: 1px solid #ddd;
+      border-radius: 4px; font-size: 14px;
     }
   </style>
 </head>
@@ -113,23 +83,23 @@
           <div class="form-group">
             <label>Password*</label>
             <div style="position: relative;">
-              <input type="password" id="password" name="password" placeholder="Create password" 
-                     minlength="8" required 
-                     pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+" />
-              <i class="fas fa-eye" style="position: absolute; right: 10px; top: 10px; cursor: pointer;" 
+              <input type="password" id="password" name="password" placeholder="Create password"
+                     minlength="8" required
+                     pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+" />
+              <i class="fas fa-eye" style="position: absolute; right: 10px; top: 10px; cursor: pointer;"
                  onclick="togglePassword('password')"></i>
             </div>
             <div class="password-hint">
               8+ characters, with uppercase, lowercase, number & special character
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Confirm Password*</label>
             <div style="position: relative;">
-              <input type="password" id="confirmPassword" name="confirmPassword" 
+              <input type="password" id="confirmPassword" name="confirmPassword"
                      placeholder="Confirm password" required />
-              <i class="fas fa-eye" style="position: absolute; right: 10px; top: 10px; cursor: pointer;" 
+              <i class="fas fa-eye" style="position: absolute; right: 10px; top: 10px; cursor: pointer;"
                  onclick="togglePassword('confirmPassword')"></i>
             </div>
           </div>
@@ -152,115 +122,41 @@
     </div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('registrationForm');
-      const errorDiv = document.getElementById('formError');
-      const { createClient } = supabase;
-      const supabaseClient = createClient(
-        window.SKREENIT_SUPABASE_URL,
-        window.SKREENIT_SUPABASE_ANON_KEY
-      );
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-      // Toggle password visibility
-      window.togglePassword = (inputId) => {
-        const input = document.getElementById(inputId);
-        const icon = event.currentTarget;
-        if (input.type === 'password') {
-          input.type = 'text';
-          icon.classList.remove('fa-eye');
-          icon.classList.add('fa-eye-slash');
-        } else {
-          input.type = 'password';
-          icon.classList.remove('fa-eye-slash');
-          icon.classList.add('fa-eye');
-        }
-      };
+  <!-- Attach registration handler -->
+  <script type="module">
+    import { handleRegistrationSubmit } from "https://auth.skreenit.com/assets/js/registration.js";
 
-      // Form submission
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.innerHTML;
-        
-        // Validate passwords match
-        const password = form.password.value;
-        const confirmPassword = form.confirmPassword.value;
-        if (password !== confirmPassword) {
-          showMessage('Passwords do not match');
-          return;
-        }
+    const form = document.getElementById("registrationForm");
+    const errorDiv = document.getElementById("formError");
 
-        // Validate password strength
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+/;
-        if (!passwordRegex.test(password)) {
-          showMessage('Password does not meet the requirements');
-          return;
-        }
+    // Password toggle stays local
+    window.togglePassword = (inputId) => {
+      const input = document.getElementById(inputId);
+      const icon = event.currentTarget;
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    };
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+    // Attach handler
+    form.addEventListener("submit", async (e) => {
+      errorDiv.style.display = "none";
+      const success = await handleRegistrationSubmit(e);
 
-        const formData = new FormData(form);
-        const userData = {
-          full_name: formData.get('full_name'),
-          mobile: formData.get('mobile'),
-          email: formData.get('email'),
-          location: formData.get('location'),
-          role: formData.get('role')
-        };
-
-        try {
-          // Create user in Supabase
-          const { data, error } = await supabaseClient.auth.signUp({
-            email: userData.email,
-            password: password,
-            options: {
-              data: userData,
-              emailRedirectTo: `${window.location.origin}/update-password.html`
-            }
-          });
-
-          if (error) throw error;
-
-          // Register user in backend
-          await fetch(`${window.__SKREENIT_BACKEND_URL__}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
-          });
-
-          // Show success message
-          showMessage('Registration successful! Please check your email to confirm your account.', 'success');
-          form.reset();
-          
-          // Redirect to login after delay
-          setTimeout(() => {
-            window.location.href = 'login.html';
-          }, 3000);
-
-        } catch (err) {
-          console.error('Registration error:', err);
-          showMessage(err.message || 'Registration failed. Please try again.');
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalBtnText;
-        }
-      });
-
-      // Show message helper
-      function showMessage(message, type = 'error') {
-        errorDiv.textContent = message;
-        errorDiv.className = `alert alert-${type}`;
-        errorDiv.style.display = 'block';
-
-        if (type === 'success') {
-          setTimeout(() => {
-            errorDiv.style.display = 'none';
-          }, 5000);
-        }
+      if (!success) {
+        errorDiv.textContent = "Registration failed. Please check your details.";
+        errorDiv.className = "alert alert-error";
+        errorDiv.style.display = "block";
       }
     });
   </script>
+
 </body>
 </html>

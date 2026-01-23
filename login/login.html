@@ -10,16 +10,6 @@
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
-  <!-- Config -->
-  <script>
-    window.__SKREENIT_BACKEND_URL__ = "https://aiskreenit.onrender.com/api/v1";
-    window.SKREENIT_SUPABASE_URL = "https://gfkbqhniopgcaapolzbu.supabase.co";
-    window.SKREENIT_SUPABASE_ANON_KEY = "sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX";
-  </script>
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
     .alert {
       padding: 12px;
@@ -91,104 +81,27 @@
   </div>
 </div>
 
-<script type="module">
-document.addEventListener("DOMContentLoaded", () => {
+<!-- Load Supabase + Shared Config -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  const { createClient } = supabase;
-  const supabaseClient = createClient(
-    window.SKREENIT_SUPABASE_URL,
-    window.SKREENIT_SUPABASE_ANON_KEY
-  );
+<!-- Load Shared Auth Logic -->
+<script type="module">
+  import { handleLoginSubmit } from "https://auth.skreenit.com/assets/js/auth-pages.js";
 
   const form = document.getElementById("loginForm");
   const errorBox = document.getElementById("errorBox");
 
+  // Override notify() for this page
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.style.display = "block";
   }
 
+  // Attach handler
   form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const submitBtn = form.querySelector("button[type='submit']");
-    const btnText = submitBtn.querySelector(".btn-text");
-    const btnLoader = submitBtn.querySelector(".btn-loader");
-
-    const formData = new FormData(form);
-    const email = formData.get("email").trim();
-    const password = formData.get("password").trim();
-
-    try {
-      // UI loading state
-      submitBtn.disabled = true;
-      submitBtn.classList.add("btn-loading");
-      btnText.style.display = "none";
-      btnLoader.style.display = "inline-flex";
-
-      // 1️⃣ LOGIN WITH SUPABASE
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        if (error.message.includes("Email not confirmed")) {
-          throw new Error("Please confirm your email before logging in.");
-        }
-        if (error.message.includes("Invalid login credentials")) {
-          throw new Error("Incorrect email or password.");
-        }
-        throw new Error(error.message);
-      }
-
-      const session = data.session;
-      if (!session?.access_token) {
-        throw new Error("Authentication failed. No session token.");
-      }
-
-      // 2️⃣ CALL BACKEND LOGIN
-      const backendResponse = await fetch(
-        `${window.__SKREENIT_BACKEND_URL__}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${session.access_token}`
-          }
-        }
-      );
-
-      const backendData = await backendResponse.json();
-
-      if (!backendResponse.ok) {
-        throw new Error(backendData.message || "Login failed");
-      }
-
-      const role = backendData.role;
-
-      // 3️⃣ REDIRECT BASED ON ROLE
-      if (role === "candidate") {
-        window.location.href = "https://applicant.skreenit.com";
-      } 
-      else if (role === "recruiter") {
-        window.location.href = "https://recruiter.skreenit.com";
-      } 
-      else {
-        throw new Error("Unknown role. Contact support.");
-      }
-
-    } catch (err) {
-      console.error(err);
-      showError(err.message || "Login failed");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("btn-loading");
-      btnText.style.display = "inline";
-      btnLoader.style.display = "none";
-    }
+    errorBox.style.display = "none";
+    await handleLoginSubmit(e);
   });
-
-});
 </script>
 
 </body>

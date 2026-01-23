@@ -2,8 +2,8 @@
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2'
 
 // Directly use Supabase URL and Anon Key
-const SUPABASE_URL = 'https://gfkbqhniopgcaapolzbu.supabase.co' // Replace with your actual Supabase URL
-const SUPABASE_ANON_KEY = 'sb_publishable_ai0_qhGdNzNAUVabNOJT4g_rpGIGfqX' //your-supabase-anon-key' // Replace with your actual Supabase Anon Key
+const SUPABASE_URL = 'https://lgmvbmbzxsqrcclaynuh.supabase.co' // Replace with your actual Supabase URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnbXZibWJ6eHNxcmNjbGF5bnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMzgxODQsImV4cCI6MjA4NDcxNDE4NH0.F63Fe9zFBuYni-qxZXwIzJNgCvM-rDxAi5_gFDGrXAM' //your-supabase-anon-key' // Replace with your actual Supabase Anon Key
 
 // Create Supabase client with enhanced configuration
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

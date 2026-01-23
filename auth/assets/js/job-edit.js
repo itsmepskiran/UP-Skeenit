@@ -1,9 +1,5 @@
 // job-edit.js
-import { backendFetch } from 'https://auth.skreenit.com/assets/js/backend-client.js';
-
-function getToken() {
-  return localStorage.getItem('skreenit_token') || '';
-}
+import { backendFetch } from './backend-client.js';
 
 function ensureRecruiter() {
   const role = localStorage.getItem('skreenit_role');
@@ -18,7 +14,7 @@ function getJobId() {
 }
 
 async function fetchJob(jobId) {
-  const token = getToken();
+  const token = localStorage.getItem('skreenit_token') || '';
 
   const res = await backendFetch(`/recruiter/jobs/${encodeURIComponent(jobId)}`, {
     headers: {
@@ -27,7 +23,7 @@ async function fetchJob(jobId) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
+    const text = await res.text().catch(() => '');
     throw new Error(text || `Failed to load job (${res.status})`);
   }
 
@@ -35,7 +31,7 @@ async function fetchJob(jobId) {
 }
 
 async function updateJob(jobId, payload) {
-  const token = getToken();
+  const token = localStorage.getItem('skreenit_token') || '';
 
   const res = await backendFetch(`/recruiter/jobs/${encodeURIComponent(jobId)}`, {
     method: 'PUT',
@@ -47,7 +43,7 @@ async function updateJob(jobId, payload) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
+    const text = await res.text().catch(() => '');
     throw new Error(text || `Failed to update job (${res.status})`);
   }
 
@@ -55,7 +51,7 @@ async function updateJob(jobId, payload) {
 }
 
 async function deleteJob(jobId) {
-  const token = getToken();
+  const token = localStorage.getItem('skreenit_token') || '';
 
   const res = await backendFetch(`/recruiter/jobs/${encodeURIComponent(jobId)}`, {
     method: 'DELETE',
@@ -65,7 +61,7 @@ async function deleteJob(jobId) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
+    const text = await res.text().catch(() => '');
     throw new Error(text || `Failed to delete job (${res.status})`);
   }
 }
@@ -88,11 +84,10 @@ async function initJobEditForm() {
   const salaryEl = document.getElementById('salary_range');
   const descEl = document.getElementById('job_description');
   const reqEl = document.getElementById('requirements');
+  const skillsEl = document.getElementById('job_skills'); // optional
 
   try {
-    // Load existing job
-    const data = await fetchJob(jobId);
-    const job = data.job || data; // flexibly handle shape
+    const job = await fetchJob(jobId);
 
     if (titleEl) titleEl.value = job.title || '';
     if (locationEl) locationEl.value = job.location || '';
@@ -100,6 +95,9 @@ async function initJobEditForm() {
     if (salaryEl) salaryEl.value = job.salary_range || '';
     if (descEl) descEl.value = job.description || '';
     if (reqEl) reqEl.value = job.requirements || '';
+    if (skillsEl && Array.isArray(job.skills)) {
+      skillsEl.value = job.skills.join(', ');
+    }
   } catch (err) {
     console.error('Failed to load job:', err);
     alert('Failed to load job details.');
@@ -108,13 +106,19 @@ async function initJobEditForm() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const skillsRaw = skillsEl?.value?.trim() || '';
+    const skills = skillsRaw
+      ? skillsRaw.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
     const payload = {
       title: titleEl.value.trim(),
       location: locationEl.value.trim(),
       job_type: typeEl.value,
       salary_range: salaryEl?.value?.trim() || null,
       description: descEl.value.trim(),
-      requirements: reqEl.value.trim()
+      requirements: reqEl.value.trim(),
+      skills
     };
 
     if (!payload.title || !payload.location || !payload.job_type || !payload.description || !payload.requirements) {
@@ -122,8 +126,10 @@ async function initJobEditForm() {
       return;
     }
 
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+
     try {
-      form.querySelector('button[type="submit"]').disabled = true;
       await updateJob(jobId, payload);
       alert('Job updated successfully!');
       window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
@@ -131,15 +137,17 @@ async function initJobEditForm() {
       console.error('Job update failed:', err);
       alert('Failed to update job. Please try again.');
     } finally {
-      form.querySelector('button[type="submit"]').disabled = false;
+      submitBtn.disabled = false;
     }
   });
 
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
       if (!confirm('Are you sure you want to delete this job?')) return;
+
+      deleteBtn.disabled = true;
+
       try {
-        deleteBtn.disabled = true;
         await deleteJob(jobId);
         alert('Job deleted.');
         window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';

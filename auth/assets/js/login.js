@@ -1,3 +1,6 @@
+// login.js
+import { supabase } from './supabase-config.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('loginForm');
   const formError = document.getElementById('formError');
@@ -6,20 +9,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const recruiterBox = document.getElementById('recruiterBox');
   const submitButton = form.querySelector('button[type="submit"]');
   const buttonText = submitButton.querySelector('.button-text');
-  
-  // Role selection handling
+
+  /* -------------------------------------------------------
+     ROLE SELECTION
+  ------------------------------------------------------- */
   roleOptions.forEach(option => {
     option.addEventListener('click', () => {
       const selectedRole = option.dataset.role;
-      
-      // Update UI
+
       roleOptions.forEach(opt => opt.classList.remove('selected'));
       option.classList.add('selected');
-      
-      // Update hidden input
+
       roleInput.value = selectedRole;
-      
-      // Show/hide recruiter fields
+
       if (recruiterBox) {
         recruiterBox.style.display = selectedRole === 'recruiter' ? 'block' : 'none';
         const companyIdInput = recruiterBox.querySelector('input');
@@ -29,133 +31,162 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-  
-  // Form submission
+
+  /* -------------------------------------------------------
+     FORM SUBMISSION
+  ------------------------------------------------------- */
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // Clear previous error
+
     formError.style.display = 'none';
     formError.textContent = '';
-    
-    // Validate role selection
+
     if (!roleInput.value) {
-      showError('Please select your role');
-      return;
+      return showError('Please select your role');
     }
-    
-    // Update button state
+
     submitButton.disabled = true;
     buttonText.textContent = 'Signing in...';
-    
+
     try {
       const formData = new FormData(form);
       const role = formData.get('role');
       const email = formData.get('email');
       const password = formData.get('password');
       const companyId = formData.get('company_id');
-      
-      // Validate company ID for recruiters
+
       if (role === 'recruiter' && !companyId) {
         throw new Error('Company ID is required for recruiter login');
       }
-      
-      // Sign in with Supabase
+
+      /* -------------------------------------------------------
+         SUPABASE SIGN-IN
+      ------------------------------------------------------- */
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
-      
-      // Verify role matches
-      const userRole = data.user?.user_metadata?.role;
-      if (userRole !== role) {
+
+      const user = data.user;
+      const metadata = user?.user_metadata || {};
+
+      /* -------------------------------------------------------
+         ROLE VALIDATION
+      ------------------------------------------------------- */
+      if (!metadata.role) {
         await supabase.auth.signOut();
-        throw new Error(`Invalid role. Please sign in as ${userRole}`);
+        throw new Error('Your account does not have a role assigned. Contact support.');
       }
-      
-      // Verify company ID for recruiters
+
+      if (metadata.role !== role) {
+        await supabase.auth.signOut();
+        throw new Error(
+          metadata.role === 'recruiter'
+            ? 'Your account is registered as a Recruiter. Please select Recruiter.'
+            : 'Your account is registered as a Candidate. Please select Candidate.'
+        );
+      }
+
+      /* -------------------------------------------------------
+         COMPANY ID VALIDATION (RECRUITER)
+      ------------------------------------------------------- */
       if (role === 'recruiter') {
-        const userCompanyId = data.user?.user_metadata?.company_id;
-        if (companyId !== userCompanyId) {
+        const userCompanyId = metadata.company_id;
+        if (!userCompanyId) {
+          await supabase.auth.signOut();
+          throw new Error('Your account is missing a Company ID. Contact support.');
+        }
+
+        if (companyId.toLowerCase() !== userCompanyId.toLowerCase()) {
           await supabase.auth.signOut();
           throw new Error('Invalid Company ID');
         }
       }
-      
-      // Store session data
+
+      /* -------------------------------------------------------
+         STORE SESSION TOKENS FOR BACKEND
+      ------------------------------------------------------- */
       const session = data.session;
       if (session) {
         localStorage.setItem('skreenit_token', session.access_token);
         localStorage.setItem('skreenit_refresh_token', session.refresh_token);
-        localStorage.setItem('skreenit_user_id', data.user.id);
+        localStorage.setItem('skreenit_user_id', user.id);
         localStorage.setItem('skreenit_role', role);
       }
-      
-      // Check first-time login status
-      const isFirstTimeLogin = data.user?.user_metadata?.first_time_login === true;
-      const hasUpdatedPassword = data.user?.user_metadata?.password_updated === true;
-      
-      // Handle redirects
-      if (!hasUpdatedPassword) {
+
+      /* -------------------------------------------------------
+         FIRST-TIME LOGIN LOGIC
+      ------------------------------------------------------- */
+      const firstLogin = metadata.first_time_login === true;
+      const passwordUpdated = metadata.password_updated === true;
+
+      if (!passwordUpdated) {
         window.location.href = 'https://login.skreenit.com/update-password.html';
-      } else if (role === 'recruiter') {
-        if (isFirstTimeLogin) {
-          window.location.href = 'https://recruiter.skreenit.com/recruiter-profile.html';
-        } else {
-          window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
-        }
-      } else {
-        if (isFirstTimeLogin) {
-          window.location.href = 'https://applicant.skreenit.com/detailed-application-form.html';
-        } else {
-          window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
-        }
+        return;
       }
-      
-    } catch (error) {
-      showError(error.message || 'Login failed');
+
+      if (role === 'recruiter') {
+        window.location.href = firstLogin
+          ? 'https://recruiter.skreenit.com/recruiter-profile.html'
+          : 'https://dashboard.skreenit.com/recruiter-dashboard.html';
+      } else {
+        window.location.href = firstLogin
+          ? 'https://applicant.skreenit.com/detailed-application-form.html'
+          : 'https://dashboard.skreenit.com/candidate-dashboard.html';
+      }
+
+    } catch (err) {
+      showError(err.message || 'Login failed');
     } finally {
       submitButton.disabled = false;
       buttonText.textContent = 'Sign In';
     }
   });
-  
+
+  /* -------------------------------------------------------
+     ERROR DISPLAY
+  ------------------------------------------------------- */
   function showError(message) {
     formError.textContent = message;
     formError.style.display = 'block';
     formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-  
-  // Add password visibility toggle
+
+  /* -------------------------------------------------------
+     PASSWORD VISIBILITY TOGGLE
+  ------------------------------------------------------- */
   const passwordInput = document.getElementById('password');
   if (passwordInput) {
-    const toggleButton = document.createElement('button');
-    toggleButton.type = 'button';
-    toggleButton.className = 'password-toggle';
-    toggleButton.innerHTML = '<i class="fas fa-eye"></i>';
-    toggleButton.style.position = 'absolute';
-    toggleButton.style.right = '1rem';
-    toggleButton.style.top = '50%';
-    toggleButton.style.transform = 'translateY(-50%)';
-    toggleButton.style.background = 'none';
-    toggleButton.style.border = 'none';
-    toggleButton.style.cursor = 'pointer';
-    toggleButton.style.color = 'var(--text-light)';
-    
-    const passwordWrapper = document.createElement('div');
-    passwordWrapper.style.position = 'relative';
-    passwordInput.parentNode.insertBefore(passwordWrapper, passwordInput);
-    passwordWrapper.appendChild(passwordInput);
-    passwordWrapper.appendChild(toggleButton);
-    
-    toggleButton.addEventListener('click', () => {
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    passwordInput.parentNode.insertBefore(wrapper, passwordInput);
+    wrapper.appendChild(passwordInput);
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'password-toggle';
+    toggle.innerHTML = '<i class="fas fa-eye"></i>';
+    Object.assign(toggle.style, {
+      position: 'absolute',
+      right: '1rem',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: 'var(--text-light)'
+    });
+
+    wrapper.appendChild(toggle);
+
+    toggle.addEventListener('click', () => {
       const type = passwordInput.type === 'password' ? 'text' : 'password';
       passwordInput.type = type;
-      toggleButton.innerHTML = type === 'password' ? 
-        '<i class="fas fa-eye"></i>' : 
-        '<i class="fas fa-eye-slash"></i>';
+      toggle.innerHTML = type === 'password'
+        ? '<i class="fas fa-eye"></i>'
+        : '<i class="fas fa-eye-slash"></i>';
     });
   }
 });

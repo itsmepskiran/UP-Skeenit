@@ -20,7 +20,7 @@ function getApplicationId() {
 async function fetchApplicationDetails(applicationId) {
   const token = getToken();
 
-  const res = await backendFetch(`/candidate/applications/${encodeURIComponent(applicationId)}`, {
+  const res = await backendFetch(`/applications/${encodeURIComponent(applicationId)}`, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     }
@@ -35,7 +35,7 @@ async function fetchApplicationDetails(applicationId) {
 }
 
 function renderTimeline(timeline = []) {
-  if (!Array.isArray(timeline) || !timeline.length) {
+  if (!Array.isArray(timeline) || timeline.length === 0) {
     return '<p>No timeline events yet.</p>';
   }
 
@@ -59,14 +59,14 @@ function renderTimeline(timeline = []) {
 }
 
 function renderApplicationDetails(container, data) {
-  const app = data.application || data;
+  const app = data;
   const job = data.job || {};
 
   const status = app.status || 'In Review';
-  const jobTitle = job.title || app.job_title || 'Job';
-  const company = job.company_name || 'Company';
-  const appliedAt = app.submitted_at ? new Date(app.submitted_at).toLocaleString() : 'Not available';
-  const timelineHtml = renderTimeline(app.timeline || data.timeline);
+  const jobTitle = job.title || 'Job';
+  const company = job.company_name || job.company || 'Company';
+  const appliedAt = app.applied_at ? new Date(app.applied_at).toLocaleString() : 'Not available';
+  const timelineHtml = renderTimeline(app.timeline || []);
 
   container.innerHTML = `
     <div class="details-header">
@@ -83,19 +83,6 @@ function renderApplicationDetails(container, data) {
         <p><strong>Status:</strong> ${status}</p>
         <p><strong>Applied on:</strong> ${appliedAt}</p>
       </div>
-      ${
-        app.next_step || app.next_interview
-          ? `<div class="details-section">
-              <h3>Next Step</h3>
-              <p>${app.next_step || ''}</p>
-              ${
-                app.next_interview
-                  ? `<p><strong>Interview:</strong> ${new Date(app.next_interview).toLocaleString()}</p>`
-                  : ''
-              }
-            </div>`
-          : ''
-      }
     </div>
 
     <div class="details-section">

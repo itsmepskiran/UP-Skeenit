@@ -22,8 +22,9 @@ function getIds() {
 
 async function fetchCandidateDetails(candidateId, jobId) {
   const token = getToken();
-  const query = jobId ? `?job_id=${encodeURIComponent(jobId)}` : '';
-  const res = await backendFetch(`/recruiter/candidates/${encodeURIComponent(candidateId)}${query}`, {
+  const query = `?candidate_id=${encodeURIComponent(candidateId)}${jobId ? `&job_id=${encodeURIComponent(jobId)}` : ''}`;
+
+  const res = await backendFetch(`/recruiter/candidate-details${query}`, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     }
@@ -38,16 +39,16 @@ async function fetchCandidateDetails(candidateId, jobId) {
 }
 
 function renderCandidateDetails(container, data) {
-  const c = data.candidate || data;
+  const profile = data.profile || {};
   const app = data.application || {};
+  const skills = data.skills || [];
+  const experience = data.experience || [];
 
-  const name = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Unknown Candidate';
-  const email = c.email || 'Not provided';
-  const phone = c.phone || 'Not provided';
+  const name = profile.full_name || 'Unknown Candidate';
+  const email = profile.email || 'Not provided';
+  const phone = profile.phone || 'Not provided';
   const status = app.status || 'In Review';
-  const resumeUrl = app.resume_url || c.resume_url || null;
-  const skills = Array.isArray(c.skills) ? c.skills.join(', ') : (c.skills || '');
-  const experience = c.total_experience || app.total_experience || 'Not specified';
+  const resumeUrl = profile.resume_url || null;
 
   container.innerHTML = `
     <div class="details-header">
@@ -61,14 +62,14 @@ function renderCandidateDetails(container, data) {
     <div class="details-grid">
       <div class="details-section">
         <h3>Profile</h3>
-        <p><strong>Experience:</strong> ${experience}</p>
-        ${skills ? `<p><strong>Skills:</strong> ${skills}</p>` : ''}
+        ${experience.length ? `<p><strong>Experience:</strong> ${experience.length} entries</p>` : ''}
+        ${skills.length ? `<p><strong>Skills:</strong> ${skills.map(s => s.skill_name).join(', ')}</p>` : ''}
       </div>
 
       <div class="details-section">
         <h3>Application</h3>
-        ${app.applied_for ? `<p><strong>Applied For:</strong> ${app.applied_for}</p>` : ''}
-        ${app.submitted_at ? `<p><strong>Submitted:</strong> ${new Date(app.submitted_at).toLocaleString()}</p>` : ''}
+        ${app.job_title ? `<p><strong>Applied For:</strong> ${app.job_title}</p>` : ''}
+        ${app.applied_at ? `<p><strong>Submitted:</strong> ${new Date(app.applied_at).toLocaleString()}</p>` : ''}
       </div>
     </div>
 
