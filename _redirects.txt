@@ -1,0 +1,15 @@
+https://auth.skreenit.com/*        /auth/:splat        200
+https://login.skreenit.com/*       /login/:splat       200
+https://recruiter.skreenit.com/*   /recruiter/:splat   200
+https://dashboard.skreenit.com/*   /dashboard/:splat   200
+https://applicant.skreenit.com/*   /applicant/:splat   200
+https://hrms.skreenit.com/*        /hrms/:splat        200
+https://support.skreenit.com/*     /support/:splat     200
+https://legal.skreenit.com/*       /legal/:splat       200
+https://backend.skreenit.com/*     /backend/:splat     200
+https://app.skreenit.com/*         /app/:splat         200
+https://in.skreenit.com/*          /in/:splat          200
+
+# Main site
+https://www.skreenit.com/*         /index.html         200
+https://skreenit.com/*             /index.html         200
