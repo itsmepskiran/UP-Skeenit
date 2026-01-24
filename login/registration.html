@@ -126,18 +126,21 @@
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <script src="https://auth.skreenit.com/assets/js/supabase-config.js"></script>
   <!-- Attach registration handler -->
   <script type="module">
     import { handleRegistrationSubmit } from "https://auth.skreenit.com/assets/js/registration.js";
 
     const form = document.getElementById("registrationForm");
     const errorDiv = document.getElementById("formError");
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const passwordHint = document.querySelector('.password-hint');
 
     // Password toggle stays local
     window.togglePassword = (inputId) => {
       const input = document.getElementById(inputId);
-      const icon = event.currentTarget;
+      const icon = input.nextElementSibling.querySelector('i');
       if (input.type === "password") {
         input.type = "text";
         icon.classList.replace("fa-eye", "fa-eye-slash");
@@ -146,93 +149,72 @@
         icon.classList.replace("fa-eye-slash", "fa-eye");
       }
     };
-
-    // Attach handler
-    form.addEventListener("submit", async (e) => {
-      errorDiv.style.display = "none";
-      const success = await handleRegistrationSubmit(e);
-
-      if (!success) {
-        errorDiv.textContent = "Registration failed. Please check your details.";
-        errorDiv.className = "alert alert-error";
-        errorDiv.style.display = "block";
-      }
-    });
-  </script>
-  <script>
-    // Password validation
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const passwordHint = document.querySelector('.password-hint');
-    const form = document.querySelector('form');
-
-    function validatePassword() {
-    const password = passwordInput.value;
-    const confirmPassword = confirmPasswordInput.value;
-    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    
-    // Reset previous states
-    passwordInput.setCustomValidity('');
-    confirmPasswordInput.setCustomValidity('');
-    
-    // Check if password meets requirements
-    if (password && !pattern.test(password)) {
-        passwordInput.setCustomValidity("Password must be at least 8 characters long and include uppercase, lowercase, number & special character");
-        passwordHint.textContent = "Password must include uppercase, lowercase, number & special character";
-        passwordHint.style.color = '#ff4444';
-        return false;
+    // Real-time password validation
+      function validatePassword() {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+      
+      // Reset states
+        passwordInput.setCustomValidity('');
+        confirmPasswordInput.setCustomValidity('');
+            
+        // Check password strength
+            const hasLower = /[a-z]/.test(password);
+            const hasUpper = /[A-Z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            const hasSpecial = /[@$!%*?&]/.test(password);
+            const isValid = password.length >= 8 && hasLower && hasUpper && hasNumber && hasSpecial;
+            
+        // Update UI
+            if (password) {
+                if (isValid) {
+                    passwordHint.textContent = "Password is strong!";
+                    passwordHint.style.color = "#10b981";
+                } else {
+                    passwordHint.textContent = "Password must include uppercase, lowercase, number & special character";
+                    passwordHint.style.color = "#ef4444";
+                    return false;
+                }
+            }
+            
+        // Check if passwords match
+            if (password !== confirmPassword && confirmPassword) {
+                confirmPasswordInput.setCustomValidity("Passwords don't match");
+                passwordHint.textContent = "Passwords don't match";
+                passwordHint.style.color = "#ef4444";
+                return false;
+            }
+            
+        return isValid;
     }
-    
-    // Check if passwords match
-    if (password !== confirmPassword && confirmPassword) {
-        confirmPasswordInput.setCustomValidity("Passwords don't match");
-        passwordHint.textContent = "Passwords don't match";
-        passwordHint.style.color = '#ff4444';
-        return false;
-    }
-    
-    // If all validations pass
-    if (password && pattern.test(password) && password === confirmPassword) {
-        passwordHint.textContent = "Password is strong!";
-        passwordHint.style.color = '#00C851';
-        return true;
-    }
-    
-    return false;
-}
-
-// Real-time validation
-[passwordInput, confirmPasswordInput].forEach(input => {
-    input.addEventListener('input', () => {
-        validatePassword();
-        // Force revalidation
-        input.reportValidity();
-    });
-});
-
-// Form submission
-form.addEventListener('submit', function(e) {
-    if (!validatePassword()) {
-        e.preventDefault();
-        // Show the first validation error that occurs
-        passwordInput.reportValidity();
-        confirmPasswordInput.reportValidity();
-        return false;
-    }
-    
-    // If we get here, validation passed
-    return true;
-});
-
-// Toggle password visibility
-function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const icon = field.nextElementSibling;
-    const type = field.type === 'password' ? 'text' : 'password';
-    field.type = type;
-    icon.classList.toggle('fa-eye');
-    icon.classList.toggle('fa-eye-slash');
-}
-</script>
+    // Add event listeners
+    passwordInput.addEventListener('input', validatePassword);
+    confirmPasswordInput.addEventListener('input', validatePassword);
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          errorDiv.style.display = "none";
+            
+            if (!validatePassword()) {
+                errorDiv.textContent = "Please fix the password requirements.";
+                errorDiv.style.display = "block";
+                return;
+            }
+            
+            try {
+                const formData = new FormData(form);
+                const success = await handleRegistrationSubmit(formData);
+                
+                if (success) {
+                    // Redirect to verification page on success
+                    window.location.href = '/confirm-email.html';
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorDiv.textContent = error.message || 'Registration failed. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
