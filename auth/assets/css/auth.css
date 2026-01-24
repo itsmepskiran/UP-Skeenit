@@ -74,7 +74,41 @@
 }
 
 /* PASSWORD FIELD WITH TOGGLE --------------------------------------------------------- */
+/* Password Input Validation */
+input[type="password"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
 
+input[type="password"]:invalid {
+  border-color: #ff4444;
+}
+
+input[type="password"]:valid {
+  border-color: #00C851;
+}
+
+/* Password hint text */
+.password-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Show red hint when invalid */
+input[type="password"]:invalid + .password-hint {
+  color: #ff4444;
+}
+
+/* Show green when valid */
+input[type="password"]:valid + .password-hint {
+  color: #00C851;
+}
 .input-group {
   position: relative;
 }

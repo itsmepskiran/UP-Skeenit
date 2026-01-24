@@ -85,7 +85,9 @@
             <div style="position: relative;">
               <input type="password" id="password" name="password" placeholder="Create password"
                      minlength="8" required
-                     pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+" />
+                     pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+" 
+                     title="Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)"
+                     />
               <i class="fas fa-eye" style="position: absolute; right: 10px; top: 10px; cursor: pointer;"
                  onclick="togglePassword('password')"></i>
             </div>
