@@ -160,6 +160,50 @@
     });
   </script>
   <script>
+    // Password validation
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const passwordHint = document.querySelector('.password-hint');
+
+    function validatePassword() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+    
+    // Check if passwords match
+    if (password !== confirmPassword && confirmPassword) {
+        confirmPasswordInput.setCustomValidity("Passwords don't match");
+        passwordHint.textContent = "Passwords don't match";
+        passwordHint.style.color = '#ff4444';
+        return false;
+    } else {
+        confirmPasswordInput.setCustomValidity('');
+    }
+    
+    // Check password strength
+    if (password) {
+        if (!pattern.test(password)) {
+            passwordHint.textContent = "Password must include uppercase, lowercase, number & special character";
+            passwordHint.style.color = '#ff4444';
+            return false;
+        } else {
+            passwordHint.textContent = "Password is strong!";
+            passwordHint.style.color = '#00C851';
+        }
+    }
+    return true;
+}
+
+// Add event listeners
+passwordInput.addEventListener('input', validatePassword);
+confirmPasswordInput.addEventListener('input', validatePassword);
+
+// Update form submission to validate
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!validatePassword()) {
+        e.preventDefault();
+    }
+});
   // Toggle password visibility
   function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
