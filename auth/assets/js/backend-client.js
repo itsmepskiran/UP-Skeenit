@@ -30,7 +30,7 @@ class BackendClient {
     // Fallback production host — using the existing `auth.skreenit.com` subdomain for API
     // Note: ensure your hosting platform routes API requests to the backend on this domain.
     return [
-      'https://aiskreenit.onrender.com',
+      'https://aiskreenit.onrender.com/api/v1',
     ]
   }
 
