@@ -121,6 +121,7 @@
           Already have an account? <a href="login.html">Sign in</a>
         </div>
       </form>
+      <div id="formError" class="error-message"></div>
     </div>
   </div>
 
@@ -191,7 +192,10 @@
     passwordInput.addEventListener('input', validatePassword);
     confirmPasswordInput.addEventListener('input', validatePassword);
     // Form submission
-    form.addEventListener('submit', async (e) => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('registrationForm');
+      const errorDiv = document.getElementById('formError');
+      form.addEventListener('submit', async (e) => {
           e.preventDefault();
           errorDiv.style.display = "none";
             
@@ -214,7 +218,9 @@
                 errorDiv.textContent = error.message || 'Registration failed. Please try again.';
                 errorDiv.style.display = 'block';
             }
-        });
+          }
+        )
+    });
     </script>
 </body>
 </html>

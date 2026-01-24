@@ -25,16 +25,16 @@ export async function handleRegistrationSubmit(event) {
   event.preventDefault();
 
   const form = event.target;
+  const fd = new FormData(form);
   const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn?.textContent || 'Register';
 
   try {
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating account...';
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
     }
 
-    const fd = new FormData(form);
     const full_name = (fd.get('full_name') || '').trim();
     const email = (fd.get('email') || '').trim().toLowerCase();
     const mobile = (fd.get('mobile') || '').trim();
