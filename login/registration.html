@@ -46,7 +46,6 @@
 
     <div class="auth-body">
       <div id="formError" class="error-message"></div>
-
       <form id="registrationForm">
         <div class="form-group">
           <label>Register as*</label>
@@ -84,10 +83,8 @@
             <label>Password*</label>
             <div style="position: relative;">
               <input type="password" id="password" name="password" placeholder="Create password"
-                     minlength="8" required
-                     pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+" 
-                     title="Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)"
-                     />
+              minlength="8" required />
+
               <i class="fas fa-eye" style="position: absolute; right: 10px; top: 10px; cursor: pointer;"
                  onclick="togglePassword('password')"></i>
             </div>
@@ -121,8 +118,7 @@
           Already have an account? <a href="login.html">Sign in</a>
         </div>
       </form>
-      <div id="formError" class="error-message"></div>
-    </div>
+      </div>
   </div>
 
   <!-- Supabase -->
