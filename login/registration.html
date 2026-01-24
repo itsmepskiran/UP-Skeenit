@@ -157,6 +157,20 @@
       }
     });
   </script>
-
+  <script>
+  // Toggle password visibility
+  function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = field.nextElementSibling;
+    
+    // Toggle the input type
+    const type = field.type === 'password' ? 'text' : 'password';
+    field.type = type;
+    
+    // Toggle the eye icon
+    icon.classList.toggle('fa-eye');
+    icon.classList.toggle('fa-eye-slash');
+  }
+  </script>
 </body>
 </html>
