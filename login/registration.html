@@ -164,11 +164,24 @@
     const passwordInput = document.getElementById('password');
     const confirmPasswordInput = document.getElementById('confirmPassword');
     const passwordHint = document.querySelector('.password-hint');
+    const form = document.querySelector('form');
 
     function validatePassword() {
     const password = passwordInput.value;
     const confirmPassword = confirmPasswordInput.value;
-    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    
+    // Reset previous states
+    passwordInput.setCustomValidity('');
+    confirmPasswordInput.setCustomValidity('');
+    
+    // Check if password meets requirements
+    if (password && !pattern.test(password)) {
+        passwordInput.setCustomValidity("Password must be at least 8 characters long and include uppercase, lowercase, number & special character");
+        passwordHint.textContent = "Password must include uppercase, lowercase, number & special character";
+        passwordHint.style.color = '#ff4444';
+        return false;
+    }
     
     // Check if passwords match
     if (password !== confirmPassword && confirmPassword) {
@@ -176,47 +189,50 @@
         passwordHint.textContent = "Passwords don't match";
         passwordHint.style.color = '#ff4444';
         return false;
-    } else {
-        confirmPasswordInput.setCustomValidity('');
     }
     
-    // Check password strength
-    if (password) {
-        if (!pattern.test(password)) {
-            passwordHint.textContent = "Password must include uppercase, lowercase, number & special character";
-            passwordHint.style.color = '#ff4444';
-            return false;
-        } else {
-            passwordHint.textContent = "Password is strong!";
-            passwordHint.style.color = '#00C851';
-        }
+    // If all validations pass
+    if (password && pattern.test(password) && password === confirmPassword) {
+        passwordHint.textContent = "Password is strong!";
+        passwordHint.style.color = '#00C851';
+        return true;
     }
-    return true;
+    
+    return false;
 }
 
-// Add event listeners
-passwordInput.addEventListener('input', validatePassword);
-confirmPasswordInput.addEventListener('input', validatePassword);
+// Real-time validation
+[passwordInput, confirmPasswordInput].forEach(input => {
+    input.addEventListener('input', () => {
+        validatePassword();
+        // Force revalidation
+        input.reportValidity();
+    });
+});
 
-// Update form submission to validate
-document.querySelector('form').addEventListener('submit', function(e) {
+// Form submission
+form.addEventListener('submit', function(e) {
     if (!validatePassword()) {
         e.preventDefault();
+        // Show the first validation error that occurs
+        passwordInput.reportValidity();
+        confirmPasswordInput.reportValidity();
+        return false;
     }
+    
+    // If we get here, validation passed
+    return true;
 });
-  // Toggle password visibility
-  function togglePassword(fieldId) {
+
+// Toggle password visibility
+function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = field.nextElementSibling;
-    
-    // Toggle the input type
     const type = field.type === 'password' ? 'text' : 'password';
     field.type = type;
-    
-    // Toggle the eye icon
     icon.classList.toggle('fa-eye');
     icon.classList.toggle('fa-eye-slash');
-  }
-  </script>
+}
+</script>
 </body>
 </html>
