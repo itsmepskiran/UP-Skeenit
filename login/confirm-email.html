@@ -3,6 +3,9 @@
 <head>
     <title>Confirming Email - Skreenit</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type=""module">
+    import { supabase } from '../auth/assets/js/supabase-config.js';
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,7 +41,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const type = urlParams.get('type') || 'signup';
@@ -50,36 +53,24 @@
                 showError('Invalid confirmation link: Missing token');
                 return;
             }
-
-            // Call the confirm-email endpoint
-            axios.get(`/api/auth/confirm-email?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}&redirect_to=${encodeURIComponent(redirectTo)}`)
-                .then(response => {
-                    if (response.data.ok) {
-                        showSuccess('Email confirmed successfully! Redirecting to password setup...');
-                        // Redirect to update password page
-                        window.location.href = redirectTo;
-                    } else {
-                        showError(response.data.message || 'Failed to confirm email');
-                    }
-                })
-                .catch(error => {
-                    const errorMsg = error.response?.data?.detail || 
-                                  error.response?.data?.message || 
-                                  error.message || 
-                                  'Failed to confirm email';
-                    showError(errorMsg);
-                });
-
-            function showError(message) {
-                messageEl.className = 'message error';
-                messageEl.textContent = message;
-            }
-
-            function showSuccess(message) {
-                messageEl.className = 'message success';
-                messageEl.textContent = message;
-            }
-        });
+            try {
+                // Verify the email with Supabase
+                const response = await axios.get(`/api/auth/confirm-email?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}&redirect_to=${encodeURIComponent(redirectTo)}`);
+        
+            if (response.data.ok) {
+            showSuccess('Email confirmed successfully! Redirecting to password setup...');
+            // Redirect to update password page
+            window.location.href = redirectTo;
+        } else {
+            showError(response.data.message || 'Failed to confirm email');
+        }
+        } catch (error) {
+        const errorMsg = error.response?.data?.detail || 
+                       error.response?.data?.message || 
+                       error.message || 
+                       'Failed to confirm email';
+        showError(errorMsg);
+        }});
     </script>
 </body>
 </html>

@@ -8,8 +8,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit',   // IMPORTANT FIX
-    storageKey: 'skreenit-auth-token'
+    flowType: 'pkce',   // Better for email confirmation
+    storageKey: 'skreenit-auth-token',
+    debug: true         // Enable debug logs for auth
   },
   global: {
     headers: {

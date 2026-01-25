@@ -60,19 +60,22 @@ export async function handleRegistrationSubmit(event) {
       throw new Error('Company name is required for recruiters');
     }
 
+    // Get password from form
+    const password = fd.get('password');
+    
     // 1. Create Supabase Auth User
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      password: generateStrongPassword(),
+      password,
       options: {
         data: {
           full_name,
           role,
-          first_time_login: true,
-          password_updated: false,
+          first_time_login: false, // Set to false since they set their own password
+          password_updated: true,  // They've already set their password
           ...(role === 'recruiter' && company_name && { company_name })
         },
-        emailRedirectTo: `${window.location.origin}/update-password.html`
+        emailRedirectTo: `${window.location.origin}/dashboard.html`  // Redirect to dashboard after email confirmation
       }
     });
 
@@ -105,19 +108,20 @@ export async function handleRegistrationSubmit(event) {
       throw new Error(result?.error || 'Registration failed');
     }
 
-    // 3. Show success message
+    // 3. Show success message and redirect to email confirmation
     const formEl = document.querySelector('.auth-body');
     if (formEl) {
       formEl.innerHTML = `
         <div class="text-center py-8">
           <div class="text-green-500 text-5xl mb-4">✓</div>
           <h2 class="text-2xl font-bold mb-2">Registration Successful!</h2>
-          <p class="mb-6">You'll be redirected to login shortly...</p>
+          <p class="mb-4">Please check your email for a confirmation link.</p>
+          <p class="text-sm text-gray-600">You'll be redirected to the login page shortly...</p>
         </div>
       `;
 
       setTimeout(() => {
-        window.location.href = '/login.html';
+        window.location.href = 'https://login.skreenit.com/confirm-email.html';
       }, 3000);
     }
 
