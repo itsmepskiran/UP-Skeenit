@@ -2,10 +2,6 @@
 <html>
 <head>
     <title>Confirming Email - Skreenit</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script type=""module">
-    import { supabase } from '../auth/assets/js/supabase-config.js';
-    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,76 +35,67 @@
     <div id="message" class="message loading">
         Please wait while we confirm your email address...
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
+    <script type="module">
+        import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
+
+        const messageEl = document.getElementById('message');
+
+        const showError = (message) => {
+            messageEl.className = 'message error';
+            messageEl.textContent = message;
+            console.error('Error:', message);
+        };
+
+        const showSuccess = (message) => {
+            messageEl.className = 'message success';
+            messageEl.textContent = message;
+            console.log('Success:', message);
+        };
+
+        const redirectToLogin = () => {
+            window.location.href = 'https://login.skreenit.com/login.html?confirmed=true';
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const type = urlParams.get('type') || 'signup';
-            const messageEl = document.getElementById('message');
-            
-            // Helper functions
-            const showError = (message) => {
-                messageEl.className = 'message error';
-                messageEl.textContent = message;
-                console.error('Error:', message);
-            };
-            const showSuccess = (message) => {
-                messageEl.className = 'message success';
-                messageEl.textContent = message;
-                console.log('Success:', message);
-            };
+
+            const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+            const accessToken = hashParams.get('access_token');
+            const errorDesc = hashParams.get('error_description');
+
+            if (errorDesc) {
+                showError(decodeURIComponent(errorDesc));
+                return;
+            }
+
+            // If you are using Supabase's default confirmation link (ConfirmationURL),
+            // the user will land here with a session in the URL hash. In that case we can just redirect.
+            if (accessToken) {
+                showSuccess('Email confirmed successfully! Redirecting to login...');
+                setTimeout(redirectToLogin, 1200);
+                return;
+            }
+
+            // If you are using a custom email template link with token_hash, verify it here.
             if (!token) {
                 showError('Invalid confirmation link: Missing token');
                 return;
             }
+
             try {
-                console.log('Verifying token with Supabase...');
-                
-                // Verify the email with Supabase
-                const { data, error } = await supabase.auth.verifyOtp({
+                const { error } = await supabase.auth.verifyOtp({
                     token_hash: token,
                     type: type === 'recovery' ? 'recovery' : 'signup'
                 });
-                if (error) {
-                    console.error('Supabase verification error:', error);
-                    throw error;
-                }
-                console.log('Verification successful, data:', data);
-                
-                // Show success message
+                if (error) throw error;
+
                 showSuccess('Email confirmed successfully! Redirecting to login...');
-                
-                // Redirect after a short delay
-                setTimeout(() => {
-                    window.location.href = 'https://login.skreenit.com/login.html?confirmed=true';
-                }, 2000);
+                setTimeout(redirectToLogin, 1200);
             } catch (error) {
                 console.error('Confirmation error:', error);
-                const errorMessage = error.message || 'Failed to confirm email. Please try again.';
-                showError(errorMessage);
-                
-                // Optionally add a "Resend confirmation" button
-                const resendButton = document.createElement('button');
-                resendButton.textContent = 'Resend Confirmation Email';
-                resendButton.style.marginTop: '10px';
-                resendButton.onclick = async () => {
-                    try {
-                        const email = prompt('Please enter your email address:');
-                        if (email) {
-                            const { error } = await supabase.auth.resend({
-                                type: 'signup',
-                                email: email
-                            });
-                            if (error) throw error;
-                            alert('Confirmation email resent! Please check your inbox.');
-                        }
-                    } catch (err) {
-                        console.error('Error resending confirmation:', err);
-                        alert('Failed to resend confirmation. Please try again later.');
-                    }
-                };
-                messageEl.appendChild(document.createElement('br'));
-                messageEl.appendChild(resendButton);
+                showError(error?.message || 'Failed to confirm email. Please try again.');
             }
         });
     </script>

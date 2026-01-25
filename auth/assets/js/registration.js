@@ -1,5 +1,4 @@
-import { supabase } from './supabase-config.js';
-import { backendUrl, handleResponse } from './backend-client.js';
+import { backendPost, handleResponse } from './backend-client.js';
 
 // Helper: Generate a strong random password
 function generateStrongPassword() {
@@ -60,51 +59,23 @@ export async function handleRegistrationSubmit(event) {
       throw new Error('Company name is required for recruiters');
     }
 
-    // Get password from form
-    const password = fd.get('password');
-    
-    // 1. Create Supabase Auth User
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name,
-          role,
-          first_time_login: false, // Set to false since they set their own password
-          password_updated: true,  // They've already set their password
-          ...(role === 'recruiter' && company_name && { company_name })
-        },
-        emailRedirectTo: `${window.location.origin}/dashboard.html`  // Redirect to dashboard after email confirmation
-      }
-    });
+    const password = (fd.get('password') || '').trim();
 
-    if (authError) throw new Error(authError.message);
-    if (!authData.user) throw new Error('Failed to create user account');
-
-    // 2. Send additional user data to backend
+    // Send registration to backend (backend creates Supabase user + sends confirmation email)
     const formData = new FormData();
-    formData.append('user_id', authData.user.id);
     formData.append('full_name', full_name);
     formData.append('email', email);
+    formData.append('password', password);
     formData.append('mobile', mobile);
     formData.append('location', location);
     formData.append('role', role);
     if (company_name) formData.append('company_name', company_name);
     if (resume) formData.append('resume', resume);
 
-    const response = await fetch(`${backendUrl()}/register`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-      }
-    });
+    const response = await backendPost('/auth/register', formData);
 
     const result = await handleResponse(response);
     if (!result?.ok) {
-      // Clean up Supabase user if backend registration fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
       throw new Error(result?.error || 'Registration failed');
     }
 
@@ -121,7 +92,7 @@ export async function handleRegistrationSubmit(event) {
       `;
 
       setTimeout(() => {
-        window.location.href = 'https://login.skreenit.com/confirm-email.html';
+        window.location.href = 'https://login.skreenit.com/login.html';
       }, 3000);
     }
 

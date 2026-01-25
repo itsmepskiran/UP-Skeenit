@@ -17,20 +17,28 @@ class BackendClient {
     this.maxRetries = 3
   }
 
+  normalizeApiBaseUrl(url) {
+    if (!url) return url
+    let u = String(url).trim()
+    u = u.replace(/\/+$/, '')
+    if (/\/api\/v1$/.test(u)) return u
+    return `${u}/api/v1`
+  }
+
   getBackendUrls() {
     const host = window.location.hostname || ''
     const isLocal = host === 'localhost' || host === '127.0.0.1' || host === ''
     if (isLocal) {
-      return ['http://localhost:8000']
+      return [this.normalizeApiBaseUrl('http://localhost:8000')]
     }
     // Production primary URL is configurable via a global injected variable
     // e.g. set window.__SKREENIT_BACKEND_URL__ = 'https://api.example.com' in your HTML
     const configured = (typeof window !== 'undefined' && window.__SKREENIT_BACKEND_URL__) ? window.__SKREENIT_BACKEND_URL__ : null
-    if (configured) return [configured]
+    if (configured) return [this.normalizeApiBaseUrl(configured)]
     // Fallback production host — using the existing `auth.skreenit.com` subdomain for API
     // Note: ensure your hosting platform routes API requests to the backend on this domain.
     return [
-      'https://aiskreenit.onrender.com/api/v1',
+      this.normalizeApiBaseUrl('https://aiskreenit.onrender.com'),
     ]
   }
 
@@ -120,8 +128,13 @@ class BackendClient {
 
   async healthCheck() {
     try {
-      const response = await this.get('/health', { timeout: 5000 })
-      return response.ok
+      const baseUrl = this.getCurrentUrl()
+      const rootUrl = baseUrl.replace(/\/api\/v1\/?$/, '')
+      const response = await this.fetchWithTimeout(`${rootUrl}/health`, {
+        method: 'GET',
+        credentials: 'include',
+      }, 5000)
+      return response.ok === true
     } catch (error) {
       console.warn(`Health check failed for ${this.getCurrentUrl()}: ${error.message}`)
       return false

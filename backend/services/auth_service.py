@@ -57,8 +57,7 @@ class AuthService:
                 "email": email,
                 "password": password,
                 "options": {
-                    # Redirect directly to login.html after confirmation
-                    "email_redirect_to": f"{self.frontend_url}/login.html",
+                    "email_redirect_to": f"{self.frontend_url}/confirm-email.html",
                     "data": {
                         "full_name": full_name,
                         "mobile": mobile,
