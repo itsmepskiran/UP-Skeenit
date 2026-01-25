@@ -10,6 +10,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitButton = form.querySelector('button[type="submit"]');
   const buttonText = submitButton.querySelector('.button-text');
 
+  const withAuthHash = (targetUrl, session, user, role) => {
+    try {
+      const at = session?.access_token;
+      const rt = session?.refresh_token;
+      const uid = user?.id;
+      if (!at || !rt) return targetUrl;
+
+      const params = new URLSearchParams();
+      params.set('access_token', at);
+      params.set('refresh_token', rt);
+      if (uid) params.set('user_id', uid);
+      if (role) params.set('role', role);
+
+      return `${targetUrl}#${params.toString()}`;
+    } catch {
+      return targetUrl;
+    }
+  };
+
   /* -------------------------------------------------------
      ROLE SELECTION
   ------------------------------------------------------- */
@@ -128,13 +147,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (role === 'recruiter') {
-        window.location.href = firstLogin
-          ? 'https://recruiter.skreenit.com/recruiter-profile.html'
-          : 'https://dashboard.skreenit.com/recruiter-dashboard.html';
+        if (firstLogin) {
+          window.location.href = withAuthHash('https://recruiter.skreenit.com/recruiter-profile.html', session, user, role);
+        } else {
+          // Always go via dashboard root so it can bootstrap tokens + redirect by role
+          window.location.href = withAuthHash('https://dashboard.skreenit.com/', session, user, role);
+        }
       } else {
-        window.location.href = firstLogin
-          ? 'https://applicant.skreenit.com/detailed-application-form.html'
-          : 'https://dashboard.skreenit.com/candidate-dashboard.html';
+        if (firstLogin) {
+          window.location.href = withAuthHash('https://applicant.skreenit.com/detailed-application-form.html', session, user, role);
+        } else {
+          // Always go via dashboard root so it can bootstrap tokens + redirect by role
+          window.location.href = withAuthHash('https://dashboard.skreenit.com/', session, user, role);
+        }
       }
 
     } catch (err) {

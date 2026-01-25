@@ -45,6 +45,33 @@ async function persistSessionToLocalStorage() {
 export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard.html') {
   const role = localStorage.getItem('skreenit_role');
 
+  const withAuthHash = async (targetUrl) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: userData } = await supabase.auth.getUser();
+
+      const session = sessionData?.session;
+      const user = userData?.user;
+
+      const at = session?.access_token;
+      const rt = session?.refresh_token;
+      const uid = user?.id;
+      const r = user?.user_metadata?.role || localStorage.getItem('skreenit_role');
+
+      if (!at || !rt) return targetUrl;
+
+      const params = new URLSearchParams();
+      params.set('access_token', at);
+      params.set('refresh_token', rt);
+      if (uid) params.set('user_id', uid);
+      if (r) params.set('role', r);
+
+      return `${targetUrl}#${params.toString()}`;
+    } catch {
+      return targetUrl;
+    }
+  };
+
   try {
     const { data: { user } } = await supabase.auth.getUser();
     const isFirstTimeLogin = user?.user_metadata?.first_time_login === true;
@@ -52,31 +79,31 @@ export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.co
 
     if (role === 'recruiter') {
       if (!hasUpdatedPassword && isFirstTimeLogin) {
-        window.location.href = 'https://recruiter.skreenit.com/recruiter-profile.html';
+        window.location.href = await withAuthHash('https://recruiter.skreenit.com/recruiter-profile.html');
       } else {
-        window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
+        window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
       }
     }
 
     else if (role === 'candidate') {
       if (!hasUpdatedPassword && isFirstTimeLogin) {
-        window.location.href = 'https://applicant.skreenit.com/detailed-application-form.html';
+        window.location.href = await withAuthHash('https://applicant.skreenit.com/detailed-application-form.html');
       } else {
-        window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
+        window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
       }
     }
 
     else {
-      window.location.href = defaultUrl;
+      window.location.href = await withAuthHash(defaultUrl);
     }
 
   } catch (error) {
     console.error('Error checking first-time login:', error);
 
     if (role === 'recruiter') {
-      window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
+      window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
     } else {
-      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
+      window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
     }
   }
 }
