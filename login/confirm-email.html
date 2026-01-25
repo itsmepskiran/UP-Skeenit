@@ -39,38 +39,78 @@
     <div id="message" class="message loading">
         Please wait while we confirm your email address...
     </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const type = urlParams.get('type') || 'signup';
-            const redirectTo = 'https://login.skreenit.com/update-password.html';
-            
             const messageEl = document.getElementById('message');
             
+            // Helper functions
+            const showError = (message) => {
+                messageEl.className = 'message error';
+                messageEl.textContent = message;
+                console.error('Error:', message);
+            };
+            const showSuccess = (message) => {
+                messageEl.className = 'message success';
+                messageEl.textContent = message;
+                console.log('Success:', message);
+            };
             if (!token) {
                 showError('Invalid confirmation link: Missing token');
                 return;
             }
             try {
+                console.log('Verifying token with Supabase...');
+                
                 // Verify the email with Supabase
-                const response = await axios.get(`/api/auth/confirm-email?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}&redirect_to=${encodeURIComponent(redirectTo)}`);
-        
-            if (response.data.ok) {
-            showSuccess('Email confirmed successfully! Redirecting to password setup...');
-            // Redirect to update password page
-            window.location.href = redirectTo;
-        } else {
-            showError(response.data.message || 'Failed to confirm email');
-        }
-        } catch (error) {
-        const errorMsg = error.response?.data?.detail || 
-                       error.response?.data?.message || 
-                       error.message || 
-                       'Failed to confirm email';
-        showError(errorMsg);
-        }});
+                const { data, error } = await supabase.auth.verifyOtp({
+                    token_hash: token,
+                    type: type === 'recovery' ? 'recovery' : 'signup'
+                });
+                if (error) {
+                    console.error('Supabase verification error:', error);
+                    throw error;
+                }
+                console.log('Verification successful, data:', data);
+                
+                // Show success message
+                showSuccess('Email confirmed successfully! Redirecting to login...');
+                
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = 'https://login.skreenit.com/login.html?confirmed=true';
+                }, 2000);
+            } catch (error) {
+                console.error('Confirmation error:', error);
+                const errorMessage = error.message || 'Failed to confirm email. Please try again.';
+                showError(errorMessage);
+                
+                // Optionally add a "Resend confirmation" button
+                const resendButton = document.createElement('button');
+                resendButton.textContent = 'Resend Confirmation Email';
+                resendButton.style.marginTop: '10px';
+                resendButton.onclick = async () => {
+                    try {
+                        const email = prompt('Please enter your email address:');
+                        if (email) {
+                            const { error } = await supabase.auth.resend({
+                                type: 'signup',
+                                email: email
+                            });
+                            if (error) throw error;
+                            alert('Confirmation email resent! Please check your inbox.');
+                        }
+                    } catch (err) {
+                        console.error('Error resending confirmation:', err);
+                        alert('Failed to resend confirmation. Please try again later.');
+                    }
+                };
+                messageEl.appendChild(document.createElement('br'));
+                messageEl.appendChild(resendButton);
+            }
+        });
     </script>
 </body>
 </html>
