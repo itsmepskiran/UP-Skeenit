@@ -66,6 +66,7 @@ export async function handleRegistrationSubmit(event) {
     formData.append('mobile', mobile);
     formData.append('location', location);
     formData.append('role', role);
+    formData.append('email_redirect_to', 'https://login.skreenit.com/confirm-email.html');
     if (company_name) formData.append('company_name', company_name);
     if (resume) formData.append('resume', resume);
 

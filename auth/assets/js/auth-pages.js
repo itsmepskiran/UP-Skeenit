@@ -41,8 +41,9 @@ async function persistSessionToLocalStorage() {
 
 /* -------------------------------------------------------
    ROLE-BASED REDIRECT
+   Updated: Removed first-time login check as password and role are now set during registration
 ------------------------------------------------------- */
-export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard.html') {
+export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard') {
   const role = localStorage.getItem('skreenit_role');
 
   const withAuthHash = async (targetUrl) => {
@@ -73,38 +74,16 @@ export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.co
   };
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    const isFirstTimeLogin = user?.user_metadata?.first_time_login === true;
-    const hasUpdatedPassword = user?.user_metadata?.password_updated === true;
-
     if (role === 'recruiter') {
-      if (!hasUpdatedPassword && isFirstTimeLogin) {
-        window.location.href = await withAuthHash('https://recruiter.skreenit.com/recruiter-profile.html');
-      } else {
-        window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
-      }
-    }
-
-    else if (role === 'candidate') {
-      if (!hasUpdatedPassword && isFirstTimeLogin) {
-        window.location.href = await withAuthHash('https://applicant.skreenit.com/detailed-application-form.html');
-      } else {
-        window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
-      }
-    }
-
-    else {
+      window.location.href = await withAuthHash('https://recruiter.skreenit.com/dashboard');
+    } else if (role === 'candidate') {
+      window.location.href = await withAuthHash('https://applicant.skreenit.com/dashboard');
+    } else {
       window.location.href = await withAuthHash(defaultUrl);
     }
-
   } catch (error) {
-    console.error('Error checking first-time login:', error);
-
-    if (role === 'recruiter') {
-      window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
-    } else {
-      window.location.href = await withAuthHash('https://dashboard.skreenit.com/');
-    }
+    console.error('Error during role-based redirect:', error);
+    window.location.href = await withAuthHash(defaultUrl);
   }
 }
 
