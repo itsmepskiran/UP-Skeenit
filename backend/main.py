@@ -90,6 +90,7 @@ else:
         "https://dashboard.skreenit.com",
         "https://app.skreenit.com",
         "https://hrms.skreenit.com",
+        "https://aiskreenit.onrender.com",
 
         # Dev subdomains
         "http://auth.localhost:3000",
@@ -112,7 +113,7 @@ def validate_origins(origins_list):
             continue
 
         if os.getenv("NODE_ENV") == "production":
-            allowed_domains = [".skreenit.com"]
+            allowed_domains = [".skreenit.com", "aiskreenit.onrender.com"]
             if not any(domain in origin for domain in allowed_domains):
                 print(f"Warning: Production origin not allowed: {origin}")
                 continue
@@ -125,13 +126,15 @@ def validate_origins(origins_list):
 origins = validate_origins(origins)
 
 if not origins:
-    origins = ["http://localhost:3000"]
-    print("Warning: No valid origins configured. Using localhost fallback.")
+    origins = ["http://localhost:3000", "*"]
+    print("Warning: No valid origins configured. Using localhost and wildcard fallback.")
 
 # Register CORS middleware first (must be before other middleware)
+# In non-production, allow wildcard to avoid CORS issues during development
+allow_origins_list = origins if os.getenv("ENVIRONMENT") == "production" else ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=allow_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=[
