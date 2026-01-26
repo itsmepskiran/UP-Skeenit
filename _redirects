@@ -1,16 +1,16 @@
 # Main site
-/*    /index.html         200    # for https://www.skreenit.com/*
-/*    /index.html         200    # for https://skreenit.com/*
+/*    /index.html         200
+/*    /index.html         200
 
 #Subdomain sites
-/*    /auth/:splat        200    # for auth.skreenit.com
-/*    /login/:splat       200    # for login.skreenit.com
-/*    /recruiter/:splat   200    # for recruiter.skreenit.com
-/*    /dashboard/:splat   200    # for dashboard.skreenit.com
-/*    /applicant/:splat   200    # for applicant.skreenit.com
-/*    /hrms/:splat        200    # for hrms.skreenit.com
-/*    /support/:splat     200    # for support.skreenit.com
-/*    /legal/:splat       200    # for legal.skreenit.com
-/*    /backend/:splat     200    # for backend.skreenit.com
-/*    /app/:splat         200    # for app.skreenit.com
-/*    /in/:splat          200    # for in.skreenit.com
+/*    /auth/:splat        200
+/*    /login/:splat       200
+/*    /recruiter/:splat   200
+/*    /dashboard/:splat   200
+/*    /applicant/:splat   200
+/*    /hrms/:splat        200
+/*    /support/:splat     200
+/*    /legal/:splat       200
+/*    /backend/:splat     200
+/*    /app/:splat         200
+/*    /in/:splat          200
