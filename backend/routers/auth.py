@@ -18,13 +18,15 @@ def get_auth_service() -> AuthService:
     return _auth_service
 
 @router.post("/login")
-async def login(request: Request):
-    user = getattr(request.state, "user", None)
-    if not user: raise HTTPException(status_code=401, detail="Invalid or missing token")
-    
-    email = user.get("email")
-    # In a real app, you might fetch more details from your DB here
-    return {"ok": True, "data": {"email": email, "user": user}}
+async def login(request: Request, form_data: LoginRequest):
+    service = get_auth_service()
+    try:
+        result = service.login(form_data.email, form_data.password)
+        logger.info("User logged in successfully", extra={"request_id": getattr(request.state, "request_id", None)})
+        return {"ok": True, "data": result}
+    except Exception as e:
+        logger.error(f"Login failed: {str(e)}")
+        raise HTTPException(status_code=401, detail=str(e))
 
 @router.post("/register")
 async def register(
