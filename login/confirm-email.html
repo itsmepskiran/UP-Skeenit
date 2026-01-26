@@ -53,7 +53,7 @@
         };
 
         const redirectToLogin = () => {
-            window.location.href = 'https://login.skreenit.com/login.html?confirmed=true';
+            window.location.href = 'https://login.skreenit.com/login?confirmed=true';
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -81,15 +81,21 @@
                     if (error) throw error;
 
                     showSuccess('Email confirmed successfully! Redirecting to login...');
-                    setTimeout(redirectToLogin, 1200);
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const role = user?.user_metadata?.role || 'candidate';
+            
+                    if (role === 'recruiter') {
+                        window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard';
+                    } else {
+                        window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard';
+                    }
                     return;
-                } catch (e) {
-                    console.error('Session set error:', e);
+                } catch (err) {
+                    console.error('Session set error:', err);
                     showError('Failed to complete email confirmation. Please try logging in.');
                     return;
                 }
             }
-
             // Legacy/custom token_hash flow
             if (!token) {
                 showError('Invalid confirmation link: Missing token');

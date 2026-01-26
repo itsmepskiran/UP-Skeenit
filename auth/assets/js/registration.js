@@ -90,7 +90,7 @@ export async function handleRegistrationSubmit(event) {
       `;
 
       setTimeout(() => {
-        window.location.href = 'https://login.skreenit.com/login.html';
+        window.location.href = 'https://login.skreenit.com/login?registered=true';
       }, 3000);
     }
 

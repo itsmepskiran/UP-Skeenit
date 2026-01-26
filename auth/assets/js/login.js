@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formError.style.display = 'none';
     formError.textContent = '';
-
+    
     if (!roleInput.value) {
       return showError('Please select your role');
     }
@@ -69,12 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const formData = new FormData(form);
-      const role = formData.get('role');
+      const roleInput = formData.get('role');
       const email = formData.get('email');
       const password = formData.get('password');
       const companyId = formData.get('company_id');
 
-      if (role === 'recruiter' && !companyId) {
+      if (roleInput === 'recruiter' && !companyId) {
         throw new Error('Company ID is required for recruiter login');
       }
 
@@ -109,22 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       /* -------------------------------------------------------
-         COMPANY ID VALIDATION (RECRUITER)
-      ------------------------------------------------------- */
-      if (role === 'recruiter') {
-        const userCompanyId = metadata.company_id;
-        if (!userCompanyId) {
-          await supabase.auth.signOut();
-          throw new Error('Your account is missing a Company ID. Contact support.');
-        }
-
-        if (companyId.toLowerCase() !== userCompanyId.toLowerCase()) {
-          await supabase.auth.signOut();
-          throw new Error('Invalid Company ID');
-        }
-      }
-
-      /* -------------------------------------------------------
          STORE SESSION TOKENS FOR BACKEND
       ------------------------------------------------------- */
       const session = data.session;
@@ -138,33 +122,17 @@ document.addEventListener('DOMContentLoaded', () => {
       /* -------------------------------------------------------
          FIRST-TIME LOGIN LOGIC
       ------------------------------------------------------- */
-      const firstLogin = metadata.first_time_login === true;
-      const passwordUpdated = metadata.password_updated === true;
-
-      if (!passwordUpdated) {
-        window.location.href = 'https://login.skreenit.com/update-password.html';
-        return;
-      }
-
-      if (role === 'recruiter') {
-        if (firstLogin) {
-          window.location.href = withAuthHash('https://recruiter.skreenit.com/recruiter-profile.html', session, user, role);
+      const role = data.user.user_metadata?.role || 'candidate';
+        if (role === 'recruiter') {
+            window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard';
         } else {
-          // Always go via dashboard root so it can bootstrap tokens + redirect by role
-          window.location.href = withAuthHash('https://dashboard.skreenit.com/', session, user, role);
+            window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard';
         }
-      } else {
-        if (firstLogin) {
-          window.location.href = withAuthHash('https://applicant.skreenit.com/detailed-application-form.html', session, user, role);
-        } else {
-          // Always go via dashboard root so it can bootstrap tokens + redirect by role
-          window.location.href = withAuthHash('https://dashboard.skreenit.com/', session, user, role);
-        }
-      }
-
-    } catch (err) {
-      showError(err.message || 'Login failed');
-    } finally {
+    } catch (error) {
+        console.error('Login error:', error);
+        showError(error.message || 'Login failed. Please try again.');
+    }
+    finally {
       submitButton.disabled = false;
       buttonText.textContent = 'Sign In';
     }
