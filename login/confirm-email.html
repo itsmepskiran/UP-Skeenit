@@ -63,6 +63,7 @@
 
             const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
             const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
             const errorDesc = hashParams.get('error_description');
 
             if (errorDesc) {
@@ -70,15 +71,26 @@
                 return;
             }
 
-            // If you are using Supabase's default confirmation link (ConfirmationURL),
-            // the user will land here with a session in the URL hash. In that case we can just redirect.
-            if (accessToken) {
-                showSuccess('Email confirmed successfully! Redirecting to login...');
-                setTimeout(redirectToLogin, 1200);
-                return;
+            // Supabase PKCE flow: session tokens are in the hash; set session and redirect
+            if (accessToken && refreshToken) {
+                try {
+                    const { error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+                    if (error) throw error;
+
+                    showSuccess('Email confirmed successfully! Redirecting to login...');
+                    setTimeout(redirectToLogin, 1200);
+                    return;
+                } catch (e) {
+                    console.error('Session set error:', e);
+                    showError('Failed to complete email confirmation. Please try logging in.');
+                    return;
+                }
             }
 
-            // If you are using a custom email template link with token_hash, verify it here.
+            // Legacy/custom token_hash flow
             if (!token) {
                 showError('Invalid confirmation link: Missing token');
                 return;

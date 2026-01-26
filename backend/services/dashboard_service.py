@@ -38,11 +38,14 @@ class DashboardService:
             if role == "candidate":
                 return self._get_candidate_summary(user_id)
 
-            raise RuntimeError("Unknown user role")
+            # Fallback for unknown/missing role
+            logger.warning("Unknown user role, returning empty summary", extra={"user_id": user_id})
+            return {"role": None, "jobs": [], "applications": []}
 
         except Exception as e:
             logger.error(f"Dashboard summary failed: {str(e)}", extra={"user_id": user_id})
-            raise RuntimeError("Failed to fetch dashboard summary")
+            # Return empty summary instead of raising to avoid frontend crash
+            return {"role": None, "jobs": [], "applications": []}
 
     # ---------------------------------------------------------
     # PRIVATE HELPERS — USER ROLE
@@ -51,19 +54,25 @@ class DashboardService:
         """
         Fetch role from Supabase Auth metadata.
         """
-        auth_user = self.supabase.auth.admin.get_user_by_id(user_id)
-        user_obj = getattr(auth_user, "user", None)
+        try:
+            auth_user = self.supabase.auth.admin.get_user_by_id(user_id)
+            user_obj = getattr(auth_user, "user", None)
 
-        if not user_obj:
-            raise RuntimeError("User not found")
+            if not user_obj:
+                logger.warning("User not found in auth, defaulting to candidate", extra={"user_id": user_id})
+                return "candidate"
 
-        metadata = user_obj.user_metadata or {}
-        role = metadata.get("role")
+            metadata = user_obj.user_metadata or {}
+            role = metadata.get("role")
 
-        if not role:
-            raise RuntimeError("User role missing")
+            if not role:
+                logger.warning("User role missing in metadata, defaulting to candidate", extra={"user_id": user_id})
+                return "candidate"
 
-        return role
+            return role
+        except Exception as e:
+            logger.error(f"Failed to fetch user role, defaulting to candidate: {str(e)}", extra={"user_id": user_id})
+            return "candidate"
 
     # ---------------------------------------------------------
     # PRIVATE HELPERS — RECRUITER SUMMARY
@@ -90,7 +99,8 @@ class DashboardService:
 
         except Exception as e:
             logger.error(f"Recruiter dashboard failed: {str(e)}", extra={"user_id": user_id})
-            raise
+            # Return empty instead of raising
+            return {"role": "recruiter", "jobs": [], "applications": []}
 
     def _fetch_recruiter_jobs(self, user_id: str) -> List[Dict[str, Any]]:
         res = (
@@ -145,7 +155,8 @@ class DashboardService:
 
         except Exception as e:
             logger.error(f"Candidate dashboard failed: {str(e)}", extra={"user_id": user_id})
-            raise
+            # Return empty instead of raising
+            return {"role": "candidate", "jobs": [], "applications": []}
 
     def _fetch_candidate_applications(self, user_id: str) -> List[Dict[str, Any]]:
         res = (

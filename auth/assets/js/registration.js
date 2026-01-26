@@ -55,9 +55,6 @@ export async function handleRegistrationSubmit(event) {
     if (mobile.length < 7) {
       throw new Error('Please enter a valid mobile number');
     }
-    if (role === 'recruiter' && !company_name) {
-      throw new Error('Company name is required for recruiters');
-    }
 
     const password = (fd.get('password') || '').trim();
 
