@@ -213,6 +213,15 @@ async def health_check():
         "environment": os.getenv("ENVIRONMENT", "development")
     }
 
+# Debug endpoint: list current CORS origins (remove in production if desired)
+@api_router.get("/debug/cors-origins")
+async def debug_cors_origins():
+    return {
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "allowed_origins": origins,
+        "allow_origins_list": allow_origins_list
+    }
+
 # Compatibility mounts: expose single-prefixed endpoints as well
 api_router.include_router(applicant.router, tags=["Applicant"])
 api_router.include_router(recruiter.router, tags=["Recruiter"])
