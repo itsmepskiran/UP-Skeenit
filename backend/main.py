@@ -53,7 +53,8 @@ logger.info("Startup env", extra={
 # Health Check
 # ---------------------------------------------------------
 @app.get("/health")
-async def health_check():
+async def health_check_root():
+    """Root health endpoint for load balancers and monitoring."""
     return {
         "status": "healthy",
         "version": "1.0.0",
@@ -199,6 +200,15 @@ api_router.include_router(video.router, prefix="/video", tags=["Video"])
 
 # Frontend compatibility endpoints (keep frontend unchanged)
 api_router.include_router(frontend_compat.router)
+
+# Health check under versioned API
+@api_router.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "environment": os.getenv("ENVIRONMENT", "development")
+    }
 
 # Compatibility mounts: expose single-prefixed endpoints as well
 api_router.include_router(applicant.router, tags=["Applicant"])
