@@ -8,6 +8,7 @@ from utils_others.logger import logger
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import auth, applicant, recruiter, dashboard, analytics, notification, video
+from routers import frontend_compat
 
 from middleware.security_headers import SecurityHeadersMiddleware
 from middleware.rate_limit import RateLimitMiddleware
@@ -195,5 +196,15 @@ api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboar
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(notification.router, prefix="/notification", tags=["Notification"])
 api_router.include_router(video.router, prefix="/video", tags=["Video"])
+
+# Frontend compatibility endpoints (keep frontend unchanged)
+api_router.include_router(frontend_compat.router)
+
+# Compatibility mounts: expose single-prefixed endpoints as well
+api_router.include_router(applicant.router, tags=["Applicant"])
+api_router.include_router(recruiter.router, tags=["Recruiter"])
+api_router.include_router(dashboard.router, tags=["Dashboard"])
+api_router.include_router(analytics.router, tags=["Analytics"])
+api_router.include_router(video.router, tags=["Video"])
 
 app.include_router(api_router)

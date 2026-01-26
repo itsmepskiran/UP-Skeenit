@@ -18,6 +18,17 @@ async def upload_video(request: Request, file: UploadFile = File(...)):
 
 
 # ---------------------------------------------------------
+# UPLOAD GENERAL VIDEO (Candidate) — frontend expects /video/general
+# ---------------------------------------------------------
+@router.post("/general")
+async def upload_general_video(request: Request, video: UploadFile = File(...)):
+    ensure_permission(request, "video:upload")
+    content = await video.read()
+    url = svc.upload_video_to_storage(content, video.filename, request.state.user["id"])
+    return {"video_url": url}
+
+
+# ---------------------------------------------------------
 # SAVE VIDEO RESPONSE
 # ---------------------------------------------------------
 @router.post("/response")

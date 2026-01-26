@@ -10,7 +10,9 @@ ROLES = {
             "jobs:delete",
             "jobs:view",
             "applications:view",
+            "applications:update",
             "analytics:view",
+            "dashboard:view",
             "users:manage",
         ],
     },
@@ -23,6 +25,8 @@ ROLES = {
             "jobs:delete",
             "jobs:view",
             "applications:view",
+            "applications:update",
+            "dashboard:view",
         ],
     },
 
@@ -33,6 +37,7 @@ ROLES = {
             "applications:view",
             "profile:update",
             "video:upload",
+            "dashboard:view",
         ],
     },
 }
