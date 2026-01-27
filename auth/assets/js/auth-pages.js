@@ -2,6 +2,7 @@
 
 import { supabase } from './supabase-config.js';
 import { backendUrl, handleResponse } from './backend-client.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from './email.js';
 
 /* -------------------------------------------------------
    AUTH STATE LISTENER
@@ -107,9 +108,9 @@ export async function handleLoginSubmit(event) {
     const email = (fd.get('email') || '').trim();
     const password = (fd.get('password') || '').trim();
 
-    if (!email || !password) throw new Error('Email and password are required.');
+    if (!email || !password) throw new Error('Email and password are required');
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message);
 
     await persistSessionToLocalStorage();

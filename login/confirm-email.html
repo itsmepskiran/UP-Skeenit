@@ -32,24 +32,24 @@
 </head>
 <body>
     <h1>Confirming Your Email</h1>
+
     <div id="message" class="message loading">
         Please wait while we confirm your email address...
     </div>
+
     <script type="module">
         import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
 
         const messageEl = document.getElementById('message');
 
-        const showError = (message) => {
+        const showError = (msg) => {
             messageEl.className = 'message error';
-            messageEl.textContent = message;
-            console.error('Error:', message);
+            messageEl.textContent = msg;
         };
 
-        const showSuccess = (message) => {
+        const showSuccess = (msg) => {
             messageEl.className = 'message success';
-            messageEl.textContent = message;
-            console.log('Success:', message);
+            messageEl.textContent = msg;
         };
 
         const redirectToLogin = () => {
@@ -57,46 +57,10 @@
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-            const type = urlParams.get('type') || 'signup';
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            const type = params.get('type') || 'signup';
 
-            const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
-            const accessToken = hashParams.get('access_token');
-            const refreshToken = hashParams.get('refresh_token');
-            const errorDesc = hashParams.get('error_description');
-
-            if (errorDesc) {
-                showError(decodeURIComponent(errorDesc));
-                return;
-            }
-
-            // Supabase PKCE flow: session tokens are in the hash; set session and redirect
-            if (accessToken && refreshToken) {
-                try {
-                    const { error } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: refreshToken
-                    });
-                    if (error) throw error;
-
-                    showSuccess('Email confirmed successfully! Redirecting to login...');
-                    const { data: { user } } = await supabase.auth.getUser();
-                    const role = user?.user_metadata?.role || 'candidate';
-            
-                    if (role === 'recruiter') {
-                        window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard';
-                    } else {
-                        window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard';
-                    }
-                    return;
-                } catch (err) {
-                    console.error('Session set error:', err);
-                    showError('Failed to complete email confirmation. Please try logging in.');
-                    return;
-                }
-            }
-            // Legacy/custom token_hash flow
             if (!token) {
                 showError('Invalid confirmation link: Missing token');
                 return;
@@ -107,13 +71,15 @@
                     token_hash: token,
                     type: type === 'recovery' ? 'recovery' : 'signup'
                 });
+
                 if (error) throw error;
 
                 showSuccess('Email confirmed successfully! Redirecting to login...');
-                setTimeout(redirectToLogin, 1200);
-            } catch (error) {
-                console.error('Confirmation error:', error);
-                showError(error?.message || 'Failed to confirm email. Please try again.');
+                setTimeout(redirectToLogin, 1500);
+
+            } catch (err) {
+                console.error('Confirmation error:', err);
+                showError(err.message || 'Failed to confirm email. Please try again.');
             }
         });
     </script>

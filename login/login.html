@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skreenit - Login</title>
 
-  <!-- Branding -->
   <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
@@ -19,13 +18,11 @@
       display: none;
     }
     .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-    .btn-loading { opacity:0.7; cursor:not-allowed; }
   </style>
 </head>
 
 <body>
 
-<!-- Floating UI -->
 <div class="floating-elements">
   <div class="floating-circle"></div>
   <div class="floating-circle"></div>
@@ -61,12 +58,6 @@
         <input type="password" name="password" placeholder="Enter your password" required />
       </div>
 
-      <div class="form-footer" style="margin: 15px 0; text-align: center; font-size: 13px; color: #666;">
-        By signing in, you agree to our
-        <a href="legal/terms-conditions.html" target="_blank">Terms & Conditions</a> and
-        <a href="legal/privacy-policy.html" target="_blank">Privacy Policy</a>
-      </div>
-
       <button type="submit" class="btn btn-primary btn-large" style="width:100%;">
         <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
         <span class="btn-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Signing in...</span>
@@ -81,26 +72,67 @@
   </div>
 </div>
 
-<!-- Load Supabase + Shared Config -->
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="module" src="https://auth.skreenit.com/assets/js/supabase-config.js"></script>
 
-<!-- Load Shared Auth Logic -->
+<!-- Embedded Login Logic -->
 <script type="module">
-  import { handleLoginSubmit } from "https://auth.skreenit.com/assets/js/auth-pages.js?v=20260125";
+  import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
 
   const form = document.getElementById("loginForm");
   const errorBox = document.getElementById("errorBox");
 
-  // Override notify() for this page
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.style.display = "block";
   }
 
-  // Attach handler
   form.addEventListener("submit", async (e) => {
+    e.preventDefault();
     errorBox.style.display = "none";
-    await handleLoginSubmit(e);
+
+    const submitBtn = form.querySelector("button");
+    const btnText = submitBtn.querySelector(".btn-text");
+    const btnLoader = submitBtn.querySelector(".btn-loader");
+
+    btnText.style.display = "none";
+    btnLoader.style.display = "inline-block";
+    submitBtn.disabled = true;
+
+    try {
+      const fd = new FormData(form);
+      const email = fd.get("email").trim();
+      const password = fd.get("password").trim();
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      const user = data.user;
+      const role = user?.user_metadata?.role;
+
+      if (!role) {
+        throw new Error("Your account does not have a role assigned.");
+      }
+
+      if (role === "recruiter") {
+        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard";
+      } else {
+        window.location.href = "https://dashboard.skreenit.com/candidate-dashboard";
+      }
+
+    } catch (err) {
+      console.error("Login error:", err);
+      showError(err.message || "Login failed. Please try again.");
+    } finally {
+      btnText.style.display = "inline-block";
+      btnLoader.style.display = "none";
+      submitBtn.disabled = false;
+    }
   });
 </script>
 

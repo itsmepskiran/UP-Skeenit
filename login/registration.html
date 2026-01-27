@@ -46,6 +46,7 @@
 
     <div class="auth-body">
       <div id="formError" class="error-message"></div>
+
       <form id="registrationForm">
         <div class="form-group">
           <label>Register as*</label>
@@ -84,7 +85,6 @@
             <div style="position: relative;">
               <input type="password" id="password" name="password" placeholder="Create password"
               minlength="8" required />
-
               <i class="fas fa-eye" style="position: absolute; right: 10px; top: 10px; cursor: pointer;"
                  onclick="togglePassword('password')"></i>
             </div>
@@ -118,79 +118,98 @@
           Already have an account? <a href="login.html">Sign in</a>
         </div>
       </form>
-      </div>
+    </div>
   </div>
 
-  <!-- Supabase -->
-  <script type="module" src="https://auth.skreenit.com/assets/js/supabase-config.js?v=20260125"></script>
-  <!-- Attach registration handler -->
+  <!-- Shared utilities -->
+  <script type="module" src="https://auth.skreenit.com/assets/js/backend-client.js"></script>
+  <script type="module" src="https://auth.skreenit.com/assets/js/supabase-config.js"></script>
+
+  <!-- Embedded Registration Logic -->
   <script type="module">
-  import { handleRegistrationSubmit } from "https://auth.skreenit.com/assets/js/registration.js?v=20260125";
+    import { backendPost, handleResponse } from "https://auth.skreenit.com/assets/js/backend-client.js";
 
-  const form = document.getElementById("registrationForm");
-  const errorDiv = document.getElementById("formError");
-  const passwordInput = document.getElementById('password');
-  const confirmPasswordInput = document.getElementById('confirmPassword');
-  const passwordHint = document.querySelector('.password-hint');
+    function notify(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
 
-  function validatePassword() {
-    const password = passwordInput.value;
-    const confirmPassword = confirmPasswordInput.value;
+    async function handleRegistrationSubmit(event) {
+      event.preventDefault();
 
-    passwordInput.setCustomValidity('');
-    confirmPasswordInput.setCustomValidity('');
+      const form = event.target;
+      const fd = new FormData(form);
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn?.textContent || 'Register';
 
-    const hasLower = /[a-z]/.test(password);
-    const hasUpper = /[A-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasSpecial = /[@$!%*?&]/.test(password);
-    const isValid = password.length >= 8 && hasLower && hasUpper && hasNumber && hasSpecial;
+      try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
 
-    if (password) {
-      if (isValid) {
-        passwordHint.textContent = "Password is strong!";
-        passwordHint.style.color = "#10b981";
-      } else {
-        passwordHint.textContent = "Password must include uppercase, lowercase, number & special character";
-        passwordHint.style.color = "#ef4444";
-        return false;
+        const full_name = fd.get('full_name').trim();
+        const email = fd.get('email').trim().toLowerCase();
+        const mobile = fd.get('mobile').trim();
+        const location = fd.get('location').trim();
+        const role = fd.get('role').trim();
+        const company_name = fd.get('company_name')?.trim();
+        const resume = fd.get('resume');
+        const password = fd.get('password').trim();
+
+        if (!role || !['candidate', 'recruiter'].includes(role)) {
+          throw new Error('Please select a valid role');
+        }
+        if (!full_name || !email || !mobile || !location) {
+          throw new Error('Please fill in all required fields');
+        }
+        if (mobile.length < 7) {
+          throw new Error('Please enter a valid mobile number');
+        }
+
+        const formData = new FormData();
+        formData.append('full_name', full_name);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('mobile', mobile);
+        formData.append('location', location);
+        formData.append('role', role);
+        formData.append('email_redirect_to', 'https://login.skreenit.com/confirm-email');
+        if (company_name) formData.append('company_name', company_name);
+        if (resume) formData.append('resume', resume);
+
+        const response = await backendPost('/auth/register', formData);
+        const result = await handleResponse(response);
+
+        if (!result?.ok) {
+          throw new Error(result?.error || 'Registration failed');
+        }
+
+        document.querySelector('.auth-body').innerHTML = `
+          <div class="text-center py-8">
+            <div class="text-green-500 text-5xl mb-4">✓</div>
+            <h2 class="text-2xl font-bold mb-2">Registration Successful!</h2>
+            <p class="mb-4">Please check your email for a confirmation link.</p>
+            <p class="text-sm text-gray-600">You'll be redirected to the login page shortly...</p>
+          </div>
+        `;
+
+        setTimeout(() => {
+          window.location.href = 'https://login.skreenit.com/login?registered=true';
+        }, 3000);
+
+      } catch (err) {
+        notify(err.message || 'Registration failed. Please try again.', 'error');
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
       }
     }
 
-    if (password !== confirmPassword && confirmPassword) {
-      confirmPasswordInput.setCustomValidity("Passwords don't match");
-      passwordHint.textContent = "Passwords don't match";
-      passwordHint.style.color = "#ef4444";
-      return false;
-    }
+    const form = document.getElementById("registrationForm");
+    form.addEventListener("submit", handleRegistrationSubmit);
+  </script>
 
-    return isValid;
-  }
-
-  passwordInput.addEventListener('input', validatePassword);
-  confirmPasswordInput.addEventListener('input', validatePassword);
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    errorDiv.style.display = "none";
-
-    if (!validatePassword()) {
-      errorDiv.textContent = "Please fix the password requirements.";
-      errorDiv.style.display = "block";
-      return;
-    }
-
-    try {
-      const success = await handleRegistrationSubmit(e);
-      if (success) {
-        window.location.href = '/confirm-email.html';
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-      errorDiv.textContent = error.message || 'Registration failed. Please try again.';
-      errorDiv.style.display = 'block';
-    }
-  });
-</script>
 </body>
 </html>

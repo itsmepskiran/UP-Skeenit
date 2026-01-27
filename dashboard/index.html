@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Skreenit – Redirecting…</title>
-
+  <title>Skreenit – Redirecting...</title>
   <meta name="description" content="Redirecting you to your Skreenit dashboard based on your role." />
 
   <!-- Favicons -->
@@ -15,100 +14,81 @@
   <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
   <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
 
-  <!-- Global Design System -->
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-
-  <!-- Dashboard Styles -->
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
-
   <style>
-    .redirect-box {
-      max-width: 720px;
-      margin: 6rem auto;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+    body {
+      margin: 0;
+      font-family: Inter, sans-serif;
+      background: #f9fafb;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #333;
+    }
+    .container {
       text-align: center;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #ddd;
+      border-top-color: #0066ff;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .logo {
+      height: 40px;
+      margin-bottom: 16px;
+    }
+    .text {
+      font-size: 16px;
+      font-weight: 500;
     }
   </style>
 </head>
 
 <body>
-
-  <div class="redirect-box" role="alert" aria-live="polite">
-    <h2>Redirecting to your dashboard…</h2>
-    <p>If you are not redirected automatically:</p>
-    <p>
-      <a href="candidate-dashboard.html">Candidate Dashboard</a> |
-      <a href="recruiter-dashboard.html">Recruiter Dashboard</a> |
-      <a href="https://login.skreenit.com/login.html">Login</a>
-    </p>
+  <div class="container">
+    <img src="https://auth.skreenit.com/assets/images/logo.png" class="logo" alt="Skreenit" />
+    <div class="spinner"></div>
+    <div class="text">Redirecting to your dashboard...</div>
   </div>
 
-  <!-- TOKEN BOOTSTRAP -->
-  <script>
-    (function () {
-      try {
-        const hash = window.location.hash ? window.location.hash.substring(1) : '';
-        if (!hash) return;
-
-        const params = new URLSearchParams(hash);
-        const at = params.get('access_token');
-        const rt = params.get('refresh_token');
-        const uid = params.get('user_id');
-        const role = params.get('role');
-
-        if (at) localStorage.setItem('skreenit_token', at);
-        if (rt) localStorage.setItem('skreenit_refresh_token', rt);
-        if (uid) localStorage.setItem('skreenit_user_id', uid);
-        if (role) localStorage.setItem('skreenit_role', role);
-
-        history.replaceState(null, document.title, window.location.pathname + window.location.search);
-      } catch {}
-    })();
-  </script>
-
-  <!-- ROLE REDIRECT LOGIC -->
   <script type="module">
-    import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
+    import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
 
-    (async () => {
-      try {
-        // Restore session if tokens exist
-        try {
-          const at = localStorage.getItem('skreenit_token');
-          const rt = localStorage.getItem('skreenit_refresh_token');
-          if (at && rt) {
-            await supabase.auth.setSession({ access_token: at, refresh_token: rt });
-          }
-        } catch {}
+    async function init() {
+      // 1. Check Supabase session
+      const { data, error } = await supabase.auth.getUser();
 
-        const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user) {
+        window.location.href = "https://login.skreenit.com/login.html";
+        return;
+      }
 
-        if (!error && data?.user) {
-          const role = data.user.user_metadata?.role || localStorage.getItem('skreenit_role');
+      const user = data.user;
+      const role = user.user_metadata?.role;
 
-          if (role === 'candidate') {
-            window.location.href = 'candidate-dashboard.html';
-            return;
-          }
+      // 2. Redirect based on role
+      if (role === "candidate") {
+        window.location.href = "/candidate-dashboard.html";
+        return;
+      }
 
-          if (role === 'recruiter') {
-            window.location.href = 'recruiter-dashboard.html';
-            return;
-          }
-        }
-      } catch {}
+      if (role === "recruiter") {
+        window.location.href = "/recruiter-dashboard.html";
+        return;
+      }
 
-      // Fallback
-      const roleLS = localStorage.getItem('skreenit_role');
+      // 3. Unknown role → send to login
+      window.location.href = "https://login.skreenit.com/login.html";
+    }
 
-      if (roleLS === 'candidate') window.location.href = 'candidate-dashboard.html';
-      else if (roleLS === 'recruiter') window.location.href = 'recruiter-dashboard.html';
-      else window.location.href = 'https://login.skreenit.com/login.html';
-    })();
+    init();
   </script>
-
 </body>
 </html>

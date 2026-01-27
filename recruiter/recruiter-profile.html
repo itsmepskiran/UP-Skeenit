@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skreenit - Recruiter Profile</title>
+
   <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
@@ -11,6 +12,7 @@
   <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
   <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+
   <style>
     .page { max-width: 900px; margin: 3rem auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.1); }
     .page-header { padding: 1.25rem 1.75rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.75rem; }
@@ -20,6 +22,7 @@
     @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
+
 <body>
   <a href="https://skreenit.com" style="position:fixed;left:16px;top:16px;z-index:10;display:inline-block;">
     <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" style="height:48px;width:auto;" />
@@ -30,6 +33,7 @@
       <i class="fas fa-building"></i>
       <h1>Recruiter Profile</h1>
     </div>
+
     <div class="page-body">
       <div class="notice">
         <strong>Welcome!</strong> Please complete your recruiter profile to start posting jobs and reviewing applicants.
@@ -41,22 +45,27 @@
             <label for="company_name">Company Name*</label>
             <input type="text" id="company_name" name="company_name" required />
           </div>
+
           <div class="form-group">
             <label for="company_website">Company Website</label>
             <input type="url" id="company_website" name="company_website" placeholder="https://example.com" />
           </div>
+
           <div class="form-group">
             <label for="contact_name">Contact Name*</label>
             <input type="text" id="contact_name" name="contact_name" required />
           </div>
+
           <div class="form-group">
             <label for="contact_email">Contact Email*</label>
             <input type="email" id="contact_email" name="contact_email" required />
           </div>
+
           <div class="form-group">
             <label for="location">Primary Location</label>
             <input type="text" id="location" name="location" />
           </div>
+
           <div class="form-group">
             <label for="about">About Company</label>
             <textarea id="about" name="about" rows="4" placeholder="Short description"></textarea>
@@ -71,83 +80,72 @@
     </div>
   </div>
 
-  <script>
-    // Bootstrap tokens and user info from URL hash across subdomains
-    (function () {
-      try {
-        const hash = window.location.hash ? window.location.hash.substring(1) : '';
-        if (!hash) return;
-        const params = new URLSearchParams(hash);
-        const at = params.get('access_token');
-        const rt = params.get('refresh_token');
-        const uid = params.get('user_id');
-        const role = params.get('role');
-        if (at) localStorage.setItem('skreenit_token', at);
-        if (rt) localStorage.setItem('skreenit_refresh_token', rt);
-        if (uid) localStorage.setItem('skreenit_user_id', uid);
-        if (role) localStorage.setItem('skreenit_role', role);
-        // Clean the hash to avoid reprocessing
-        history.replaceState(null, document.title, window.location.pathname + window.location.search);
-      } catch {}
-    })();
-  </script>
+  <!-- Embedded JS -->
   <script type="module">
-    import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js'
-    (async () => {
-      try {
-        const at = localStorage.getItem('skreenit_token')
-        const rt = localStorage.getItem('skreenit_refresh_token')
-        if (at && rt) {
-          await supabase.auth.setSession({ access_token: at, refresh_token: rt })
-        }
-      } catch (e) {
-        console.warn('Failed to set Supabase session', e)
+    import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
+    import { backendPost, handleResponse } from "https://auth.skreenit.com/assets/js/backend-client.js";
+
+    /* -------------------------------------------------------
+       ROLE CHECK
+    ------------------------------------------------------- */
+    async function ensureRecruiter() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const role = user?.user_metadata?.role;
+
+      if (role !== "recruiter") {
+        window.location.href = "https://login.skreenit.com/login";
       }
-    })()
-  </script>
-  <script type="module">
-    import { backendFetch } from 'https://auth.skreenit.com/assets/js/backend-client.js'
-    const form = document.getElementById('recruiterProfileForm');
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const userId = localStorage.getItem('skreenit_user_id');
-      if (!userId) {
-        alert('Not logged in. Please login again.');
-        window.location.href = 'https://login.skreenit.com/login.html';
+
+      return user;
+    }
+
+    /* -------------------------------------------------------
+       SUBMIT HANDLER
+    ------------------------------------------------------- */
+    async function handleProfileSubmit(event) {
+      event.preventDefault();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Session expired. Please login again.");
+        window.location.href = "https://login.skreenit.com/login";
         return;
       }
 
       const payload = {
-        user_id: userId,
-        company_name: document.getElementById('company_name').value.trim(),
-        company_website: document.getElementById('company_website').value.trim() || null,
-        contact_name: document.getElementById('contact_name').value.trim(),
-        contact_email: document.getElementById('contact_email').value.trim(),
-        location: document.getElementById('location').value.trim() || null,
-        about: document.getElementById('about').value.trim() || null,
+        user_id: user.id,
+        company_name: document.getElementById("company_name").value.trim(),
+        company_website: document.getElementById("company_website").value.trim() || null,
+        contact_name: document.getElementById("contact_name").value.trim(),
+        contact_email: document.getElementById("contact_email").value.trim(),
+        location: document.getElementById("location").value.trim() || null,
+        about: document.getElementById("about").value.trim() || null,
       };
 
       try {
-        const token = localStorage.getItem('skreenit_token');
-        const resp = await backendFetch('/recruiter/profile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(payload),
-        });
-        if (!resp.ok) {
-          const text = await resp.text();
-          throw new Error(text || `Error ${resp.status}`);
-        }
-        alert('Profile saved! Redirecting to Recruiter Dashboard...');
-        window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
+        const res = await backendPost("/recruiter/profile", payload);
+        await handleResponse(res);
+
+        alert("Profile saved! Redirecting to Recruiter Dashboard...");
+        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
+
       } catch (err) {
-        console.error('Profile save failed:', err);
-        alert('Failed to save profile. Please try again.');
+        console.error("Profile save failed:", err);
+        alert("Failed to save profile. Please try again.");
       }
+    }
+
+    /* -------------------------------------------------------
+       MAIN
+    ------------------------------------------------------- */
+    document.addEventListener("DOMContentLoaded", async () => {
+      await ensureRecruiter();
+
+      document
+        .getElementById("recruiterProfileForm")
+        .addEventListener("submit", handleProfileSubmit);
     });
   </script>
+
 </body>
 </html>
