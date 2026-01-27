@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 
 from supabase import Client
 from services.supabase_client import get_client
-from utils_others.file_upload import upload_to_bucket, create_signed_url
 from utils_others.logger import logger
 
 
@@ -173,40 +172,51 @@ class ApplicantService:
             safe_name = (filename or "resume").replace(" ", "_")
             path = f"{candidate_id}/{int(time.time() * 1000)}-{safe_name}"
 
-            upload_to_bucket(
-                client=self.supabase,
-                bucket="resumes",
-                path=path,
-                content=content,
-                content_type=content_type or "application/octet-stream",
+            # Upload to storage
+            upload_res = self.supabase.storage.from_("resumes").upload(
+                path,
+                content,
+                {
+                    "content-type": content_type or "application/octet-stream",
+                    "upsert": True,
+                },
             )
 
+            if getattr(upload_res, "error", None):
+                raise Exception(upload_res.error)
+
+            # Update profile with resume path
             try:
-                self.supabase.table("candidate_profiles").update({"resume_url": path}).eq(
-                    "user_id", candidate_id
-                ).execute()
+                self.supabase.table("candidate_profiles").update(
+                    {"resume_url": path}
+                ).eq("user_id", candidate_id).execute()
             except Exception as e:
                 logger.error(
                     f"Failed to update resume_url in profile: {str(e)}",
                     extra={"candidate_id": candidate_id, "path": path},
                 )
 
-            signed = create_signed_url(self.supabase, "resumes", path, 3600)
+            # Generate signed URL
+            signed_res = self.supabase.storage.from_("resumes").create_signed_url(
+                path, 3600
+            )
+
+            if getattr(signed_res, "error", None):
+                raise Exception(signed_res.error)
+
+            signed_url = signed_res.get("signedURL") or signed_res.get("signed_url")
 
             logger.info("Resume uploaded", extra={"candidate_id": candidate_id, "path": path})
 
-            return {"resume_path": path, "resume_url": signed}
+            return {"resume_path": path, "resume_url": signed_url}
 
         except Exception as e:
             logger.error(f"Resume upload failed: {str(e)}", extra={"candidate_id": candidate_id})
             raise RuntimeError("Failed to upload resume")
-
+            
     def get_resume_url(self, candidate_id: str) -> Dict[str, Any]:
         """
         Get signed resume URL for candidate.
-        Tries:
-        - candidate_profiles.resume_url
-        - latest file in resumes/{candidate_id}/
         """
         try:
             path = self._get_resume_path_from_profile(candidate_id)
@@ -217,11 +227,18 @@ class ApplicantService:
             if not path:
                 raise RuntimeError("Resume not found")
 
-            url = create_signed_url(self.supabase, "resumes", path, 3600)
+            signed_res = self.supabase.storage.from_("resumes").create_signed_url(
+                path, 3600
+            )
+
+            if getattr(signed_res, "error", None):
+                raise Exception(signed_res.error)
+
+            signed_url = signed_res.get("signedURL") or signed_res.get("signed_url")
 
             logger.info("Resume URL fetched", extra={"candidate_id": candidate_id})
 
-            return {"resume_url": url}
+            return {"resume_url": signed_url}
 
         except Exception as e:
             logger.error(f"Resume URL fetch failed: {str(e)}", extra={"candidate_id": candidate_id})
