@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from enum import Enum
 
 
@@ -14,7 +14,7 @@ class JobStatus(str, Enum):
 
 
 # ---------------------------------------------------------
-# CREATE JOB (Used by recruiter_router)
+# CREATE JOB
 # ---------------------------------------------------------
 class JobCreateRequest(BaseModel):
     title: str
@@ -35,7 +35,7 @@ class JobCreateRequest(BaseModel):
 
 
 # ---------------------------------------------------------
-# UPDATE JOB (Used by recruiter_router)
+# UPDATE JOB
 # ---------------------------------------------------------
 class JobUpdateRequest(BaseModel):
     title: Optional[str] = None
@@ -50,28 +50,6 @@ class JobUpdateRequest(BaseModel):
     salary_max: Optional[int] = None
     currency: Optional[str] = None
     status: Optional[JobStatus] = None
-    expires_at: Optional[str] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# ---------------------------------------------------------
-# INTERNAL MODEL (Still used by RecruiterService)
-# ---------------------------------------------------------
-class JobPostRequest(BaseModel):
-    title: str
-    description: str
-    requirements: str
-    responsibilities: Optional[str] = None
-    department: Optional[str] = None
-    location: str
-    job_type: str
-    experience_level: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    currency: Optional[str] = "INR"
-    status: Optional[JobStatus] = JobStatus.draft
-    company_id: Optional[str] = None
     expires_at: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -104,6 +82,19 @@ class CompanyRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CompanyResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    website: Optional[str] = None
+    logo_url: Optional[str] = None
+    industry: Optional[str] = None
+    size: Optional[str] = None
+    location: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ---------------------------------------------------------
 # INTERVIEW QUESTIONS
 # ---------------------------------------------------------
@@ -116,8 +107,18 @@ class InterviewQuestionRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class InterviewQuestionResponse(BaseModel):
+    id: str
+    job_id: str
+    question_text: str
+    question_order: int
+    time_limit: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ---------------------------------------------------------
-# RECRUITER PROFILE UPDATE (Used by recruiter_router)
+# RECRUITER PROFILE
 # ---------------------------------------------------------
 class RecruiterProfileUpdate(BaseModel):
     fullname: Optional[str] = None
@@ -129,9 +130,6 @@ class RecruiterProfileUpdate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ---------------------------------------------------------
-# INTERNAL MODEL (Still used by RecruiterService)
-# ---------------------------------------------------------
 class RecruiterProfileRequest(BaseModel):
     user_id: str
     company_id: Optional[str] = None
@@ -148,8 +146,8 @@ class RecruiterProfileRequest(BaseModel):
 # APPLICATION RESPONSE
 # ---------------------------------------------------------
 class CandidateApplicationResponse(BaseModel):
-    candidate: Optional[Dict] = None
-    application: Optional[Dict] = None
+    candidate: Optional[Dict[str, Any]] = None
+    application: Optional[Dict[str, Any]] = None
 
     model_config = ConfigDict(from_attributes=True)
 

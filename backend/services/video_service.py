@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
 from supabase import Client
@@ -102,6 +102,7 @@ class VideoService:
         duration: Optional[int] = None,
         status: str = "completed",
         candidate_id: Optional[str] = None,
+        ai_analysis: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Save a per-question video response for an application.
@@ -114,7 +115,8 @@ class VideoService:
                 "transcript": transcript,
                 "duration": duration,
                 "status": status,
-                "recorded_at": datetime.utcnow().isoformat(),
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+                "ai_analysis": ai_analysis or {},
             }
 
             if candidate_id:
@@ -168,7 +170,7 @@ class VideoService:
                 "candidate_id": candidate_id,
                 "video_url": video_url,
                 "status": status,
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
                 "is_general": True,
                 "ai_analysis": ai_analysis or {},
             }

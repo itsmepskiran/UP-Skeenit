@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 from models.analytics_models import AnalyticsEventRequest
 from services.analytics_service import AnalyticsService
 from utils_others.rbac import ensure_permission
@@ -12,14 +12,34 @@ svc = AnalyticsService()
 # ---------------------------------------------------------
 @router.post("/")
 async def create_event(request: Request, payload: AnalyticsEventRequest):
-    # No permission needed — all authenticated users allowed
-    return svc.create_event(payload.model_dump())
+    """
+    All authenticated users can create analytics events.
+    No permission check required.
+    """
+    try:
+        event = svc.create_event(payload.model_dump())
+        return {"ok": True, "data": event}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---------------------------------------------------------
 # LIST EVENTS (Recruiter/Admin)
 # ---------------------------------------------------------
 @router.get("/")
-async def list_events(request: Request):
+async def list_events(
+    request: Request,
+    page: int = 1,
+    page_size: int = 50
+):
     ensure_permission(request, "analytics:view")
-    return svc.list_events(request.state.user["id"])
+
+    try:
+        events = svc.list_events(
+            request.state.user["id"],
+            page=page,
+            page_size=page_size
+        )
+        return {"ok": True, "data": events}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

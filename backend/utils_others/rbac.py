@@ -1,4 +1,6 @@
 from typing import List
+from functools import lru_cache
+
 from utils_others.logger import logger
 from utils_others.error_handler import UnauthorizedError, ForbiddenError
 from utils_others.rbac_config import ROLES
@@ -7,14 +9,17 @@ from utils_others.rbac_config import ROLES
 # ---------------------------------------------------------
 # GET ALL PERMISSIONS FOR A ROLE (INCLUDING INHERITED)
 # ---------------------------------------------------------
+@lru_cache(maxsize=32)
 def get_permissions_for_role(role: str) -> List[str]:
+    role = (role or "").lower()
+
     if role not in ROLES:
         return []
 
     role_info = ROLES[role]
     perms = set(role_info["permissions"])
 
-    # Add inherited permissions
+    # Add inherited permissions recursively
     for parent in role_info["inherits"]:
         perms.update(get_permissions_for_role(parent))
 
@@ -25,6 +30,7 @@ def get_permissions_for_role(role: str) -> List[str]:
 # CHECK IF ROLE HAS A SPECIFIC PERMISSION
 # ---------------------------------------------------------
 def role_has_permission(role: str, permission: str) -> bool:
+    role = (role or "").lower()
     return permission in get_permissions_for_role(role)
 
 
@@ -37,10 +43,13 @@ def ensure_role(request, allowed_roles: List[str]) -> None:
     if not user:
         raise UnauthorizedError("Authentication required")
 
-    role = user.get("user_metadata", {}).get("role")
+    metadata = user.get("user_metadata") or {}
+    role = (metadata.get("role") or "").lower()
 
     if not role:
         raise ForbiddenError("User role missing")
+
+    allowed_roles = [r.lower() for r in allowed_roles]
 
     if role not in allowed_roles:
         logger.warning(
@@ -63,7 +72,8 @@ def ensure_permission(request, permission: str) -> None:
     if not user:
         raise UnauthorizedError("Authentication required")
 
-    role = user.get("user_metadata", {}).get("role")
+    metadata = user.get("user_metadata") or {}
+    role = (metadata.get("role") or "").lower()
 
     if not role:
         raise ForbiddenError("User role missing")

@@ -11,6 +11,7 @@ class DashboardService:
     - User role
     - Jobs (for recruiters)
     - Applications (for both)
+    - Basic stats
     """
 
     def __init__(self, client: Optional[Client] = None):
@@ -25,6 +26,7 @@ class DashboardService:
         Structure:
         {
             "role": "recruiter" | "candidate",
+            "stats": {...},
             "jobs": [...],
             "applications": [...]
         }
@@ -38,22 +40,17 @@ class DashboardService:
             if role == "candidate":
                 return self._get_candidate_summary(user_id)
 
-            # Fallback for unknown/missing role
             logger.warning("Unknown user role, returning empty summary", extra={"user_id": user_id})
-            return {"role": None, "jobs": [], "applications": []}
+            return {"role": None, "stats": self._empty_stats(), "jobs": [], "applications": []}
 
         except Exception as e:
             logger.error(f"Dashboard summary failed: {str(e)}", extra={"user_id": user_id})
-            # Return empty summary instead of raising to avoid frontend crash
-            return {"role": None, "jobs": [], "applications": []}
+            return {"role": None, "stats": self._empty_stats(), "jobs": [], "applications": []}
 
     # ---------------------------------------------------------
-    # PRIVATE HELPERS — USER ROLE
+    # USER ROLE
     # ---------------------------------------------------------
     def _get_user_role(self, user_id: str) -> str:
-        """
-        Fetch role from Supabase Auth metadata.
-        """
         try:
             auth_user = self.supabase.auth.admin.get_user_by_id(user_id)
             user_obj = getattr(auth_user, "user", None)
@@ -75,37 +72,34 @@ class DashboardService:
             return "candidate"
 
     # ---------------------------------------------------------
-    # PRIVATE HELPERS — RECRUITER SUMMARY
+    # RECRUITER SUMMARY
     # ---------------------------------------------------------
     def _get_recruiter_summary(self, user_id: str) -> Dict[str, Any]:
-        """
-        Recruiter dashboard:
-        - Jobs created by recruiter
-        - Applications for those jobs
-        """
         try:
             jobs = self._fetch_recruiter_jobs(user_id)
             job_ids = [j["id"] for j in jobs]
 
             applications = self._fetch_applications_for_jobs(job_ids) if job_ids else []
 
+            stats = self._compute_recruiter_stats(jobs, applications)
+
             logger.info("Recruiter dashboard loaded", extra={"user_id": user_id})
 
             return {
                 "role": "recruiter",
+                "stats": stats,
                 "jobs": jobs,
                 "applications": applications,
             }
 
         except Exception as e:
             logger.error(f"Recruiter dashboard failed: {str(e)}", extra={"user_id": user_id})
-            # Return empty instead of raising
-            return {"role": "recruiter", "jobs": [], "applications": []}
+            return {"role": "recruiter", "stats": self._empty_stats(), "jobs": [], "applications": []}
 
     def _fetch_recruiter_jobs(self, user_id: str) -> List[Dict[str, Any]]:
         res = (
             self.supabase.table("jobs")
-            .select("id, title, status, created_at")
+            .select("id, title, status, created_at, expires_at, location, job_type")
             .eq("created_by", user_id)
             .order("created_at", desc=True)
             .execute()
@@ -131,32 +125,29 @@ class DashboardService:
         return res.data or []
 
     # ---------------------------------------------------------
-    # PRIVATE HELPERS — CANDIDATE SUMMARY
+    # CANDIDATE SUMMARY
     # ---------------------------------------------------------
     def _get_candidate_summary(self, user_id: str) -> Dict[str, Any]:
-        """
-        Candidate dashboard:
-        - Applications submitted by candidate
-        - Jobs corresponding to those applications
-        """
         try:
             applications = self._fetch_candidate_applications(user_id)
             job_ids = [a["job_id"] for a in applications]
 
             jobs = self._fetch_jobs_for_candidate(job_ids) if job_ids else []
 
+            stats = self._compute_candidate_stats(applications)
+
             logger.info("Candidate dashboard loaded", extra={"user_id": user_id})
 
             return {
                 "role": "candidate",
+                "stats": stats,
                 "jobs": jobs,
                 "applications": applications,
             }
 
         except Exception as e:
             logger.error(f"Candidate dashboard failed: {str(e)}", extra={"user_id": user_id})
-            # Return empty instead of raising
-            return {"role": "candidate", "jobs": [], "applications": []}
+            return {"role": "candidate", "stats": self._empty_stats(), "jobs": [], "applications": []}
 
     def _fetch_candidate_applications(self, user_id: str) -> List[Dict[str, Any]]:
         res = (
@@ -173,9 +164,10 @@ class DashboardService:
         return res.data or []
 
     def _fetch_jobs_for_candidate(self, job_ids: List[str]) -> List[Dict[str, Any]]:
+        # jobs table does not have "company" column; we keep it minimal here
         res = (
             self.supabase.table("jobs")
-            .select("id, title, company, location, job_type, status")
+            .select("id, title, location, job_type, status")
             .in_("id", job_ids)
             .execute()
         )
@@ -184,3 +176,41 @@ class DashboardService:
             raise RuntimeError(res.error)
 
         return res.data or []
+
+    # ---------------------------------------------------------
+    # STATS HELPERS
+    # ---------------------------------------------------------
+    def _empty_stats(self) -> Dict[str, int]:
+        return {
+            "total_jobs": 0,
+            "active_jobs": 0,
+            "closed_jobs": 0,
+            "total_applications": 0,
+            "shortlisted": 0,
+            "interviews": 0,
+            "hired": 0,
+        }
+
+    def _compute_recruiter_stats(self, jobs: List[Dict[str, Any]], applications: List[Dict[str, Any]]) -> Dict[str, int]:
+        stats = self._empty_stats()
+
+        stats["total_jobs"] = len(jobs)
+        stats["active_jobs"] = sum(1 for j in jobs if j.get("status") == "active")
+        stats["closed_jobs"] = sum(1 for j in jobs if j.get("status") == "closed")
+
+        stats["total_applications"] = len(applications)
+        stats["shortlisted"] = sum(1 for a in applications if a.get("status") == "shortlisted")
+        stats["interviews"] = sum(1 for a in applications if a.get("status") == "interview_scheduled")
+        stats["hired"] = sum(1 for a in applications if a.get("status") == "hired")
+
+        return stats
+
+    def _compute_candidate_stats(self, applications: List[Dict[str, Any]]) -> Dict[str, int]:
+        stats = self._empty_stats()
+
+        stats["total_applications"] = len(applications)
+        stats["shortlisted"] = sum(1 for a in applications if a.get("status") == "shortlisted")
+        stats["interviews"] = sum(1 for a in applications if a.get("status") == "interview_scheduled")
+        stats["hired"] = sum(1 for a in applications if a.get("status") == "hired")
+
+        return stats

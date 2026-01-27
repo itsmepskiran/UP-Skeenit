@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List, Union, Optional, Dict, Any
 from utils_others.logger import logger
 
@@ -12,9 +13,11 @@ def send_email(
     to: Union[str, List[str]],
     subject: str,
     html: str,
+    text: Optional[str] = None,
     from_addr: Optional[str] = None,
     email_type: str = "default",
-    reply_to: Optional[str] = None
+    reply_to: Optional[str] = None,
+    retries: int = 2,
 ) -> Dict[str, Any]:
     """
     Sends an email using the Resend API.
@@ -64,6 +67,12 @@ def send_email(
         from_addr = senders.get(email_type, senders["default"])
 
     # ---------------------------------------------------------
+    # Validate required fields
+    # ---------------------------------------------------------
+    if not subject or not html:
+        raise EmailError("Subject and HTML content are required")
+
+    # ---------------------------------------------------------
     # Prepare payload
     # ---------------------------------------------------------
     payload = {
@@ -71,33 +80,39 @@ def send_email(
         "to": to,
         "subject": subject,
         "html": html,
-        "text": "This is an HTML email. Please enable HTML view.",
+        "text": text or "This is an HTML email. Please enable HTML view.",
     }
 
     if reply_to:
         payload["reply_to"] = reply_to
 
     # ---------------------------------------------------------
-    # Send email
+    # Retry logic for transient failures
     # ---------------------------------------------------------
-    try:
-        response = resend.Emails.send(payload)
+    for attempt in range(retries + 1):
+        try:
+            response = resend.Emails.send(payload)
 
-        # Normalize response
-        if isinstance(response, dict):
+            # Normalize response
+            if isinstance(response, dict):
+                logger.info("Email sent successfully", extra={"to": to, "type": email_type})
+                return response
+
+            if hasattr(response, "__dict__"):
+                logger.info("Email sent successfully", extra={"to": to, "type": email_type})
+                return response.__dict__
+
             logger.info("Email sent successfully", extra={"to": to, "type": email_type})
-            return response
+            return {"status": "sent", "raw": str(response)}
 
-        if hasattr(response, "__dict__"):
-            logger.info("Email sent successfully", extra={"to": to, "type": email_type})
-            return response.__dict__
+        except Exception as e:
+            logger.error(
+                f"Email sending failed (attempt {attempt + 1}): {str(e)}",
+                extra={"to": to, "subject": subject, "type": email_type},
+            )
 
-        logger.info("Email sent successfully", extra={"to": to, "type": email_type})
-        return {"status": "sent", "raw": str(response)}
+            if attempt < retries:
+                time.sleep(1.0)  # small backoff
+                continue
 
-    except Exception as e:
-        logger.error(
-            f"Email sending failed: {str(e)}",
-            extra={"to": to, "subject": subject, "type": email_type}
-        )
-        raise EmailError(f"Email sending failed: {e}")
+            raise EmailError(f"Email sending failed after retries: {e}")

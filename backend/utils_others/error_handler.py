@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi import HTTPException
 from utils_others.logger import logger
 
 
@@ -8,9 +9,6 @@ from utils_others.logger import logger
 # BASE APPLICATION ERRORS
 # ---------------------------------------------------------
 class AppError(Exception):
-    """
-    Base class for all custom application errors.
-    """
     def __init__(self, message: str, status_code: int = 400, code: str = "app_error"):
         self.status_code = status_code
         self.code = code
@@ -41,21 +39,20 @@ class ValidationError(AppError):
 # REGISTER GLOBAL EXCEPTION HANDLERS
 # ---------------------------------------------------------
 def register_exception_handlers(app: FastAPI) -> None:
-    """
-    Registers global exception handlers for:
-    - Custom AppError
-    - FastAPI validation errors
-    - Unexpected server errors
-    """
 
     # -----------------------------
-    # Custom application errors
+    # Custom AppError
     # -----------------------------
     @app.exception_handler(AppError)
     async def handle_app_error(request: Request, exc: AppError):
         logger.error(
             f"AppError: {exc.code} - {exc.message}",
-            extra={"path": request.url.path, "method": request.method}
+            extra={
+                "path": request.url.path,
+                "method": request.method,
+                "request_id": getattr(request.state, "request_id", None),
+                "user_id": getattr(getattr(request.state, "user", {}), "id", None),
+            },
         )
         return JSONResponse(
             status_code=exc.status_code,
@@ -63,7 +60,8 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ok": False,
                 "error": exc.code,
                 "message": exc.message,
-            }
+                "request_id": getattr(request.state, "request_id", None),
+            },
         )
 
     # -----------------------------
@@ -73,7 +71,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def handle_validation_error(request: Request, exc: RequestValidationError):
         logger.error(
             "Request validation failed",
-            extra={"errors": exc.errors(), "path": request.url.path}
+            extra={
+                "errors": exc.errors(),
+                "path": request.url.path,
+                "request_id": getattr(request.state, "request_id", None),
+            },
         )
         return JSONResponse(
             status_code=422,
@@ -81,7 +83,32 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ok": False,
                 "error": "validation_error",
                 "message": exc.errors(),
-            }
+                "request_id": getattr(request.state, "request_id", None),
+            },
+        )
+
+    # -----------------------------
+    # HTTPException (FastAPI built-in)
+    # -----------------------------
+    @app.exception_handler(HTTPException)
+    async def handle_http_exception(request: Request, exc: HTTPException):
+        logger.warning(
+            f"HTTPException: {exc.detail}",
+            extra={
+                "path": request.url.path,
+                "method": request.method,
+                "status_code": exc.status_code,
+                "request_id": getattr(request.state, "request_id", None),
+            },
+        )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "ok": False,
+                "error": "http_error",
+                "message": exc.detail,
+                "request_id": getattr(request.state, "request_id", None),
+            },
         )
 
     # -----------------------------
@@ -91,7 +118,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def handle_unexpected_error(request: Request, exc: Exception):
         logger.exception(
             "Unexpected server error",
-            extra={"path": request.url.path, "method": request.method}
+            extra={
+                "path": request.url.path,
+                "method": request.method,
+                "request_id": getattr(request.state, "request_id", None),
+            },
         )
         return JSONResponse(
             status_code=500,
@@ -99,5 +130,6 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ok": False,
                 "error": "server_error",
                 "message": "Internal server error",
-            }
+                "request_id": getattr(request.state, "request_id", None),
+            },
         )

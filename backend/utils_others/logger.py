@@ -24,15 +24,10 @@ class JSONFormatter(logging.Formatter):
             "thread": record.thread,
         }
 
-        # Request ID (from middleware)
-        if hasattr(record, "request_id"):
-            log_record["request_id"] = record.request_id
-
-        # Optional request metadata
-        if hasattr(record, "request_path"):
-            log_record["path"] = record.request_path
-        if hasattr(record, "request_method"):
-            log_record["method"] = record.request_method
+        # Request metadata (middleware attaches these)
+        for field in ["request_id", "request_path", "request_method", "user_id", "role", "ip"]:
+            if hasattr(record, field):
+                log_record[field] = getattr(record, field)
 
         # Exception details
         if record.exc_info:
@@ -55,35 +50,35 @@ class RequestIDFilter(logging.Filter):
 # Logger Setup
 # ---------------------------------------------------------
 def setup_logging():
-    # Determine absolute log directory
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     log_dir = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "logs"))
     os.makedirs(log_dir, exist_ok=True)
 
-    # Root logger
     logger = logging.getLogger()
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
     logger.setLevel(log_level)
 
     formatter = JSONFormatter()
 
-    # Console handler (Render logs)
+    # Remove existing handlers (Uvicorn adds its own)
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+
+    # Console handler (always enabled)
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     console_handler.addFilter(RequestIDFilter())
+    logger.addHandler(console_handler)
 
-    # File handler (local + production)
-    file_handler = RotatingFileHandler(
-        os.path.join(log_dir, "app.log"),
-        maxBytes=10 * 1024 * 1024,  # 10 MB
-        backupCount=5
-    )
-    file_handler.setFormatter(formatter)
-    file_handler.addFilter(RequestIDFilter())
-
-    # Avoid duplicate handlers on reload
-    if not logger.handlers:
-        logger.addHandler(console_handler)
+    # File handler (only for local/dev)
+    if os.getenv("ENVIRONMENT", "development") != "production":
+        file_handler = RotatingFileHandler(
+            os.path.join(log_dir, "app.log"),
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5
+        )
+        file_handler.setFormatter(formatter)
+        file_handler.addFilter(RequestIDFilter())
         logger.addHandler(file_handler)
 
     # Sync Uvicorn + FastAPI logs
@@ -96,5 +91,4 @@ def setup_logging():
     return logger
 
 
-# Global logger instance
 logger = setup_logging()

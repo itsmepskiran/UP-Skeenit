@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from pathlib import Path
 import os
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
 from utils_others.logger import logger
 
 
@@ -17,7 +17,8 @@ class EmailTemplates:
 
         self.env = Environment(
             loader=FileSystemLoader(str(self.template_dir)),
-            autoescape=True
+            autoescape=select_autoescape(["html", "xml"]),
+            cache_size=50,  # enable caching
         )
 
         self.frontend_url = os.getenv("FRONTEND_BASE_URL", "https://login.skreenit.com")
@@ -38,50 +39,69 @@ class EmailTemplates:
             raise RuntimeError(f"Email template missing: {template_name}")
 
         except Exception as e:
-            logger.error(f"Email template render failed: {str(e)}", extra={"template": template_name})
+            logger.error(
+                f"Email template render failed: {str(e)}",
+                extra={"template": template_name},
+            )
             raise RuntimeError("Failed to render email template")
 
     # ---------------------------------------------------------
     # PUBLIC TEMPLATES
     # ---------------------------------------------------------
-    def registration_confirmation(self, user_data: Dict[str, Any]) -> str:
-        return self._render(
-            "registration_confirmation.html",
-            {
-                "name": user_data.get("full_name"),
-                "role": user_data.get("role"),
-                "login_url": self.frontend_url,
-            }
-        )
+    def registration_confirmation(self, user_data: Dict[str, Any]) -> Dict[str, str]:
+        return {
+            "subject": "Welcome to Skreenit!",
+            "html": self._render(
+                "registration_confirmation.html",
+                {
+                    "name": user_data.get("full_name"),
+                    "role": user_data.get("role"),
+                    "login_url": self.frontend_url,
+                },
+            ),
+            "text": f"Welcome to Skreenit, {user_data.get('full_name')}! Login at {self.frontend_url}",
+        }
 
-    def recruiter_welcome(self, user_data: Dict[str, Any]) -> str:
-        return self._render(
-            "recruiter_welcome.html",
-            {
-                "name": user_data.get("full_name"),
-                "email": user_data.get("email"),
-                "company_id": user_data.get("company_id"),
-                "login_url": self.frontend_url,
-            }
-        )
+    def recruiter_welcome(self, user_data: Dict[str, Any]) -> Dict[str, str]:
+        return {
+            "subject": "Your Recruiter Account is Ready",
+            "html": self._render(
+                "recruiter_welcome.html",
+                {
+                    "name": user_data.get("full_name"),
+                    "email": user_data.get("email"),
+                    "company_id": user_data.get("company_id"),
+                    "login_url": self.frontend_url,
+                },
+            ),
+            "text": f"Welcome {user_data.get('full_name')}! Login at {self.frontend_url}",
+        }
 
-    def password_reset(self, user_data: Dict[str, Any]) -> str:
-        return self._render(
-            "password_reset.html",
-            {
-                "name": user_data.get("full_name"),
-                "reset_url": user_data.get("reset_url"),
-            }
-        )
+    def password_reset(self, user_data: Dict[str, Any]) -> Dict[str, str]:
+        return {
+            "subject": "Reset Your Password",
+            "html": self._render(
+                "password_reset.html",
+                {
+                    "name": user_data.get("full_name"),
+                    "reset_url": user_data.get("reset_url"),
+                },
+            ),
+            "text": f"Reset your password: {user_data.get('reset_url')}",
+        }
 
-    def password_updated(self, user_data: Dict[str, Any]) -> str:
-        return self._render(
-            "password_updated.html",
-            {
-                "name": user_data.get("full_name"),
-                "login_url": self.frontend_url,
-            }
-        )
+    def password_updated(self, user_data: Dict[str, Any]) -> Dict[str, str]:
+        return {
+            "subject": "Your Password Has Been Updated",
+            "html": self._render(
+                "password_updated.html",
+                {
+                    "name": user_data.get("full_name"),
+                    "login_url": self.frontend_url,
+                },
+            ),
+            "text": f"Your password was updated. Login at {self.frontend_url}",
+        }
 
 
 # ---------------------------------------------------------
@@ -148,5 +168,4 @@ def write_default_templates() -> None:
             logger.info(f"Created default email template: {filename}")
 
 
-# Run once safely
 write_default_templates()

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, UploadFile, File
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException
 from models.applicant_models import (
     DraftSaveRequest,
     DetailedFormRequest,
@@ -16,8 +16,12 @@ svc = ApplicantService()
 @router.post("/draft")
 async def save_draft(request: Request, payload: DraftSaveRequest):
     ensure_permission(request, "applications:create")
-    svc.save_draft(request.state.user["id"], payload.draft)
-    return {"ok": True}
+
+    try:
+        svc.save_draft(request.state.user["id"], payload.draft)
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---------------------------------------------------------
@@ -26,7 +30,12 @@ async def save_draft(request: Request, payload: DraftSaveRequest):
 @router.get("/draft")
 async def get_draft(request: Request):
     ensure_permission(request, "applications:view")
-    return svc.get_draft(request.state.user["id"])
+
+    try:
+        draft = svc.get_draft(request.state.user["id"])
+        return {"ok": True, "data": draft}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---------------------------------------------------------
@@ -35,14 +44,18 @@ async def get_draft(request: Request):
 @router.post("/detailed-form")
 async def save_detailed_form(request: Request, payload: DetailedFormRequest):
     ensure_permission(request, "profile:update")
-    svc.save_detailed_form(
-        request.state.user["id"],
-        profile=payload.profile,
-        education=payload.education,
-        experience=payload.experience,
-        skills=payload.skills,
-    )
-    return {"ok": True}
+
+    try:
+        svc.save_detailed_form(
+            request.state.user["id"],
+            profile=payload.profile,
+            education=payload.education,
+            experience=payload.experience,
+            skills=payload.skills,
+        )
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---------------------------------------------------------
@@ -51,7 +64,12 @@ async def save_detailed_form(request: Request, payload: DetailedFormRequest):
 @router.get("/detailed-form")
 async def get_detailed_form(request: Request):
     ensure_permission(request, "applications:view")
-    return svc.get_detailed_form(request.state.user["id"])
+
+    try:
+        details = svc.get_detailed_form(request.state.user["id"])
+        return {"ok": True, "data": details}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---------------------------------------------------------
@@ -60,13 +78,18 @@ async def get_detailed_form(request: Request):
 @router.post("/resume")
 async def upload_resume(request: Request, file: UploadFile = File(...)):
     ensure_permission(request, "profile:update")
-    content = await file.read()
-    return svc.upload_resume(
-        request.state.user["id"],
-        file.filename,
-        content,
-        file.content_type,
-    )
+
+    try:
+        content = await file.read()
+        result = svc.upload_resume(
+            request.state.user["id"],
+            file.filename,
+            content,
+            file.content_type,
+        )
+        return {"ok": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---------------------------------------------------------
@@ -75,4 +98,9 @@ async def upload_resume(request: Request, file: UploadFile = File(...)):
 @router.get("/resume")
 async def get_resume(request: Request):
     ensure_permission(request, "applications:view")
-    return svc.get_resume_url(request.state.user["id"])
+
+    try:
+        url = svc.get_resume_url(request.state.user["id"])
+        return {"ok": True, "data": url}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

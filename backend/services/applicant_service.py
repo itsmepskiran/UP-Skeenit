@@ -119,7 +119,7 @@ class ApplicantService:
             prof = (
                 self.supabase.table("candidate_profiles")
                 .select("*")
-                .eq("id", candidate_id)
+                .eq("user_id", candidate_id)
                 .single()
                 .execute()
             )
@@ -183,7 +183,7 @@ class ApplicantService:
 
             try:
                 self.supabase.table("candidate_profiles").update({"resume_url": path}).eq(
-                    "id", candidate_id
+                    "user_id", candidate_id
                 ).execute()
             except Exception as e:
                 logger.error(
@@ -295,7 +295,10 @@ class ApplicantService:
             return data
 
         except Exception as e:
-            logger.error(f"Application details fetch failed: {str(e)}", extra={"application_id": application_id})
+            logger.error(
+                f"Application details fetch failed: {str(e)}",
+                extra={"application_id": application_id},
+            )
             raise RuntimeError("Failed to fetch application details")
 
     # ---------------------------------------------------------
@@ -303,12 +306,11 @@ class ApplicantService:
     # ---------------------------------------------------------
     def _save_profile(self, candidate_id: str, profile: Dict[str, Any]) -> None:
         profile = {**profile}
-        profile["id"] = candidate_id
         profile["user_id"] = candidate_id
 
         res = (
             self.supabase.table("candidate_profiles")
-            .upsert(profile, on_conflict="id")
+            .upsert(profile, on_conflict="user_id")
             .execute()
         )
         err = getattr(res, "error", None)
@@ -376,7 +378,7 @@ class ApplicantService:
             prof = (
                 self.supabase.table("candidate_profiles")
                 .select("resume_url")
-                .eq("id", candidate_id)
+                .eq("user_id", candidate_id)
                 .single()
                 .execute()
             )
