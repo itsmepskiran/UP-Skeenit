@@ -1,9 +1,16 @@
 # backend/middleware/auth_middleware.py
 
+import os
+import jwt
+from datetime import datetime
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request, HTTPException
-from utils_others.security import validate_supabase_token
 from utils_others.logger import logger
+
+# Load Supabase JWT secret
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+if not SUPABASE_JWT_SECRET:
+    raise RuntimeError("SUPABASE_JWT_SECRET is not set in environment variables")
 
 
 # Public endpoints that do NOT require authentication
@@ -57,14 +64,37 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         token = auth_header.replace("Bearer ", "").strip()
 
-        # Validate Supabase JWT
-        user = validate_supabase_token(token)
-        if not user:
-            logger.warning("Invalid or expired token", extra={"path": path})
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        # ---------------------------------------------------------
+        # Validate Supabase JWT (inline, no external module)
+        # ---------------------------------------------------------
+        try:
+            payload = jwt.decode(
+                token,
+                SUPABASE_JWT_SECRET,
+                algorithms=["HS256"],
+                options={"verify_aud": False}  # Supabase tokens do not include 'aud'
+            )
 
-        # Attach user to request
-        request.state.user = user
+            # Check expiration manually (optional, but safe)
+            exp = payload.get("exp")
+            if exp and datetime.utcnow().timestamp() > exp:
+                raise jwt.ExpiredSignatureError("Token expired")
+
+        except jwt.ExpiredSignatureError:
+            logger.warning("Expired token", extra={"path": path})
+            raise HTTPException(status_code=401, detail="Token expired")
+
+        except jwt.InvalidTokenError as e:
+            logger.warning(f"Invalid token: {str(e)}", extra={"path": path})
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        except Exception as e:
+            logger.error(f"Token validation error: {str(e)}", extra={"path": path})
+            raise HTTPException(status_code=500, detail="Token validation error")
+
+        # Attach decoded user to request
+        request.state.user = payload
+
         return await call_next(request)
 
 
