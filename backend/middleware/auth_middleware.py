@@ -30,6 +30,13 @@ PUBLIC_PATHS = [
     "/api/v1/auth/reset-password",
 ]
 
+# Additional paths to exclude from authentication
+EXCLUDED_PATHS = [
+    "/health",
+    "/api/v1/health",
+    "/api/v1/system/info",
+    "/api/v1/system/db-health",
+]
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """
