@@ -1,6 +1,8 @@
 import os
 from supabase import create_client, Client
 from utils_others.logger import logger
+from dotenv import load_dotenv
+load_dotenv()
 
 _supabase_client: Client | None = None
 

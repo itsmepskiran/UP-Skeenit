@@ -6,7 +6,7 @@ from services.auth_service import AuthService
 from services.supabase_client import get_client
 from utils_others.logger import logger
 
-router = APIRouter(tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 _auth_service: Optional[AuthService] = None
 
 

@@ -1,6 +1,9 @@
 # backend/middleware/auth_middleware.py
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import jwt
 from datetime import datetime
 from starlette.middleware.base import BaseHTTPMiddleware

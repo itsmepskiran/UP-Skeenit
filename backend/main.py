@@ -1,5 +1,7 @@
 import os
 from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, APIRouter
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -129,13 +131,13 @@ register_exception_handlers(app)
 # ---------------------------------------------------------
 api = APIRouter(prefix="/api/v1")
 
-api.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-api.include_router(applicant.router, prefix="/applicant", tags=["Applicant"])
-api.include_router(recruiter.router, prefix="/recruiter", tags=["Recruiter"])
-api.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
-api.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
-api.include_router(notification.router, prefix="/notification", tags=["Notification"])
-api.include_router(video.router, prefix="/video", tags=["Video"])
+api.include_router(auth.router, tags=["Authentication"])
+api.include_router(applicant.router, tags=["Applicant"])
+api.include_router(recruiter.router, tags=["Recruiter"])
+api.include_router(dashboard.router, tags=["Dashboard"])
+api.include_router(analytics.router, tags=["Analytics"])
+api.include_router(notification.router, tags=["Notification"])
+api.include_router(video.router, tags=["Video"])
 
 # Versioned health check
 @api.get("/health")
