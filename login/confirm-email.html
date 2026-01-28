@@ -53,12 +53,12 @@
         };
 
         const redirectToLogin = () => {
-            window.location.href = 'https://login.skreenit.com/login?confirmed=true';
+            window.location.href = 'https://login.skreenit.com/login.html?confirmed=true';
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const params = new URLSearchParams(window.location.search);
-            const token = params.get('token');
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const token = params.get('access_token');
             const type = params.get('type') || 'signup';
 
             if (!token) {

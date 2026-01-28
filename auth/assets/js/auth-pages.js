@@ -44,47 +44,20 @@ async function persistSessionToLocalStorage() {
    ROLE-BASED REDIRECT
    Updated: Removed first-time login check as password and role are now set during registration
 ------------------------------------------------------- */
-export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard') {
+export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard.html') {
   const role = localStorage.getItem('skreenit_role');
-
-  const withAuthHash = async (targetUrl) => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const { data: userData } = await supabase.auth.getUser();
-
-      const session = sessionData?.session;
-      const user = userData?.user;
-
-      const at = session?.access_token;
-      const rt = session?.refresh_token;
-      const uid = user?.id;
-      const r = user?.user_metadata?.role || localStorage.getItem('skreenit_role');
-
-      if (!at || !rt) return targetUrl;
-
-      const params = new URLSearchParams();
-      params.set('access_token', at);
-      params.set('refresh_token', rt);
-      if (uid) params.set('user_id', uid);
-      if (r) params.set('role', r);
-
-      return `${targetUrl}#${params.toString()}`;
-    } catch {
-      return targetUrl;
-    }
-  };
 
   try {
     if (role === 'recruiter') {
-      window.location.href = await withAuthHash('https://recruiter.skreenit.com/dashboard');
+      window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
     } else if (role === 'candidate') {
-      window.location.href = await withAuthHash('https://applicant.skreenit.com/dashboard');
+      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
     } else {
-      window.location.href = await withAuthHash(defaultUrl);
+      window.location.href = defaultUrl;
     }
   } catch (error) {
     console.error('Error during role-based redirect:', error);
-    window.location.href = await withAuthHash(defaultUrl);
+    window.location.href = defaultUrl;
   }
 }
 
@@ -114,7 +87,7 @@ export async function handleLoginSubmit(event) {
     if (error) throw new Error(error.message);
 
     await persistSessionToLocalStorage();
-    redirectByRole();
+    await redirectByRole();
 
   } catch (err) {
     console.error('Login error:', err);
