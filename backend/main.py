@@ -82,6 +82,7 @@ DEFAULT_ALLOWED_ORIGINS = [
     "https://dashboard.skreenit.com",
     "https://backend.skreenit.com",
     "https://aiskreenit.onrender.com",
+    "https://backskreenit.onrender.com",
 ]
 
 LOCAL_DEV_ORIGINS = [
@@ -89,24 +90,36 @@ LOCAL_DEV_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:8000",  # Added for local testing
+    "http://127.0.0.1:8000",  # Added for local testing
 ]
 
 origins = DEFAULT_ALLOWED_ORIGINS if IS_PROD else DEFAULT_ALLOWED_ORIGINS + LOCAL_DEV_ORIGINS
 
+# Enhanced CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all methods including OPTIONS
+    allow_headers=["*"],  # Allow all headers
+    expose_headers=["*"],  # Expose all headers to the client
+    max_age=600,  # Cache preflight response for 10 minutes
 )
-
+@app.options("/{path:path}") 
+async def options_handler(path: str): 
+    return Response(status_code=200)
 # ---------------------------------------------------------
 # Middleware
 # ---------------------------------------------------------
 app.add_middleware(SecurityHeadersMiddleware)
+class PatchedAuthMiddleware(AuthMiddleware): 
+    async def dispatch(self, request, call_next): 
+        if request.method == "OPTIONS": 
+            return Response(status_code=200) 
+        return await super().dispatch(request, call_next)
 
-app.add_middleware(AuthMiddleware, excluded_paths=EXCLUDED_PATHS)
+app.add_middleware(PatchedAuthMiddleware, excluded_paths=EXCLUDED_PATHS)
 
 # ---------------------------------------------------------
 # Exception Handlers
