@@ -43,14 +43,14 @@ async function persistSessionToLocalStorage() {
    ROLE-BASED REDIRECT
    Updated: Removed first-time login check as password and role are now set during registration
 ------------------------------------------------------- */
-export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard.html') {
+export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard') {
   const role = localStorage.getItem('skreenit_role');
 
   try {
     if (role === 'recruiter') {
-      window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
+      window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard';
     } else if (role === 'candidate') {
-      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
+      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard';
     } else {
       window.location.href = defaultUrl;
     }
@@ -153,7 +153,7 @@ export async function handleUpdatePasswordSubmit(event) {
 
     notify('Password updated successfully! Redirecting to login...', 'success');
     setTimeout(() => {
-      window.location.href = 'https://login.skreenit.com/login.html';
+      window.location.href = 'https://login.skreenit.com/login';
     }, 3000);
 
   } catch (err) {

@@ -10,7 +10,6 @@ from utils_others.logger import logger
 from utils_others.error_handler import register_exception_handlers
 
 from middleware.security_headers import SecurityHeadersMiddleware
-from middleware.rate_limit import RateLimitMiddleware
 from middleware.auth_middleware import AuthMiddleware, EXCLUDED_PATHS
 
 from routers import (
@@ -105,18 +104,6 @@ app.add_middleware(
 # ---------------------------------------------------------
 # Middleware
 # ---------------------------------------------------------
-app.add_middleware(
-    RateLimitMiddleware,
-    max_requests=200,
-    window=900,
-    excluded_paths=EXCLUDED_PATHS,
-    path_overrides={
-        "/api/v1/auth/login": 10,
-        "/api/v1/auth/register": 5,
-        "/api/v1/auth/confirm-email": 20,
-    }
-)
-
 app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(AuthMiddleware, excluded_paths=EXCLUDED_PATHS)
