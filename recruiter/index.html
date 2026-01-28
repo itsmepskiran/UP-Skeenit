@@ -66,7 +66,7 @@
       const { data, error } = await supabase.auth.getUser();
 
       if (error || !data?.user) {
-        window.location.href = "https://login.skreenit.com/login.html";
+        window.location.href = "https://login.skreenit.com/login";
         return;
       }
 
@@ -75,17 +75,17 @@
 
       // 2. Redirect based on role
       if (role === "recruiter") {
-        window.location.href = "/recruiter-dashboard.html";
+        window.location.href = "/recruiter-dashboard";
         return;
       }
 
       if (role === "candidate") {
-        window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
+        window.location.href = "https://dashboard.skreenit.com/candidate-dashboard";
         return;
       }
 
       // 3. Unknown role → send to login
-      window.location.href = "https://login.skreenit.com/login.html";
+      window.location.href = "https://login.skreenit.com/login";
     }
 
     init();

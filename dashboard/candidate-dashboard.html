@@ -162,14 +162,14 @@
             const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
-                window.location.href = "https://login.skreenit.com/login.html";
+                window.location.href = "https://login.skreenit.com/login";
                 return;
             }
 
             const role = user.user_metadata?.role;
 
             if (role !== "candidate") {
-                window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
+                window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard";
                 return;
             }
 
@@ -240,7 +240,7 @@
         // ---------------------------
         document.getElementById("logoutBtn").addEventListener("click", async () => {
             await supabase.auth.signOut();
-            window.location.href = "https://login.skreenit.com/login.html";
+            window.location.href = "https://login.skreenit.com/login";
         });
 
         // INIT
