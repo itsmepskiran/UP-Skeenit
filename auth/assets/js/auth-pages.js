@@ -2,7 +2,6 @@
 
 import { supabase } from './supabase-config.js';
 import { backendUrl, handleResponse } from './backend-client.js';
-import { sendVerificationEmail, sendPasswordResetEmail } from './email.js';
 
 /* -------------------------------------------------------
    AUTH STATE LISTENER

@@ -56,7 +56,7 @@ class BackendClient {
     if (configured) return [this.normalizeApiBaseUrl(configured)];
 
     // Default production backend
-    return [this.normalizeApiBaseUrl("https://aiskreenit.onrender.com")];
+    return [this.normalizeApiBaseUrl("https://backend.skreenit.com")];
   }
 
   getCurrentUrl() {
