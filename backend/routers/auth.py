@@ -118,16 +118,17 @@ async def confirm_email(request: Request):
     data = await request.json()
     token = data.get('token')
     token_type = data.get('type', 'signup')
-    
-    if not token:
-        raise HTTPException(status_code=400, detail="Missing token")
+    email = data.get('email')
+    if not token or not email:
+        raise HTTPException(status_code=400, detail="Missing token or email")
     
     try:
         # Verify the token with Supabase
         supabase = get_client()
         response = supabase.auth.verify_otp({
             'token': token,
-            'type': token_type
+            'type': token_type,
+            'email': email
         })
         
         if hasattr(response,'error') and response.error:
