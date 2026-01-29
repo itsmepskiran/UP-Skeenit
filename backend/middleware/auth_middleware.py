@@ -39,6 +39,7 @@ EXCLUDED_PATHS = [
     "/api/v1/health",
     "/api/v1/system/info",
     "/api/v1/system/db-health",
+    "/api/v1/auth/confirm-email"
 ]
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -63,7 +64,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Allow public paths
-        if any(path.startswith(p) for p in PUBLIC_PATHS):
+        clean_path = path.split("?")[0].rstrip("/") 
+        if clean_path in PUBLIC_PATHS:
             return await call_next(request)
 
         # Require Authorization header
