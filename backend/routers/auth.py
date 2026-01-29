@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException, Form
 from typing import Optional
 
-from backend.models.recruiter_models import CompanyRequest
 from models.auth_models import LoginRequest
 from services.auth_service import AuthService
 from services.supabase_client import get_client
