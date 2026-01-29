@@ -52,27 +52,20 @@ async def register(
     location: str = Form(...),
     role: str = Form(...),
     email_redirect_to: Optional[str] = Form(None)
-) -> dict[str, Any]:
-    try:
-        redirect_to = email_redirect_to or f"{self.frontend_url}/confirm-email"
+):
+    """Register a new user."""
+    service = get_auth_service()
 
-        auth_res = self.supabase.auth.sing_up({
-            "email": email,
-            "password": password,
-            "options":{
-                "email_redirect_to": redirect_to,
-                "data": {
-                    "full_name": full_name,
-                    "mobile": mobile,
-                    "location": location,
-                    "role": role,
-                    "onboarded": False,
-                    "password_set": True,
-                    "company_id": None,
-                    "company_name": None,
-                }
-            }
-        })
+    try:
+        result = service.register(
+            full_name=full_name, 
+            email=email, 
+            password=password, 
+            mobile=mobile, 
+            location=location, 
+            role=role,
+            email_redirect_to=email_redirect_to
+        )
         
         logger.info(
             "User registered successfully",

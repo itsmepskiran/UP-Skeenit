@@ -73,7 +73,8 @@ class AuthService:
         password: str,
         mobile: str,
         location: str,
-        role: str
+        role: str,
+        email_redirect_to: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Register a new user.
@@ -81,11 +82,12 @@ class AuthService:
         Recruiter will fill company info later in recruiter-profile.html.
         """
         try:
+            redirect_to = email_redirect_to or f"{self.frontend_url}/confirm-email"
             auth_res = self.supabase.auth.sign_up({
                 "email": email,
                 "password": password,
                 "options": {
-                    "email_redirect_to": f"{self.frontend_url}/confirm-email",
+                    "email_redirect_to": redirect_to,
                     "data": {
                         "full_name": full_name,
                         "mobile": mobile,
@@ -93,9 +95,7 @@ class AuthService:
                         "role": role,
                         "onboarded": False,
                         "password_set": True,
-                        "company_id": None,
-                        "company_name": None,
-                    }
+                        }
                 }
             })
 
@@ -120,8 +120,6 @@ class AuthService:
                     "full_name": metadata.get("full_name"),
                     "mobile": metadata.get("mobile"),
                     "location": metadata.get("location"),
-                    "company_id": None,
-                    "company_name": None,
                     "onboarded": False,
                     "password_set": True,
                 }
