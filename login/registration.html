@@ -164,7 +164,7 @@
         if (!full_name || !email || !mobile || !location) {
           throw new Error('Please fill in all required fields');
         }
-        if (mobile.length < 7) {
+        if (mobile.length < 10) {
           throw new Error('Please enter a valid mobile number');
         }
 
@@ -176,9 +176,7 @@
         formData.append('location', location);
         formData.append('role', role);
         formData.append('email_redirect_to', 'https://login.skreenit.com/confirm-email');
-        if (company_name) formData.append('company_name', company_name);
-        if (resume) formData.append('resume', resume);
-
+        
         const response = await backendPost('/auth/register', formData);
         const result = await handleResponse(response);
 

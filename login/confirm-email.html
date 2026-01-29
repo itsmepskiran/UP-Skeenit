@@ -52,36 +52,58 @@
             messageEl.textContent = msg;
         };
 
+        const showMessage = (msg) => {
+            messageEl.className = 'message'; // Default class
+            messageEl.textContent = msg;
+        };
+
         const redirectToLogin = () => {
             window.location.href = 'https://login.skreenit.com/login?confirmed=true';
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const params = new URLSearchParams(window.location.search);
-            const token = params.get('token');
-            const type = params.get('type') || 'signup';
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token = params.get('access_token');
+    const type = params.get('type') || 'signup';
 
-            if (!token) {
-                showError('Invalid confirmation link: Missing token');
-                return;
-            }
+    if (!token) {
+        showError('Invalid confirmation link: Missing token');
+        return;
+    }
 
-            try {
-                const { error } = await supabase.auth.verifyOtp({
-                    token_hash: token,
-                    type: type === 'recovery' ? 'recovery' : 'signup'
-                });
+    try {
+        showMessage('Please wait while we confirm your email address...');
 
-                if (error) throw error;
-
-                showSuccess('Email confirmed successfully! Redirecting to login...');
-                setTimeout(redirectToLogin, 1500);
-
-            } catch (err) {
-                console.error('Confirmation error:', err);
-                showError(err.message || 'Failed to confirm email. Please try again.');
-            }
+        // Fixed: URL quotes, method syntax, and closing parentheses/braces
+        const response = await fetch('https://backend.skreenit.com/api/v1/auth/confirm-email', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+                token: token,
+                type: type
+            })
         });
+
+        const result = await response.json();
+
+        // Note: Check if your API uses HTTP status codes (response.ok) 
+        // or a specific field in the JSON (result.ok) to determine success.
+        // Assuming your API returns { ok: true/false } in the body:
+        if (!result.ok) {
+            throw new Error(result.detail || 'Failed to confirm email');
+        }
+
+        showSuccess('Email confirmed successfully! Redirecting to login...');
+        setTimeout(redirectToLogin, 1500);
+
+    } catch (err) {
+        console.error('Confirmation error:', err);
+        showError(err.message || 'Failed to confirm email. Please try again.');
+    }
+    });
     </script>
 </body>
 </html>

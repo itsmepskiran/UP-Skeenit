@@ -117,6 +117,7 @@ async def forgot_password(request: Request, email: str = Form(...)):
 async def confirm_email(request: Request):
     data = await request.json()
     token = data.get('token')
+    token_type = data.get('type', 'signup')
     
     if not token:
         raise HTTPException(status_code=400, detail="Missing token")
@@ -126,13 +127,14 @@ async def confirm_email(request: Request):
         supabase = get_client()
         response = supabase.auth.verify_otp({
             'token': token,
-            'type': 'signup'
+            'type': token_type
         })
         
-        if response.get('error'):
-            raise HTTPException(status_code=400, detail=response['error']['message'])
+        if hasattr(response,'error') and response.error:
+            raise HTTPException(status_code=400, detail=response.error.message)
         
         return {"message": "Email confirmed successfully"}
         
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Email confirmation failed: {str(e)}")
+        raise HTTPException(status_code=400, detail="Invalid or expired confirmation link")
