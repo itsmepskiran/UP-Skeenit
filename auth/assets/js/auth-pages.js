@@ -38,7 +38,40 @@ async function persistSessionToLocalStorage() {
     console.warn('Failed to persist session to localStorage', e);
   }
 }
+// Check for email confirmation token in URL
+async function handleEmailConfirmation() {
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = urlParams.get('access_token');
+    const tokenType = urlParams.get('type');
 
+    if (accessToken && tokenType === 'signup') {
+        try {
+            // Send token to your backend for confirmation
+            const response = await fetch('https://backend.skreenit.com/api/v1/auth/confirm-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: accessToken })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                // Show success message
+                alert('Email confirmed successfully! Please log in.');
+                window.location.href = '/login.html';
+            } else {
+                throw new Error(result.message || 'Failed to confirm email');
+            }
+        } catch (error) {
+            console.error('Email confirmation error:', error);
+            alert('Error confirming email: ' + error.message);
+        }
+    }
+}
+
+// Call this when the page loads
+document.addEventListener('DOMContentLoaded', handleEmailConfirmation);
 /* -------------------------------------------------------
    ROLE-BASED REDIRECT
    Updated: Removed first-time login check as password and role are now set during registration

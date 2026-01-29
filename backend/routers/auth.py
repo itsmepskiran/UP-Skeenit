@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, Form
 from typing import Optional
 
+from backend.models.recruiter_models import CompanyRequest
 from models.auth_models import LoginRequest
 from services.auth_service import AuthService
 from services.supabase_client import get_client
@@ -49,24 +50,30 @@ async def register(
     password: str = Form(...),
     mobile: str = Form(...),
     location: str = Form(...),
-    role: str = Form(...)
-):
-    """
-    Registration no longer accepts company_id or company_name.
-    Recruiters fill company details later in recruiter-profile.html.
-    """
-    service = get_auth_service()
-
+    role: str = Form(...),
+    email_redirect_to: Optional[str] = Form(None)
+) -> dict[str, Any]:
     try:
-        result = service.register(
-            full_name=full_name,
-            email=email,
-            password=password,
-            mobile=mobile,
-            location=location,
-            role=role
-        )
+        redirect_to = email_redirect_to or f"{self.frontend_url}/confirm-email"
 
+        auth_res = self.supabase.auth.sing_up({
+            "email": email,
+            "password": password,
+            "options":{
+                "email_redirect_to": redirect_to,
+                "data": {
+                    "full_name": full_name,
+                    "mobile": mobile,
+                    "location": location,
+                    "role": role,
+                    "onboarded": False,
+                    "password_set": True,
+                    "company_id": None,
+                    "company_name": None,
+                }
+            }
+        })
+        
         logger.info(
             "User registered successfully",
             extra={"request_id": getattr(request.state, "request_id", None)}
@@ -112,3 +119,28 @@ async def forgot_password(request: Request, email: str = Form(...)):
     except Exception:
         # Always return success to avoid email enumeration
         return {"ok": True, "message": "If an account exists, a reset link has been sent"}
+
+# Then add the new endpoint to the auth router
+@router.post("/confirm-email")
+async def confirm_email(request: Request):
+    data = await request.json()
+    token = data.get('token')
+    
+    if not token:
+        raise HTTPException(status_code=400, detail="Missing token")
+    
+    try:
+        # Verify the token with Supabase
+        supabase = get_client()
+        response = supabase.auth.verify_otp({
+            'token': token,
+            'type': 'signup'
+        })
+        
+        if response.get('error'):
+            raise HTTPException(status_code=400, detail=response['error']['message'])
+        
+        return {"message": "Email confirmed successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
