@@ -1,14 +1,6 @@
 import { backendPost, handleResponse } from "https://auth.skreenit.com/assets/js/backend-client.js";
 import { notify } from "https://auth.skreenit.com/assets/js/auth-shared.js";
 
-    function notify(message, type = 'info') {
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 5000);
-    }
-
     async function handleRegistrationSubmit(event) {
       event.preventDefault();
 
