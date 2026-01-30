@@ -71,70 +71,8 @@
     </form>
   </div>
 </div>
-
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="module" src="https://auth.skreenit.com/assets/js/supabase-config.js"></script>
-
-<!-- Embedded Login Logic -->
-<script type="module">
-  import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
-
-  const form = document.getElementById("loginForm");
-  const errorBox = document.getElementById("errorBox");
-
-  function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.style.display = "block";
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorBox.style.display = "none";
-
-    const submitBtn = form.querySelector("button");
-    const btnText = submitBtn.querySelector(".btn-text");
-    const btnLoader = submitBtn.querySelector(".btn-loader");
-
-    btnText.style.display = "none";
-    btnLoader.style.display = "inline-block";
-    submitBtn.disabled = true;
-
-    try {
-      const fd = new FormData(form);
-      const email = fd.get("email").trim();
-      const password = fd.get("password").trim();
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-
-      const user = data.user;
-      const role = user?.user_metadata?.role;
-
-      if (!role) {
-        throw new Error("Your account does not have a role assigned.");
-      }
-
-      if (role === "recruiter") {
-        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard";
-      } else {
-        window.location.href = "https://dashboard.skreenit.com/candidate-dashboard";
-      }
-
-    } catch (err) {
-      console.error("Login error:", err);
-      showError(err.message || "Login failed. Please try again.");
-    } finally {
-      btnText.style.display = "inline-block";
-      btnLoader.style.display = "none";
-      submitBtn.disabled = false;
-    }
-  });
-</script>
-
+<script type="module" src="/js/login.js"></script>
 </body>
 </html>

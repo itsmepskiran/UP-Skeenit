@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skreenit - Job Details</title>
+
+  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
+  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+</head>
+
+<body>
+
+<!-- Floating background elements -->
+<div class="floating-elements">
+  <div class="floating-circle"></div>
+  <div class="floating-circle"></div>
+  <div class="floating-circle"></div>
+  <div class="floating-circle"></div>
+</div>
+
+<!-- Logo -->
+<a href="https://skreenit.com" class="logo-link">
+  <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
+</a>
+
+<!-- Wrapper -->
+<div class="auth-wrapper animate-slideInScale" style="max-width: 900px;">
+
+  <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand-image" />
+
+  <div class="auth-header">
+    <h1><i class="fas fa-briefcase"></i> Job Details</h1>
+    <p>Review the job information before applying</p>
+  </div>
+
+  <div class="auth-body">
+
+    <div id="jobDetails" class="details-box card">
+      <p>Loading job details...</p>
+    </div>
+
+    <button id="applyBtn" class="btn btn-primary btn-large" style="width:100%; margin-top:20px;">
+      <span class="btn-text"><i class="fas fa-paper-plane"></i> Apply Now</span>
+      <span class="btn-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Applying...</span>
+    </button>
+
+    <div class="auth-actions" style="margin-top:20px;">
+      <a href="candidate-dashboard.html"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="/js/job-details.js"></script>
+</body>
+</html>
