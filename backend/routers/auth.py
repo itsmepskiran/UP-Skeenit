@@ -111,31 +111,3 @@ async def forgot_password(request: Request, email: str = Form(...)):
     except Exception:
         # Always return success to avoid email enumeration
         return {"ok": True, "message": "If an account exists, a reset link has been sent"}
-
-# Then add the new endpoint to the auth router
-@router.post("/confirm-email")
-async def confirm_email(request: Request):
-    data = await request.json()
-    token = data.get('token')
-    token_type = data.get('type', 'signup')
-    email = data.get('email')
-    if not token or not email:
-        raise HTTPException(status_code=400, detail="Missing token or email")
-    
-    try:
-        # Verify the token with Supabase
-        supabase = get_client()
-        response = supabase.auth.verify_otp({
-            'token': token,
-            'type': token_type,
-            'email': email
-        })
-        
-        if hasattr(response,'error') and response.error:
-            raise HTTPException(status_code=400, detail=response.error.message)
-        
-        return {"message": "Email confirmed successfully"}
-        
-    except Exception as e:
-        logger.error(f"Email confirmation failed: {str(e)}")
-        raise HTTPException(status_code=400, detail="Invalid or expired confirmation link")

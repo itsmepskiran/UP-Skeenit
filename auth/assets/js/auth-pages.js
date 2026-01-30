@@ -38,47 +38,51 @@ async function persistSessionToLocalStorage() {
     console.warn('Failed to persist session to localStorage', e);
   }
 }
-// Check for email confirmation token in URL
+
+/* -------------------------------------------------------
+   EMAIL CONFIRMATION (Option 2 — Supabase handles everything)
+------------------------------------------------------- */
 async function handleEmailConfirmation() {
-    const fragment = window.location.hash.substring(1);
-    const params = new URLSearchParams(fragment);
+  const messageEl = document.getElementById("message");
 
-    const token = params.get("access_token");
-    const email = decodeURIComponent(params.get("email") || "");
-    const type = params.get("type") || "email";  // Supabase uses "email"
+  const show = (text, type = "") => {
+    if (!messageEl) return;
+    messageEl.textContent = text;
+    messageEl.className = type ? `message ${type}` : "message";
+  };
 
-    if (!token || !email) {
-        alert("Invalid confirmation link: Missing token or email");
-        return;
+  try {
+    show("Confirming your email...");
+
+    // Supabase automatically:
+    // - extracts token
+    // - extracts email
+    // - verifies OTP
+    // - confirms the user
+    // - creates a session
+    const { data, error } = await supabase.auth.getSessionFromUrl();
+
+    if (error) {
+      show("Invalid or expired confirmation link", "error");
+      return;
     }
 
-    try {
-        const response = await fetch("https://backend.skreenit.com/api/v1/auth/confirm-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, email, type })
-        });
+    show("Email confirmed successfully! Redirecting...", "success");
 
-        const result = await response.json();
+    setTimeout(() => {
+      window.location.href = "https://login.skreenit.com/login?confirmed=true";
+    }, 1500);
 
-        if (!response.ok || result.ok === false) {
-            throw new Error(result.detail || "Failed to confirm email");
-        }
-
-        alert("Email confirmed successfully! Please log in.");
-        window.location.href = "https://login.skreenit.com/login?confirmed=true";
-
-    } catch (error) {
-        console.error("Email confirmation error:", error);
-        alert("Error confirming email: " + error.message);
-    }
+  } catch (err) {
+    console.error("Email confirmation error:", err);
+    show("Something went wrong while confirming your email", "error");
+  }
 }
 
 document.addEventListener("DOMContentLoaded", handleEmailConfirmation);
 
 /* -------------------------------------------------------
    ROLE-BASED REDIRECT
-   Updated: Removed first-time login check as password and role are now set during registration
 ------------------------------------------------------- */
 export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard') {
   const role = localStorage.getItem('skreenit_role');
@@ -160,7 +164,6 @@ export async function handleUpdatePasswordSubmit(event) {
     if (new_password.length < 8) throw new Error('Password must be at least 8 characters.');
     if (new_password !== confirm_password) throw new Error('Passwords do not match.');
 
-    // Extract token from hash or query
     let token = '';
     const hash = window.location.hash;
 
