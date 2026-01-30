@@ -20,22 +20,14 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 ------------------------------------------------------- */
 async function persistSessionToLocalStorage() {
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
     const { data: userData } = await supabase.auth.getUser();
-
-    const access_token = sessionData?.session?.access_token || '';
-    const refresh_token = sessionData?.session?.refresh_token || '';
     const user = userData?.user || null;
-
-    if (access_token) localStorage.setItem('skreenit_token', access_token);
-    if (refresh_token) localStorage.setItem('skreenit_refresh_token', refresh_token);
-    if (user?.id) localStorage.setItem('skreenit_user_id', user.id);
 
     const role = user?.user_metadata?.role;
     if (role) localStorage.setItem('skreenit_role', role);
 
   } catch (e) {
-    console.warn('Failed to persist session to localStorage', e);
+    console.warn('Failed to persist role to localStorage', e);
   }
 }
 
@@ -123,10 +115,23 @@ export async function handleLoginSubmit(event) {
 
     if (!email || !password) throw new Error('Email and password are required');
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // 1️⃣ Login
+    const { data: loginData, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
     if (error) throw new Error(error.message);
 
+    // 2️⃣ ⭐ Write shared cookie session for ALL subdomains
+    await supabase.auth.setSession({
+      access_token: loginData.session.access_token,
+      refresh_token: loginData.session.refresh_token
+    });
+
+    // 3️⃣ Store role only
     await persistSessionToLocalStorage();
+
+    // 4️⃣ Redirect
     await redirectByRole();
 
   } catch (err) {
