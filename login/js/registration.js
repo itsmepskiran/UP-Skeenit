@@ -1,5 +1,5 @@
 import { backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
-import { notify } from 'https://auth.skreenit.com/assets/js/auth-shared.js';
+import { notify } from 'https://auth.skreenit.com/assets/js/auth-pages.js';
 
     async function handleRegistrationSubmit(event) {
       event.preventDefault();
