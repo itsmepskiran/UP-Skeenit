@@ -1,4 +1,4 @@
-    import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
+import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
 
     document.addEventListener("DOMContentLoaded", async () => {
       const form = document.getElementById("passwordForm");

@@ -1,16 +1,3 @@
-// backend-client.js — Enterprise Edition
-// ------------------------------------------------------------
-// Features:
-// ✔ Supabase-native JWT retrieval (no localStorage tokens)
-// ✔ Automatic retries + failover across multiple backend URLs
-// ✔ Timeout protection using AbortController
-// ✔ Latency tracking + structured logs
-// ✔ FormData-safe uploads (no forced Content-Type)
-// ✔ Consistent error envelopes
-// ✔ Health-aware failover
-// ✔ Drop-in replacement for your existing backend-client.js
-// ------------------------------------------------------------
-
 import { supabase } from "./supabase-config.js";
 
 class BackendClient {
