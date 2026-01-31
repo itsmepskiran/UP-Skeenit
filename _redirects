@@ -8,16 +8,3 @@
 /recruiter/js/*         /recruiter/js/:splat       200
 /dashboard/js/*         /dashboard/js/:splat       200
 /applicant/js/*         /applicant/js/:splat       200
-
-# SPA ROUTING
-/auth/*                 /auth/index.html        200
-/login/*                /login/index.html       200
-/recruiter/*            /recruiter/index.html   200
-/dashboard/*            /dashboard/index.html   200
-/applicant/*            /applicant/index.html   200
-/hrms/*                 /hrms/index.html        200
-/support/*              /support/index.html     200
-/legal/*                /legal/index.html       200
-/backend/*              /backend/index.html     200
-/app/*                  /app/index.html         200
-/in/*                   /in/index.html          200
