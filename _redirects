@@ -1,19 +1,7 @@
 # ---------------------------------------------------------
-# ANTI-LOOP EXCEPTIONS (Critical)
-# These rules break the infinite loop by explicitly serving the 
-# index files without applying the wildcard rewrite again.
+# CATCH-ALL
 # ---------------------------------------------------------
-/auth/index.html      /auth/index.html      200
-/login/index.html     /login/index.html     200
-/recruiter/index.html /recruiter/index.html 200
-/dashboard/index.html /dashboard/index.html 200
-/applicant/index.html /applicant/index.html 200
-/hrms/index.html      /hrms/index.html      200
-/support/index.html   /support/index.html   200
-/legal/index.html     /legal/index.html     200
-/backend/index.html   /backend/index.html   200
-/app/index.html       /app/index.html       200
-/in/index.html        /in/index.html        200
+/*                      /index.html             200
 
 # ---------------------------------------------------------
 # STATIC ASSETS
@@ -42,8 +30,3 @@
 /backend/*              /backend/index.html     200
 /app/*                  /app/index.html         200
 /in/*                   /in/index.html          200
-
-# ---------------------------------------------------------
-# CATCH-ALL
-# ---------------------------------------------------------
-/*                      /index.html             200
