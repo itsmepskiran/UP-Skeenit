@@ -1,5 +1,5 @@
 // api-services.js
-import { supabase } from './supabase-config.js';
+import { supabase } from '/auth/assets/js/supabase-config.js';
 
 /* -------------------------------------------------------
    AUTH HELPERS
