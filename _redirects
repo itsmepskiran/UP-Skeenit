@@ -1,37 +1,28 @@
 # ---------------------------------------------------------
-# STATIC ASSETS (must NEVER be rewritten)
+# STATIC ASSETS (Pass-through)
 # ---------------------------------------------------------
-/auth/assets/*        /auth/assets/:splat        200
-/auth/assets/css/*    /auth/assets/css/:splat    200
-/auth/assets/images/* /auth/assets/images/:splat 200
-/auth/assets/js/*     /auth/assets/js/:splat     200
+/auth/assets/*          /auth/assets/:splat        200
+/auth/assets/css/*      /auth/assets/css/:splat    200
+/auth/assets/images/*   /auth/assets/images/:splat 200
+/auth/assets/js/*       /auth/assets/js/:splat     200
 
-/login/js/*           /login/js/:splat           200
-/recruiter/js/*       /recruiter/js/:splat       200
-/dashboard/js/*       /dashboard/js/:splat       200
-/applicant/js/*       /applicant/js/:splat       200
+/login/js/*             /login/js/:splat           200
+/recruiter/js/*         /recruiter/js/:splat       200
+/dashboard/js/*         /dashboard/js/:splat       200
+/applicant/js/*         /applicant/js/:splat       200
 
-# ---------------------------------------------------------
-# SPA ROUTING RULES
-# Handle all non-asset, non-file requests to index.html
-# ---------------------------------------------------------
-/auth/*         /auth/index.html        200
-/login/*        /login/index.html       200
-/recruiter/*    /recruiter/index.html   200
-/dashboard/*    /dashboard/index.html   200
-/applicant/*    /applicant/index.html   200
-/hrms/*         /hrms/index.html        200
-/support/*      /support/index.html     200
-/legal/*        /legal/index.html       200
-/backend/*      /backend/index.html     200
-/app/*          /app/index.html         200
-/in/*           /in/index.html          200
+# Specific App Routes
+/auth/*                 /auth/index.html        200
+/login/*                /login/index.html       200
+/recruiter/*            /recruiter/index.html   200
+/dashboard/*            /dashboard/index.html   200
+/applicant/*            /applicant/index.html   200
+/hrms/*                 /hrms/index.html        200
+/support/*              /support/index.html     200
+/legal/*                /legal/index.html       200
+/backend/*              /backend/index.html     200
+/app/*                  /app/index.html         200
+/in/*                   /in/index.html          200
 
-# ---------------------------------------------------------
-# REDIRECT RULES
-# ---------------------------------------------------------
-# Redirect .html to clean URLs (exclude index.html)
-/*.html    /:splat    301
-
-# Catch-all rule for SPA (must be last)
-/*         /index.html    200
+# Global Catch-all (Must be last)
+/*                      /index.html             200
