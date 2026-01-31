@@ -12,11 +12,16 @@ import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
+        if (window.__CONFIRM_EMAIL_RAN__) {
+            return;
+        }
+        window.__CONFIRM_EMAIL_RAN__ = true;
+
         try {
             show("Confirming your email...", "loading");
-            const { data, error } = await supabase.auth.getSessionFromUrl();
+            const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
 
-            if (error) {
+            if (error || !data.session) {
                 show("Invalid or expired confirmation link.", "error");
                 return;
             }
