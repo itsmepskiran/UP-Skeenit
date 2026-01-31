@@ -1,11 +1,4 @@
-# ---------------------------------------------------------
-# CATCH-ALL
-# ---------------------------------------------------------
-/*                      /index.html             200
-
-# ---------------------------------------------------------
 # STATIC ASSETS
-# ---------------------------------------------------------
 /auth/assets/*          /auth/assets/:splat        200
 /auth/assets/css/*      /auth/assets/css/:splat    200
 /auth/assets/images/*   /auth/assets/images/:splat 200
@@ -16,9 +9,7 @@
 /dashboard/js/*         /dashboard/js/:splat       200
 /applicant/js/*         /applicant/js/:splat       200
 
-# ---------------------------------------------------------
-# SPA ROUTING RULES
-# ---------------------------------------------------------
+# SPA ROUTING
 /auth/*                 /auth/index.html        200
 /login/*                /login/index.html       200
 /recruiter/*            /recruiter/index.html   200

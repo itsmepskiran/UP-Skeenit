@@ -1,6 +1,18 @@
 {
   "version": 1,
-  "include": ["/*"],
+  "include": [
+    "/auth/*",
+    "/login/*",
+    "/recruiter/*",
+    "/dashboard/*",
+    "/applicant/*",
+    "/hrms/*",
+    "/support/*",
+    "/legal/*",
+    "/backend/*",
+    "/app/*",
+    "/in/*"
+  ],
   "exclude": [
     "/auth/assets/*",
     "/auth/assets/css/*",
