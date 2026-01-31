@@ -59,36 +59,40 @@
   </div>
 
   <script type="module">
-    import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
+  import { supabase } from "/auth/assets/js/supabase-config.js";
 
-    async function init() {
-      // 1. Check Supabase session
-      const { data, error } = await supabase.auth.getUser();
+  async function init() {
+    // 1. Check Supabase session
+    const { data, error } = await supabase.auth.getUser();
 
-      if (error || !data?.user) {
-        window.location.href = "https://login.skreenit.com/login";
-        return;
-      }
-
-      const user = data.user;
-      const role = user.user_metadata?.role;
-
-      // 2. Redirect based on role
-      if (role === "recruiter") {
-        window.location.href = "/recruiter-dashboard";
-        return;
-      }
-
-      if (role === "candidate") {
-        window.location.href = "https://dashboard.skreenit.com/candidate-dashboard";
-        return;
-      }
-
-      // 3. Unknown role → send to login
-      window.location.href = "https://login.skreenit.com/login";
+    if (error || !data?.user) {
+      window.location.href = "https://login.skreenit.com/login/login.html";
+      return;
     }
 
-    init();
-  </script>
+    const user = data.user;
+    const role = user.user_metadata?.role;
+
+    // 2. Redirect based on role
+    if (role === "recruiter") {
+      window.location.href = "/recruiter/recruiter-dashboard.html";
+      return;
+    }
+
+    if (role === "candidate") {
+      window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
+      return;
+    }
+
+    // 3. Unknown role → send to login
+    window.location.href = "https://login.skreenit.com/login.html";
+  }
+
+  init();
+</script>
+<script type="module" src="/recruiter/js/candidate-details.js"></script>
+<script type="module" src="/recruiter/js/job-create.js"></script>
+<script type="module" src="/recruiter/js/job-edit.js"></script>
+<script type="module" src="/recruiter/js/recruiter-profile.js"></script>
 </body>
 </html>

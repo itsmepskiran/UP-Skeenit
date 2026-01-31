@@ -56,9 +56,26 @@
     <div class="text">Redirecting to login...</div>
   </div>
 
+  <!-- Load Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Load shared auth modules -->
+  <script type="module" src="/auth/assets/js/backend-client.js"></script>
+  <script type="module" src="/auth/assets/js/supabase-config.js"></script>
+
+  <!-- Load login subdomain modules -->
+  <script type="module" src="/login/js/login.js"></script>
+  <script type="module" src="/login/js/registration.js"></script>
+  <script type="module" src="/login/js/update-password.js"></script>
+  <script type="module" src="/login/js/confirm-email.js"></script>
+  <script type="module" src="/login/js/forgot-password.js"></script>
+
+  <!-- Redirect AFTER modules load -->
   <script>
-    // Fast redirect to login page
-    window.location.href = "/login/login.html";
+    setTimeout(() => {
+      window.location.href = "/login/login.html";
+    }, 0);
   </script>
 </body>
 </html>
+
