@@ -23,6 +23,3 @@
 /backend/*              /backend/index.html     200
 /app/*                  /app/index.html         200
 /in/*                   /in/index.html          200
-
-# Global Catch-all (Must be last)
-/                      /index.html             200
