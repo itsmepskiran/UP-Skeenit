@@ -15,17 +15,17 @@
 # SPA ROUTING RULES
 # Handle all non-asset, non-file requests to index.html
 # ---------------------------------------------------------
-/auth/         /auth/index.html        200
-/login/        /login/index.html       200
-/recruiter/    /recruiter/index.html   200
-/dashboard/    /dashboard/index.html   200
-/applicant/    /applicant/index.html   200
-/hrms/         /hrms/index.html        200
-/support/      /support/index.html     200
-/legal/        /legal/index.html       200
-/backend/      /backend/index.html     200
-/app/          /app/index.html         200
-/in/           /in/index.html          200
+/auth/*         /auth/index.html        200
+/login/*        /login/index.html       200
+/recruiter/*    /recruiter/index.html   200
+/dashboard/*    /dashboard/index.html   200
+/applicant/*    /applicant/index.html   200
+/hrms/*         /hrms/index.html        200
+/support/*      /support/index.html     200
+/legal/*        /legal/index.html       200
+/backend/*      /backend/index.html     200
+/app/*          /app/index.html         200
+/in/*           /in/index.html          200
 
 # ---------------------------------------------------------
 # REDIRECT RULES
