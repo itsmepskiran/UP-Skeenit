@@ -1,21 +1,35 @@
-# Main site - Handle all root paths
-/*    /index.html   200
+# ---------------------------------------------------------
+# STATIC ASSETS (must NEVER be rewritten)
+# ---------------------------------------------------------
+/assets/*        /assets/:splat        200
+/js/*            /js/:splat            200
+/css/*           /css/:splat           200
+/images/*        /images/:splat        200
 
-# Handle HTML5 pushState (clean URLs)
-/*.html    /index.html   200
+# ---------------------------------------------------------
+# ROOT SITE (www.skreenit.com)
+# ---------------------------------------------------------
+/                /index.html           200
 
-# Subdomain sites - Handle SPA routing
-/auth/*    /auth/index.html    200
-/login/*   /login/index.html   200
-/recruiter/*    /recruiter/index.html    200
-/dashboard/*    /dashboard/index.html    200
-/applicant/*    /applicant/index.html    200
-/hrms/*         /hrms/index.html         200
-/support/*      /support/index.html      200
-/legal/*        /legal/index.html        200
-/backend/*      /backend/index.html      200
-/app/*          /app/index.html          200
-/in/*           /in/index.html           200
+# Clean URLs for root HTML files
+/*.html          /index.html           200
 
+# ---------------------------------------------------------
+# SUBDOMAIN FOLDERS (SPA routing)
+# ---------------------------------------------------------
+/auth/*          /auth/index.html          200
+/login/*         /login/index.html         200
+/recruiter/*     /recruiter/index.html     200
+/dashboard/*     /dashboard/index.html     200
+/applicant/*     /applicant/index.html     200
+/hrms/*          /hrms/index.html          200
+/support/*       /support/index.html       200
+/legal/*         /legal/index.html         200
+/backend/*       /backend/index.html       200
+/app/*           /app/index.html           200
+/in/*            /in/index.html            200
+
+# ---------------------------------------------------------
 # Redirect .html to clean URLs
-/*.html    /:splat  301
+# ---------------------------------------------------------
+/*.html          /:splat                 301
