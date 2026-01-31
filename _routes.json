@@ -1,17 +1,17 @@
 {
   "version": 1,
   "include": [
-    "/auth/index.html",
-    "/login/index.html",
-    "/recruiter/index.html",
-    "/dashboard/index.html",
-    "/applicant/index.html",
-    "/hrms/index.html",
-    "/support/index.html",
-    "/legal/index.html",
-    "/backend/index.html",
-    "/app/index.html",
-    "/in/index.html"
+    "/auth/*",
+    "/login/*",
+    "/recruiter/*",
+    "/dashboard/*",
+    "/applicant/*",
+    "/hrms/*",
+    "/support/*",
+    "/legal/*",
+    "/backend/*",
+    "/app/*",
+    "/in/*"
   ],
   "exclude": [
     "/auth/assets/*",
