@@ -1,12 +1,14 @@
 {
   "version": 1,
-  "include": [
-    "/*"
-  ],
+  "include": ["/*"],
   "exclude": [
-    "/assets/*",
-    "/js/*",
-    "/css/*",
-    "/images/*"
+    "/auth/assets/*",
+    "/auth/assets/css/*",
+    "/auth/assets/images/*",
+    "/auth/assets/js/*",
+    "/login/js/*",
+    "/recruiter/js/*",
+    "/dashboard/js/*",
+    "/applicant/js/*"
   ]
 }
