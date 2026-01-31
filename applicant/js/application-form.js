@@ -1,5 +1,5 @@
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
-import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { supabase } from '/auth/assets/js/supabase-config.js';
+import { backendGet, backendPost, handleResponse } from '/auth/assets/js/backend-client.js';
 
     const form = document.getElementById('detailedApplicationForm');
     const steps = Array.from(document.querySelectorAll('.form-step'));

@@ -1,5 +1,5 @@
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
-import { persistSessionToLocalStorage, redirectByRole} from 'https://auth.skreenit.com/assets/js/auth-pages.js';
+import { supabase } from '/auth/assets/js/supabase-config.js';
+import { persistSessionToLocalStorage, redirectByRole} from '/auth/assets/js/auth-pages.js';
 
 const form = document.getElementById("loginForm");
 const errorBox = document.getElementById("errorBox");

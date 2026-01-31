@@ -1,5 +1,5 @@
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
-import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { supabase } from '/auth/assets/js/supabase-config.js';
+import { backendGet, handleResponse } from '/auth/assets/js/backend-client.js';
         const detailsBox = document.getElementById("applicationDetails");
 
         // ---------------------------
