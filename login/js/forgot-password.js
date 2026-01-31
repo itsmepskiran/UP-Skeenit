@@ -1,4 +1,4 @@
-import { supabase } from '/auth/assets/js/supabase-config.js';
+import { supabase } from './auth/assets/js/supabase-config.js';
 
   const form = document.getElementById("forgotPasswordForm");
   const messageBox = document.getElementById("message");
