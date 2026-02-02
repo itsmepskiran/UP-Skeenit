@@ -9,14 +9,14 @@ import { backendGet, handleResponse } from '/auth/assets/js/backend-client.js';
             const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
-                window.location.href = "https://login.skreenit.com/login";
+                window.location.href = "https://www.skreenit.com/login";
                 return;
             }
 
             const role = user.user_metadata?.role;
 
             if (role !== "candidate") {
-                window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
+                window.location.href = "https://www.skreenit.com/recruiter";
                 return;
             }
 
@@ -97,7 +97,7 @@ import { backendGet, handleResponse } from '/auth/assets/js/backend-client.js';
                     <div class="details-value">${app.notes || "No notes available"}</div>
                 </div>
 
-                <a href="https://dashboard.skreenit.com/candidate-dashboard.html" class="btn-primary">Back to Dashboard</a>
+                <a href="https://www.skreenit.com/applicant" class="btn-primary">Back to Dashboard</a>
             `;
         }
 
@@ -106,7 +106,7 @@ import { backendGet, handleResponse } from '/auth/assets/js/backend-client.js';
         // ---------------------------
         document.getElementById("logoutBtn").addEventListener("click", async () => {
             await supabase.auth.signOut();
-            window.location.href = "https://login.skreenit.com/login";
+            window.location.href = "https://www.skreenit.com/login";
         });
 
         // INIT

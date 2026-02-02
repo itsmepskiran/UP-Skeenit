@@ -8,7 +8,7 @@ import { backendPost, handleResponse } from '/auth/assets/js/backend-client.js';
       const role = user?.user_metadata?.role;
 
       if (role !== "recruiter") {
-        window.location.href = "https://login.skreenit.com/login";
+        window.location.href = "https://www.skreenit.com/login";
       }
 
       // Update sidebar user info
@@ -51,7 +51,7 @@ import { backendPost, handleResponse } from '/auth/assets/js/backend-client.js';
         await handleResponse(res);
 
         alert("Job created successfully!");
-        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard";
+        window.location.href = "https://www.skreenit.com/recruiter";
 
       } catch (err) {
         console.error("Job create failed:", err);
@@ -66,7 +66,7 @@ import { backendPost, handleResponse } from '/auth/assets/js/backend-client.js';
     ------------------------------------------------------- */
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       await supabase.auth.signOut();
-      window.location.href = "https://login.skreenit.com/login";
+      window.location.href = "https://www.skreenit.com/login";
     });
 
     /* -------------------------------------------------------

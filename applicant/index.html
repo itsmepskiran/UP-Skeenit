@@ -59,7 +59,7 @@
       // 1. Check Supabase session
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) {
-        window.location.href = "https://login.skreenit.com/login";
+        window.location.href = "https://www.skreenit.com/login";
         return;
       }
 
@@ -68,7 +68,7 @@
       // 2. Role check
       const role = user.user_metadata?.role;
       if (role !== "candidate") {
-        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard";
+        window.location.href = "https://www.skreenit.com/recruiter";
         return;
       }
 
@@ -83,21 +83,21 @@
           case "not_started":
           case "draft":
           case "incomplete":
-            window.location.href = "/detailed-application-form.html";
+            window.location.href = "https://www.skreenit.com/update-profile";
             break;
 
           case "submitted":
           case "accepted":
           case "rejected":
-            window.location.href = "https://dashboard.skreenit.com/candidate-dashboard";
+            window.location.href = "https://www.skreenit.com/applicant";
             break;
 
           default:
-            window.location.href = "./detailed-application-form";
+            window.location.href = "https://www.skreenit.com/update-profile";
         }
       } catch (e) {
         console.warn("Status check failed", e);
-        window.location.href = "./detailed-application-form";
+        window.location.href = "https://www.skreenit.com/update-profile";
       }
     }
 

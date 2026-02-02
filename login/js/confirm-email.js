@@ -8,7 +8,7 @@ import { supabase } from '/auth/assets/js/supabase-config.js';
     };
 
     const redirectToLogin = () => {
-        window.location.href = 'https://login.skreenit.com/login?confirmed=true';
+        window.location.href = 'https://www.skreenit.com/login?confirmed=true';
     };
 
     document.addEventListener('DOMContentLoaded', async () => {

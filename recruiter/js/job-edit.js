@@ -12,7 +12,7 @@ import {
       const role = user?.user_metadata?.role;
 
       if (role !== "recruiter") {
-        window.location.href = "https://login.skreenit.com/login";
+        window.location.href = "https://www.skreenit.com/login";
         return;
       }
 
@@ -51,7 +51,7 @@ import {
       const jobId = getJobId();
       if (!jobId) {
         alert("Missing job ID.");
-        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
+        window.location.href = "https://www.skreenit.com/recruiter";
         return;
       }
 
@@ -102,7 +102,7 @@ import {
         try {
           await updateJob(jobId, payload);
           alert("Job updated successfully!");
-          window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
+          window.location.href = "https://www.skreenit.com/recruiter";
         } catch (err) {
           console.error("Job update failed:", err);
           alert("Failed to update job. Please try again.");
@@ -121,7 +121,7 @@ import {
           try {
             await deleteJob(jobId);
             alert("Job deleted.");
-            window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard";
+            window.location.href = "https://www.skreenit.com/recruiter";
           } catch (err) {
             console.error("Job delete failed:", err);
             alert("Failed to delete job. Please try again.");
@@ -137,7 +137,7 @@ import {
     if (logoutBtn) {
       logoutBtn.addEventListener("click", async () => {
         await supabase.auth.signOut();
-        window.location.href = "https://login.skreenit.com/login";
+        window.location.href = "https://www.skreenit.com/login";
       });
     }
 

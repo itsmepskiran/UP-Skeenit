@@ -9,7 +9,7 @@ import { backendPost, handleResponse } from '/auth/assets/js/backend-client.js';
       const role = user?.user_metadata?.role;
 
       if (role !== "recruiter") {
-        window.location.href = "https://login.skreenit.com/login";
+        window.location.href = "https://www.skreenit.com/login";
       }
 
       return user;
@@ -24,7 +24,7 @@ import { backendPost, handleResponse } from '/auth/assets/js/backend-client.js';
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         alert("Session expired. Please login again.");
-        window.location.href = "https://login.skreenit.com/login";
+        window.location.href = "https://www.skreenit.com/login";
         return;
       }
 
@@ -43,7 +43,7 @@ import { backendPost, handleResponse } from '/auth/assets/js/backend-client.js';
         await handleResponse(res);
 
         alert("Profile saved! Redirecting to Recruiter Dashboard...");
-        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
+        window.location.href = "https://www.skreenit.com/recruiter";
 
       } catch (err) {
         console.error("Profile save failed:", err);

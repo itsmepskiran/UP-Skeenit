@@ -33,13 +33,13 @@ import { backendGet, backendPost, handleResponse } from '/auth/assets/js/backend
     async function ensureCandidate() {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) {
-        window.location.href = 'https://login.skreenit.com/login';
+        window.location.href = 'https://www.skreenit.com/login';
         return null;
       }
       const user = data.user;
       const role = user.user_metadata?.role;
       if (role !== 'candidate') {
-        window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard';
+        window.location.href = 'https://www.skreenit.com/recruiter';
         return null;
       }
       const emailEl = document.getElementById('email');
@@ -775,11 +775,11 @@ import { backendGet, backendPost, handleResponse } from '/auth/assets/js/backend
 
     logoutBtn.addEventListener('click', async () => {
       await supabase.auth.signOut();
-      window.location.href = 'https://login.skreenit.com/login';
+      window.location.href = 'https://www.skreenit.com/login';
     });
 
     goToDashboardBtn.addEventListener('click', () => {
-      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard';
+      window.location.href = 'https://www.skreenit.com/applicant';
     });
 
     // Auto-save every 10 seconds
