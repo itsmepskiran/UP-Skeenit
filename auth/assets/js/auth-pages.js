@@ -35,7 +35,7 @@ export async function redirectByRole() {
 
     // Not onboarded → go to candidate onboarding
     if (!onboarded) {
-      window.location.href = "https://applicants.skreenit.com/detailed-application-form.html";
+      window.location.href = "https://applicant.skreenit.com/detailed-application-form.html";
       return;
     }
 
