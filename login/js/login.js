@@ -26,18 +26,25 @@ form.addEventListener("submit", async (e) => {
     const email = fd.get("email").trim();
     const password = fd.get("password").trim();
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    // 1. Login with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) throw error;
-
-    // ⭐ REQUIRED: Write cookie for all subdomains
+    // 2. Set session cookie
     await supabase.auth.setSession({
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token
     });
+
+    // 3. Fetch metadata (this is the missing piece)
+    const { data: userData } = await supabase.auth.getUser();
+    const metadata = userData.user.user_metadata;
+
+    // 4. Store metadata manually
+    localStorage.setItem("skreenit_role", metadata.role);
+    localStorage.setItem("company_id", metadata.company_id);
+    localStorage.setItem("user_id", userData.user.id);
+    localStorage.setItem("onboarded", metadata.onboarded);
+    localStorage.setItem("password_set", metadata.password_set);
 
     // ⭐ Store role
     await persistSessionToLocalStorage(); // ✅ Store role in localStorage - Refer auth-pages.js
