@@ -17,12 +17,11 @@ export async function persistSessionToLocalStorage() {
 export async function redirectByRole() {
   const role = localStorage.getItem("skreenit_role");
   const onboarded = localStorage.getItem("onboarded") === "true";
-  const company_id = localStorage.getItem("company_id");
-
+  
   if (role === "recruiter") {
 
     // Not onboarded → go to recruiter onboarding
-    if (!onboarded || !company_id) {
+    if (!onboarded) {
       window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
       return;
     }
