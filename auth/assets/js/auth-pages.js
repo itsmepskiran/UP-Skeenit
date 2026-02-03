@@ -2,12 +2,15 @@ import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js
 
 export async function persistSessionToLocalStorage() {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user || null;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData?.session?.user;
     const role = user?.user_metadata?.role;
-    if (role) localStorage.setItem('skreenit_role', role);
+
+    if (role) {
+      localStorage.setItem("skreenit_role", role);
+    }
   } catch (e) {
-    console.warn('Failed to persist role to localStorage', e);
+    console.warn("Failed to persist role to localStorage", e);
   }
 }
 

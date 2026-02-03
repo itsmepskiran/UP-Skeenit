@@ -40,10 +40,10 @@ form.addEventListener("submit", async (e) => {
     });
 
     // ⭐ Store role
-    await persistSessionToLocalStorage();
+    await persistSessionToLocalStorage(); // ✅ Store role in localStorage - Refer auth-pages.js
 
-    // ⭐ Redirect based on role
-    await redirectByRole();
+    // ⭐ Redirect based on role 
+    await redirectByRole(); // ✅ Redirect to appropriate dashboard - Refer auth-pages.js
 
   } catch (err) {
     console.error("Login error:", err);
