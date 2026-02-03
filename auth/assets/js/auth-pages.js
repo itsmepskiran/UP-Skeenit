@@ -14,19 +14,39 @@ export async function persistSessionToLocalStorage() {
   }
 }
 
-export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard.html') {
-  const role = localStorage.getItem('skreenit_role');
-  try {
-    if (role === 'recruiter') {
-      window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
-    } else if (role === 'candidate') {
-      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
-    } else {
-      window.location.href = defaultUrl;
+export async function redirectByRole() {
+  const role = localStorage.getItem("skreenit_role");
+  const onboarded = localStorage.getItem("onboarded") === "true";
+  const company_id = localStorage.getItem("company_id");
+
+  if (role === "recruiter") {
+
+    // Not onboarded → go to recruiter onboarding
+    if (!onboarded || !company_id) {
+      window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
+      return;
     }
-  } catch {
-    window.location.href = defaultUrl;
+
+    // Fully onboarded → go to dashboard
+    window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
+    return;
   }
+
+  if (role === "candidate") {
+
+    // Not onboarded → go to candidate onboarding
+    if (!onboarded) {
+      window.location.href = "https://applicants.skreenit.com/detailed-application-form.html";
+      return;
+    }
+
+    // Fully onboarded → go to dashboard
+    window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
+    return;
+  }
+
+  // fallback
+  window.location.href = "https://login.skreenit.com/login.html";
 }
 
 export function notify(message, type = 'info') {
