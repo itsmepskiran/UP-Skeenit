@@ -13,22 +13,31 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // AUTH CHECK
         // ---------------------------
         async function checkAuth() {
-            const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
 
-            if (!user) {
-                window.location.href = "https://login.skreenit.com/login.html";
-                return;
-            }
-
-            const role = user.user_metadata?.role;
-
-            if (role !== "recruiter") {
-                window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
-                return;
-            }
-
-            loadDashboard();
+          if (!user) {
+            window.location.href = "https://login.skreenit.com/login.html";
+            return;
         }
+
+        const role = user.user_metadata?.role;
+        const onboarded = user.user_metadata?.onboarded;
+
+        // Wrong role → send to correct dashboard
+        if (role !== "recruiter") {
+            window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
+        return;
+        }
+
+        // Not onboarded → send to onboarding form
+        if (!onboarded) {
+            window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
+            return;
+        }
+
+        loadDashboard();
+}
+
 
         // ---------------------------
         // LOAD DASHBOARD DATA
