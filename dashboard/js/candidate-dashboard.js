@@ -15,14 +15,14 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
-                window.location.href = "https://www.skreenit.com/login";
+                window.location.href = "https://login.skreenit.com/login.html";
                 return;
             }
 
             const role = user.user_metadata?.role;
 
             if (role !== "candidate") {
-                window.location.href = "https://www.skreenit.com/recruiter";
+                window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
                 return;
             }
 
@@ -65,7 +65,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
                 <div class="list-item">
                     <div class="item-title">${app.job_title}</div>
                     <div class="item-meta">Status: ${app.status}</div>
-                    <a href="application-details?app_id=${app.id}" class="btn-primary">View Application</a>
+                    <a href="application-details.html?app_id=${app.id}" class="btn-primary">View Application</a>
                 </div>
             `).join("");
         }
@@ -83,7 +83,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
                 <div class="list-item">
                     <div class="item-title">${job.title}</div>
                     <div class="item-meta">${job.location} • ${job.job_type}</div>
-                    <a href="job-details?job_id=${job.id}" class="btn-primary">View Job</a>
+                    <a href="job-details.html?job_id=${job.id}" class="btn-primary">View Job</a>
                 </div>
             `).join("");
         }
@@ -93,7 +93,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // ---------------------------
         document.getElementById("logoutBtn").addEventListener("click", async () => {
             await supabase.auth.signOut();
-            window.location.href = "https://www.skreenit.com/login";
+            window.location.href = "https://login.skreenit.com/login.html";
         });
 
         // INIT

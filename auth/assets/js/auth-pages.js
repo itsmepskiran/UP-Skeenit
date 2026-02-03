@@ -11,13 +11,13 @@ export async function persistSessionToLocalStorage() {
   }
 }
 
-export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard') {
+export async function redirectByRole(defaultUrl = 'https://dashboard.skreenit.com/candidate-dashboard.html') {
   const role = localStorage.getItem('skreenit_role');
   try {
     if (role === 'recruiter') {
-      window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard';
+      window.location.href = 'https://dashboard.skreenit.com/recruiter-dashboard.html';
     } else if (role === 'candidate') {
-      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard';
+      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard.html';
     } else {
       window.location.href = defaultUrl;
     }

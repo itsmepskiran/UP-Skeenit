@@ -8,7 +8,7 @@ import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js
     };
 
     const redirectToLogin = () => {
-        window.location.href = 'https://www.skreenit.com/login?confirmed=true';
+        window.location.href = 'https://login.skreenit.com/login?confirmed=true';
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -28,7 +28,7 @@ import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js
 
             show("Email confirmed successfully! Redirecting...", "success");
 
-            setTimeout(redirectToLogin, 1500);
+            setTimeout(redirectToLogin, 3000);
 
             } 
             catch (err) {

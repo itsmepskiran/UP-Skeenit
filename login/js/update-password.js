@@ -127,7 +127,7 @@ import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js
 
           showSuccess("Password updated successfully! Redirecting to login...");
           setTimeout(() => {
-            window.location.href = "https://www.skreenit.com/login?reset=success";
+            window.location.href = "https://login.skreenit.com/login?reset=success";
           }, 2000);
 
         } catch (err) {

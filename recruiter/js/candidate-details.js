@@ -9,7 +9,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
       const role = user?.user_metadata?.role;
 
       if (role !== "recruiter") {
-        window.location.href = "https://www.skreenit.com/login";
+        window.location.href = "https://login.skreenit.com/login.html";
       }
 
       // Update sidebar user info
@@ -117,7 +117,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
     ------------------------------------------------------- */
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       await supabase.auth.signOut();
-      window.location.href = "https://www.skreenit.com/login";
+      window.location.href = "https://login.skreenit.com/login.html";
     });
 
     /* -------------------------------------------------------

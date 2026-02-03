@@ -39,7 +39,7 @@ import { notify } from 'https://auth.skreenit.com/assets/js/auth-pages.js';
         formData.append('mobile', mobile);
         formData.append('location', location);
         formData.append('role', role);
-        formData.append('email_redirect_to', 'https://www.skreenit.com/confirm-email');
+        formData.append('email_redirect_to', 'https://login.skreenit.com/confirm-email.html');
         
         const response = await backendPost('/auth/register', formData);
         const result = await handleResponse(response);
@@ -58,7 +58,7 @@ import { notify } from 'https://auth.skreenit.com/assets/js/auth-pages.js';
         `;
 
         setTimeout(() => {
-          window.location.href = 'https://www.skreenit.com/login?registered=true';
+          window.location.href = 'https://login.skreenit.com/login?registered=true';
         }, 3000);
 
       } catch (err) {
