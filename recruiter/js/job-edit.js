@@ -1,10 +1,10 @@
-import { supabase } from '/auth/assets/js/supabase-config.js';
+import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
 import {
       backendGet,
       backendPut,
       backendDelete,
       handleResponse
-} from '/auth/assets/js/backend-client.js';
+} from 'https://auth.skreenit.com/assets/js/backend-client.js';
 
     // --- Role check ---
     async function ensureRecruiter() {

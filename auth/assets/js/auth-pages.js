@@ -1,4 +1,4 @@
-import { supabase } from '/auth/assets/js/supabase-config.js';
+import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
 
 export async function persistSessionToLocalStorage() {
   try {
