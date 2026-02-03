@@ -173,6 +173,7 @@ async def root_page():
     <html>
         <head>
             <title>Skreenit Backend API</title>
+            <meta http-equiv="refresh" content="5;url=https://www.skreenit.com" />
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -201,15 +202,29 @@ async def root_page():
                     margin: 6px 0;
                     color: #555;
                 }
+                a {
+                    color: #007bff;
+                    text-decoration: none;
+                }
+                a:hover {
+                    text-decoration: underline;
+                }
             </style>
         </head>
         <body>
             <img src="https://auth.skreenit.com/assets/images/logobrand.png" alt="Skreenit Logo" />
             <div class="box">
-                <h2>Welcome to Skreenit Backend API</h2>
-                <p>This server powers the Skreenit platform.</p>
-                <p>Direct access is not required for users.</p>
-                <p style="font-size: 13px; color: #888;">If you reached this page by mistake, you can safely return to skreenit.com.</p>
+            <h2>Welcome to Skreenit Backend API</h2>
+            <p>This server powers the Skreenit platform.</p>
+            <p>Direct access is not required for users.</p>
+
+            <p style="font-size: 13px; color: #888;">
+            If you reached this page by mistake, you will be redirected to 
+            <a href="https://www.skreenit.com">Skreenit</a> shortly.
+            <br>
+            If the redirect does not happen automatically, 
+            <a href="https://www.skreenit.com">click here</a>.
+            </p>
             </div>
         </body>
     </html>
