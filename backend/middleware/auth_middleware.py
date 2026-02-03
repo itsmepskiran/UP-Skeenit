@@ -19,6 +19,7 @@ if not SUPABASE_JWT_SECRET:
 # Public endpoints that do NOT require authentication
 PUBLIC_PATHS = [
     "/",                        # Root
+    "",                         # ⭐ REQUIRED because clean_path becomes "" for "/"
     "/favicon.ico",
     "/docs",
     "/openapi.json",
