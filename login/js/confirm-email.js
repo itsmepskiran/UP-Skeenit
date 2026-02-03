@@ -1,38 +1,10 @@
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
+document.addEventListener("DOMContentLoaded", () => {
+    const messageEl = document.getElementById("message");
 
-    const messageEl = document.getElementById('message');
+    messageEl.textContent = "Your email has been successfully confirmed! Redirecting to login...";
+    messageEl.className = "message success";
 
-    const show = (msg, type = "") => {
-        messageEl.textContent = msg;
-        messageEl.className = type ? `message ${type}` : "message";
-    };
-
-    const redirectToLogin = () => {
-        window.location.href = 'https://login.skreenit.com/login?confirmed=true';
-    };
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        if (window.__CONFIRM_EMAIL_RAN__) {
-            return;
-        }
-        window.__CONFIRM_EMAIL_RAN__ = true;
-
-        try {
-            show("Confirming your email...", "loading");
-            const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-
-            if (error || !data.session) {
-                show("Invalid or expired confirmation link.", "error");
-                return;
-            }
-
-            show("Email confirmed successfully! Redirecting...", "success");
-
-            setTimeout(redirectToLogin, 3000);
-
-            } 
-            catch (err) {
-            console.error("Confirmation error:", err);
-            show("Something went wrong while confirming your email.", "error");
-            }
-    });
+    setTimeout(() => {
+        window.location.href = "https://login.skreenit.com/login?confirmed=true";
+    }, 3000);
+});
