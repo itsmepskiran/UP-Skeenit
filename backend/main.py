@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, APIRouter
-from fastapi.responses import Response
+from fastapi.responses import Response, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils_others.logger import logger
@@ -163,6 +163,57 @@ async def db_health():
     return {"status": "ok"}
 
 app.include_router(api)
+
+# ---------------------------------------------------------
+# Browser Display
+# ---------------------------------------------------------
+@app.get("/", response_class=HTMLResponse)
+async def root_page():
+    return """
+    <html>
+        <head>
+            <title>Skreenit Backend API</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    padding: 60px 20px;
+                    background: #f7f9fc;
+                    color: #333;
+                }
+                img {
+                    max-width: 240px;
+                    margin-bottom: 25px;
+                }
+                .box {
+                    display: inline-block;
+                    padding: 25px 35px;
+                    border-radius: 10px;
+                    background: white;
+                    border: 1px solid #e0e0e0;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                }
+                h2 {
+                    margin-bottom: 10px;
+                    color: #2c3e50;
+                }
+                p {
+                    margin: 6px 0;
+                    color: #555;
+                }
+            </style>
+        </head>
+        <body>
+            <img src="https://auth.skreenit.com/assets/images/logobrand.png" alt="Skreenit Logo" />
+            <div class="box">
+                <h2>Welcome to Skreenit Backend API</h2>
+                <p>This server powers the Skreenit platform.</p>
+                <p>Direct access is not required for users.</p>
+                <p style="font-size: 13px; color: #888;">If you reached this page by mistake, you can safely return to skreenit.com.</p>
+            </div>
+        </body>
+    </html>
+    """
 
 # ---------------------------------------------------------
 # Startup / Shutdown Events
