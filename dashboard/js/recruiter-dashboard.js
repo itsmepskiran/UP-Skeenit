@@ -16,7 +16,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             try {
 
             // Current user session
-            const { data: { session }, error: sessionError } = await supabase.auth.getUser();
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
             // If no user session, redirect to login
             if (sessionError || !session?.user) {
                 console.error("No active session, redirecting to login");
@@ -24,11 +24,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
                 return;
             }
             // Get user data
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) {
-                console.error('Failed to get user data');
-            }
-            // Use stored role if user_metadata is not available yet
+            const user = session.user;
             const role = user.user_metadata?.role || localStorage.getItem("skreenit_role");
             const onboarded = user.user_metadata?.onboarded !== undefined
             ? user.user_metadata.onboarded

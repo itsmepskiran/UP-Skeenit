@@ -27,7 +27,7 @@ export async function redirectByRole() {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session?.user) {
       console.log("No active session found, redirecting to login");
-      window.location.href = 'https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}';
+      window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
       return;
     }
   const role = session.user.user_metadata?.role|| localStorage.getItem("skreenit_role");
