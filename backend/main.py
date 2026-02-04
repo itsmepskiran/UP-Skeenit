@@ -44,7 +44,7 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-app.mount("/logos", StaticFiles(directory="logos"), name="logos")
+app.mount("/logos", StaticFiles(directory="backend/logos"), name="logos")
 # ---------------------------------------------------------
 # Browser Display
 # ---------------------------------------------------------
@@ -93,7 +93,7 @@ async def root_page():
             </style>
         </head>
         <body>
-            <img src="/logos/logobrand.png" alt="Skreenit Logo" />
+            <img src="https://backend.skreenit.com/logos/logobrand.png" alt="Skreenit Logo" />
             <div class="box">
             <h2>Welcome to Skreenit Backend API</h2>
             <p>This server powers the Skreenit platform.</p>
