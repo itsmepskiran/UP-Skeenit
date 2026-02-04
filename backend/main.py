@@ -44,7 +44,7 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-app.mount("/logos", StaticFiles(directory="backend/logos"), name="logos")
+app.mount("/logos", StaticFiles(directory="logos"), name="logos")
 # ---------------------------------------------------------
 # Browser Display
 # ---------------------------------------------------------
