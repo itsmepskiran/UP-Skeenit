@@ -29,11 +29,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       sameSite: 'lax',
     },
   },
-  global: {
-    headers: {
-      'x-client-info': 'skreenit-frontend'
-    }
-  }
 });
 
 // Keep only role in localStorage
