@@ -39,3 +39,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state change:', event, session)
 })
+// test the storage methos
+// Test the storage methods
+console.log('Testing storage methods...');
+storage.setItem('test_key', 'test_value');
+const value = storage.getItem('test_key');
+storage.removeItem('test_key');
+console.log('Storage test complete', { value });
