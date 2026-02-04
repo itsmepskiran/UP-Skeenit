@@ -40,9 +40,9 @@ form.addEventListener("submit", async (e) => {
     const metadata = userData.user.user_metadata;
 
     // 4. Store metadata manually
-    localStorage.setItem("skreenit_role", metadata.role);
-    localStorage.setItem("user_id", userData.user.id);
-    localStorage.setItem("onboarded", metadata.onboarded);
+    localStorage.setItem("skreenit_role", userData.user.user_metadata.role);
+    localStorage.setItem("user_id", userData.user.user_metadata.id);
+    localStorage.setItem("onboarded", userData.user.user_metadata.onboarded.toString());
     
     // ⭐ Store role
     await persistSessionToLocalStorage(); // ✅ Store role in localStorage - Refer auth-pages.js

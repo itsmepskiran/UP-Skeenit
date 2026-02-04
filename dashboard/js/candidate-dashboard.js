@@ -26,22 +26,24 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             }
 
         const role = user.user_metadata?.role || storedRole;
-        const onboarded = user.user_metadata?.onboarded || storedOnboarded;
+        const onboarded = user.user_metadata?.onboarded !== undefined
+        ? user.user_metadata.onboarded
+        : storedOnboarded;
 
         // Wrong role → send to correct dashboard
-        if (user.user_metadata.role?.role) {
-            localStorage.setItem("skreenit_role", user.user_metadata.role.role);
+        if (user.user_metadata?.role) {
+            localStorage.setItem("skreenit_role", user.user_metadata.role);
             localStorage.setItem("onboarded", user.user_metadata.onboarded);
         }
         //Chek role
         if(role !== "candidate") {
-            console.log('Wrong role, redirecting to recruiter dashboard');
+            console.log('Wrong role, Not a candidate, redirecting to recruiter dashboard');
             window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
             return;
         }
 
         // Not onboarded → send to onboarding form
-        if (!onboarded) {
+        if (onboarded === false) {
             console.log('Not onboarded, redirecting to onboarding form');
             window.location.href = "https://applicant.skreenit.com/detailed-application-form.html";
             return;

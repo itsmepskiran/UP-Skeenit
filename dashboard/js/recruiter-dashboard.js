@@ -27,11 +27,15 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             }
             // Use stored role if user_metadata is not available yet
             const role = user.user_metadata?.role || storedRole;
-            const onboarded = user.user_metadata?.onboarded || storedOnboarded;
+            const onboarded = user.user_metadata?.onboarded !== undefined
+            ? user.user_metadata.onboarded
+            : storedOnboarded;
 
             //Store in local storage
-            localStorage.getItem("skreenit_role", user.user_metadata.role);
-            localStorage.getItem("onboarded", user.user_metadata.onboarded);
+            if(user.user_metadata?.role){
+                localStorage.setItem("skreenit_role", user.user_metadata.role);
+                localStorage.setItem("onboarded", user.user_metadata.onboarded);
+            }
 
             // Check role
             if (role !== "recruiter") {
@@ -40,13 +44,13 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
                 return;
             }
             // Check if onboarded
-            if (!onboarded) {
+            if (onboarded === false) {
                 console.error("User is not onboarded, redirecting to onboarding form");
                 window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
                 return;
             }
-            //Authentication Succesful
-            console.log('Authentication sucessful, loading dashboard');
+            //Authentication Successful
+            console.log('Authentication successful, loading dashboard');
             loadDashboard();
             } catch (error) {
             console.error('Authentication failed:', error);
