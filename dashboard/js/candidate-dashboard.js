@@ -12,31 +12,48 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // AUTH CHECK
         // ---------------------------
         async function checkAuth() {
-        const { data: { user } } = await supabase.auth.getUser();
+            try {
+        // First check localStorage for role and onboarded status
+        const storedRole = localStorage.getItem("skreenit_role");
+        const storedOnboarded = localStorage.getItem("onboarded") === "true";
+        
+        const { data: { user }, error } = await supabase.auth.getUser();
 
-          if (!user) {
+          if (error ||!user) {
+            console.log('No active session, redirecting to login');
             window.location.href = "https://login.skreenit.com/login.html";
             return;
-        }
+            }
 
-        const role = user.user_metadata?.role;
-        const onboarded = user.user_metadata?.onboarded;
+        const role = user.user_metadata?.role || storedRole;
+        const onboarded = user.user_metadata?.onboarded || storedOnboarded;
 
         // Wrong role → send to correct dashboard
-        if (role !== "candidate") {
+        if (user.user_metadata.role?.role) {
+            localStorage.setItem("skreenit_role", user.user_metadata.role.role);
+            localStorage.setItem("onboarded", user.user_metadata.onboarded);
+        }
+        //Chek role
+        if(role !== "candidate") {
+            console.log('Wrong role, redirecting to recruiter dashboard');
             window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
-        return;
+            return;
         }
 
         // Not onboarded → send to onboarding form
         if (!onboarded) {
+            console.log('Not onboarded, redirecting to onboarding form');
             window.location.href = "https://applicant.skreenit.com/detailed-application-form.html";
             return;
         }
 
+        console.log('Onboarding Successful, loading dashboard');
         loadDashboard();
+        } catch (error) {
+            console.error('Error checking authentication:', error);
+            window.location.href = "https://login.skreenit.com/login.html";
         }
-
+        }
         // ---------------------------
         // LOAD DASHBOARD DATA
         // ---------------------------

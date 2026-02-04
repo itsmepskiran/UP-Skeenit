@@ -13,32 +13,46 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // AUTH CHECK
         // ---------------------------
         async function checkAuth() {
-        const { data: { user } } = await supabase.auth.getUser();
+            try {
+            const storedRole = localStorage.getItem("skreenit_role")
+            const storedOnboarded = localStorage.getItem("onboarded") === "true";
 
-          if (!user) {
+            // Current user session
+            const { data: { user }, error } = await supabase.auth.getUser();
+            // If no user session, redirect to login
+            if (error || !user) {
+                console.error("No active session, redirecting to login");
+                window.location.href = "https://login.skreenit.com/login.html";
+                return;
+            }
+            // Use stored role if user_metadata is not available yet
+            const role = user.user_metadata?.role || storedRole;
+            const onboarded = user.user_metadata?.onboarded || storedOnboarded;
+
+            //Store in local storage
+            localStorage.getItem("skreenit_role", user.user_metadata.role);
+            localStorage.getItem("onboarded", user.user_metadata.onboarded);
+
+            // Check role
+            if (role !== "recruiter") {
+                console.error("User is not a recruiter, redirecting to candidate dashboard");
+                window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
+                return;
+            }
+            // Check if onboarded
+            if (!onboarded) {
+                console.error("User is not onboarded, redirecting to onboarding form");
+                window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
+                return;
+            }
+            //Authentication Succesful
+            console.log('Authentication sucessful, loading dashboard');
+            loadDashboard();
+            } catch (error) {
+            console.error('Authentication failed:', error);
             window.location.href = "https://login.skreenit.com/login.html";
-            return;
+            }
         }
-
-        const role = user.user_metadata?.role;
-        const onboarded = user.user_metadata?.onboarded;
-
-        // Wrong role → send to correct dashboard
-        if (role !== "recruiter") {
-            window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
-        return;
-        }
-
-        // Not onboarded → send to onboarding form
-        if (!onboarded) {
-            window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
-            return;
-        }
-
-        loadDashboard();
-}
-
-
         // ---------------------------
         // LOAD DASHBOARD DATA
         // ---------------------------
@@ -92,7 +106,6 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
                 applicationsList.innerHTML = "<p>No recent applications.</p>";
                 return;
             }
-
             applicationsList.innerHTML = apps.map(app => `
                 <div class="application-item">
                     <div class="job-title">${app.candidate_name}</div>
@@ -109,6 +122,5 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             await supabase.auth.signOut();
             window.location.href = "https://login.skreenit.com/login.html";
         });
-
         // INIT
         checkAuth();
