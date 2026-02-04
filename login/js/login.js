@@ -28,21 +28,18 @@ form.addEventListener("submit", async (e) => {
 
     // 1. Login with Supabase
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    // 2. Set session cookie
-    await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token
-    });
-
+    if (error) {
+      throw error;
+    }
     // 3. Fetch metadata (this is the missing piece)
-    const { data: userData } = await supabase.auth.getUser();
-    const metadata = userData.user.user_metadata;
-
-    // 4. Store metadata manually
-    localStorage.setItem("skreenit_role", userData.user.user_metadata.role);
-    localStorage.setItem("user_id", userData.user.user_metadata.id);
-    localStorage.setItem("onboarded", userData.user.user_metadata.onboarded.toString());
+    const { data: {user} } = await supabase.auth.getUser();
+    
+    if(user){
+      // 4. Store metadata manually
+      localStorage.setItem("skreenit_role", user.user_metadata.role);
+      localStorage.setItem("user_id", user.user_metadata.id);
+      localStorage.setItem("onboarded", user.user_metadata.onboarded.toString());
+    }
     
     // ⭐ Store role
     await persistSessionToLocalStorage(); // ✅ Store role in localStorage - Refer auth-pages.js

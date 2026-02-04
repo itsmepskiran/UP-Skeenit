@@ -2,12 +2,19 @@ import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js
 
 export async function persistSessionToLocalStorage() {
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const user = sessionData?.session?.user;
-    const role = user?.user_metadata?.role;
+    const { data: {session}, error } = await supabase.auth.getSession();
+    if(error || !session?.user){
+      console.warn("No active session found");
+      return;
+    }
 
+    const user = session.user;
+    const role = user.user_metadata?.role;
+    const onboarded = user.user_metadata?.onboarded;
     if (role) {
       localStorage.setItem("skreenit_role", role);
+      localStorage.setItem("onboarded", onboarded?.toString() || "false");
+      localStorage.setItem("user_id", user.id);
     }
   } catch (e) {
     console.warn("Failed to persist role to localStorage", e);
@@ -15,37 +22,40 @@ export async function persistSessionToLocalStorage() {
 }
 
 export async function redirectByRole() {
-  const role = localStorage.getItem("skreenit_role");
-  const onboarded = localStorage.getItem("onboarded") === "true";
-  
-  if (role === "recruiter") {
-
-    // Not onboarded → go to recruiter onboarding
-    if (!onboarded) {
-      window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
+  try{
+    //First check if we have a valid session
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session?.user) {
+      console.log("No active session found, redirecting to login");
+      window.location.href = 'https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}';
       return;
     }
-
-    // Fully onboarded → go to dashboard
-    window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
-    return;
-  }
-
+  const role = session.user.user_metadata?.role|| localStorage.getItem("skreenit_role");
+  const onboarded = session.user.user_metadata?.onboarded !== undefined
+  ? session.user.user_metadata.onboarded 
+  : localStorage.getItem("onboarded") === "true";
+  if (session.user.user_metadata?.role) {
+    localStorage.setItem("skreenit_role", session.user.user_metadata.role);
+    localStorage.setItem("onboarded", session.user.user_metadata.onboarded?.toString() || "false");
+    }
   if (role === "candidate") {
-
-    // Not onboarded → go to candidate onboarding
-    if (!onboarded) {
-      window.location.href = "https://applicant.skreenit.com/detailed-application-form.html";
-      return;
+      window.location.href = onboarded
+      ? "https://dashboard.skreenit.com/candidate-dashboard.html"
+      : "https://applicant.skreenit.com/detailed-application-form.html";
     }
-
-    // Fully onboarded → go to dashboard
-    window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
-    return;
+    else if (role === "recruiter") {
+    window.location.href = onboarded
+      ? "https://dashboard.skreenit.com/recruiter-dashboard.html"
+      : "https://recruiter.skreenit.com/recruiter-profile.html";
+    }
+    else{
+      console.warn("User role not found, redirecting to login");
+      window.location.href = "https://login.skreenit.com/login.html";
+    }
+  } catch(error) {
+    console.error("Error in redirectByRole", error);
+    window.location.href = "https://login.skreenit.com/login.html";
   }
-
-  // fallback
-  window.location.href = "https://login.skreenit.com/login.html";
 }
 
 export function notify(message, type = 'info') {

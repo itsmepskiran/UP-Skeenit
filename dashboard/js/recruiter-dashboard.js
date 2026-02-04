@@ -14,39 +14,47 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // ---------------------------
         async function checkAuth() {
             try {
-            const storedRole = localStorage.getItem("skreenit_role")
-            const storedOnboarded = localStorage.getItem("onboarded") === "true";
 
             // Current user session
-            const { data: { user }, error } = await supabase.auth.getUser();
+            const { data: { session }, error: sessionError } = await supabase.auth.getUser();
             // If no user session, redirect to login
-            if (error || !user) {
+            if (sessionError || !session?.user) {
                 console.error("No active session, redirecting to login");
-                window.location.href = "https://login.skreenit.com/login.html";
+                window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
                 return;
             }
+            // Get user data
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) {
+                console.error('Failed to get user data');
+            }
             // Use stored role if user_metadata is not available yet
-            const role = user.user_metadata?.role || storedRole;
+            const role = user.user_metadata?.role || localStorage.getItem("skreenit_role");
             const onboarded = user.user_metadata?.onboarded !== undefined
             ? user.user_metadata.onboarded
-            : storedOnboarded;
+            : localStorage.getItem("onboarded") === "true";
 
             //Store in local storage
             if(user.user_metadata?.role){
                 localStorage.setItem("skreenit_role", user.user_metadata.role);
-                localStorage.setItem("onboarded", user.user_metadata.onboarded);
+                localStorage.setItem("onboarded", user.user_metadata.onboarded?.toString());
+                localStorage.setItem("user_id", user.id);
             }
 
             // Check role
-            if (role !== "recruiter") {
-                console.error("User is not a recruiter, redirecting to candidate dashboard");
-                window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
+            const expectedRole = 'candidate';
+            if (role !== expectedRole) {
+                console.log(`Wrong role selected, redirecting to ${expectedRole}`);
+                window.location.href = `https://dashboard.skreenit.com/${expectedRole}-dashboard.html`;
                 return;
             }
             // Check if onboarded
-            if (onboarded === false) {
-                console.error("User is not onboarded, redirecting to onboarding form");
-                window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
+            if (onboarded === false || onboarded === "false") {
+                console.log('User is not onboarded, redirecting to onboarding form');
+                const redirectURL = expectedRole === 'candidate'
+                ? 'https://applicant.skreenit.com/detailed-application-form.html'
+                : 'https://recruiter.skreenit.com/recruiter-profile.html';
+                window.location.href = redirectURL;
                 return;
             }
             //Authentication Successful
@@ -54,13 +62,13 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             loadDashboard();
             } catch (error) {
             console.error('Authentication failed:', error);
-            window.location.href = "https://login.skreenit.com/login.html";
+            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
             }
         }
         // ---------------------------
         // LOAD DASHBOARD DATA
         // ---------------------------
-        async function loadDashboard() {
+        export async function loadDashboard() {
             try {
                 const response = await backendGet("/api/v1/recruiter/dashboard");
                 const data = await handleResponse(response);

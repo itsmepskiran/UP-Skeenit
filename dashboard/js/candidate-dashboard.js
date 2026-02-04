@@ -1,5 +1,6 @@
 import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
 import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { loadDashboard } from './recruiter-dashboard';
         const statApplied = document.getElementById("statApplied");
         const statPending = document.getElementById("statPending");
         const statInterview = document.getElementById("statInterview");
@@ -13,48 +14,56 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // ---------------------------
         async function checkAuth() {
             try {
-        // First check localStorage for role and onboarded status
-        const storedRole = localStorage.getItem("skreenit_role");
-        const storedOnboarded = localStorage.getItem("onboarded") === "true";
-        
-        const { data: { user }, error } = await supabase.auth.getUser();
 
-          if (error ||!user) {
-            console.log('No active session, redirecting to login');
-            window.location.href = "https://login.skreenit.com/login.html";
-            return;
+            // Current user session
+            const { data: { session }, error: sessionError } = await supabase.auth.getUser();
+            // If no user session, redirect to login
+            if (sessionError || !session?.user) {
+                console.error("No active session, redirecting to login");
+                window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+                return;
+            }
+            // Get user data
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) {
+                console.error('Failed to get user data');
+            }
+            // Use stored role if user_metadata is not available yet
+            const role = user.user_metadata?.role || localStorage.getItem("skreenit_role");
+            const onboarded = user.user_metadata?.onboarded !== undefined
+            ? user.user_metadata.onboarded
+            : localStorage.getItem("onboarded") === "true";
+
+            //Store in local storage
+            if(user.user_metadata?.role){
+                localStorage.setItem("skreenit_role", user.user_metadata.role);
+                localStorage.setItem("onboarded", user.user_metadata.onboarded?.toString());
+                localStorage.setItem("user_id", user.id);
             }
 
-        const role = user.user_metadata?.role || storedRole;
-        const onboarded = user.user_metadata?.onboarded !== undefined
-        ? user.user_metadata.onboarded
-        : storedOnboarded;
-
-        // Wrong role → send to correct dashboard
-        if (user.user_metadata?.role) {
-            localStorage.setItem("skreenit_role", user.user_metadata.role);
-            localStorage.setItem("onboarded", user.user_metadata.onboarded);
-        }
-        //Chek role
-        if(role !== "candidate") {
-            console.log('Wrong role, Not a candidate, redirecting to recruiter dashboard');
-            window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
-            return;
-        }
-
-        // Not onboarded → send to onboarding form
-        if (onboarded === false) {
-            console.log('Not onboarded, redirecting to onboarding form');
-            window.location.href = "https://applicant.skreenit.com/detailed-application-form.html";
-            return;
-        }
-
-        console.log('Onboarding Successful, loading dashboard');
-        loadDashboard();
-        } catch (error) {
-            console.error('Error checking authentication:', error);
-            window.location.href = "https://login.skreenit.com/login.html";
-        }
+            // Check role
+            const expectedRole = 'candidate';
+            if (role !== expectedRole) {
+                console.log(`Wrong role selected, redirecting to ${expectedRole}`);
+                window.location.href = `https://dashboard.skreenit.com/${expectedRole}-dashboard.html`;
+                return;
+            }
+            // Check if onboarded
+            if (onboarded === false || onboarded === "false") {
+                console.log('User is not onboarded, redirecting to onboarding form');
+                const redirectURL = expectedRole === 'candidate'
+                ? 'https://applicant.skreenit.com/detailed-application-form.html'
+                : 'https://recruiter.skreenit.com/recruiter-profile.html';
+                window.location.href = redirectURL;
+                return;
+            }
+            //Authentication Successful
+            console.log('Authentication successful, loading dashboard');
+            loadDashboard();
+            } catch (error) {
+            console.error('Authentication failed:', error);
+            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            }
         }
         // ---------------------------
         // LOAD DASHBOARD DATA
