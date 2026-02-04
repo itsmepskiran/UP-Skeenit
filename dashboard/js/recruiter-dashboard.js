@@ -13,53 +13,85 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // AUTH CHECK
         // ---------------------------
         async function checkAuth() {
-            try {
-
-            // Current user session
+        console.log('🔍 checkAuth started');
+        try {
+            console.log('📡 Calling supabase.auth.getSession()...');
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            // If no user session, redirect to login
-            if (sessionError || !session?.user) {
-                console.error("No active session, redirecting to login");
-                window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
-                return;
+        
+            console.log('📊 Session result:', { 
+            hasSession: !!session, 
+            hasUser: !!session?.user, 
+            error: sessionError?.message || 'none'
+         });
+
+            if (sessionError) {
+            console.error('❌ Session error:', sessionError);
+            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            return;
             }
-            // Get user data
+
+            if (!session) {
+            console.error('❌ No session object found');
+            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            return;
+            }
+
+            if (!session.user) {
+            console.error('❌ Session exists but no user found');
+            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            return;
+            }
+
+            console.log('✅ Session found, user ID:', session.user.id);
             const user = session.user;
+        
+            console.log('📋 User metadata:', user.user_metadata);
+        
             const role = user.user_metadata?.role || localStorage.getItem("skreenit_role");
-            const onboarded = user.user_metadata?.onboarded !== undefined
-            ? user.user_metadata.onboarded
+            const onboarded = user.user_metadata?.onboarded !== undefined 
+            ? user.user_metadata.onboarded 
             : localStorage.getItem("onboarded") === "true";
 
-            //Store in local storage
-            if(user.user_metadata?.role){
-                localStorage.setItem("skreenit_role", user.user_metadata.role);
-                localStorage.setItem("onboarded", user.user_metadata.onboarded?.toString());
-                localStorage.setItem("user_id", user.id);
-            }
+            console.log('🎭 Role determined:', role);
+            console.log('✔️ Onboarded status:', onboarded);
+
+            // Update localStorage
+            if (user.user_metadata?.role) {
+            console.log('💾 Updating localStorage with fresh data');
+            localStorage.setItem("skreenit_role", user.user_metadata.role);
+            localStorage.setItem("onboarded", user.user_metadata.onboarded?.toString() || 'false');
+            localStorage.setItem("user_id", user.id);
+        }
 
             // Check role
-            const expectedRole = 'candidate';
+            const expectedRole = 'candidate'; // or 'recruiter' in recruiter-dashboard.js
+            console.log(`🔐 Checking role: expected="${expectedRole}", actual="${role}"`);
+        
             if (role !== expectedRole) {
-                console.log(`Wrong role selected, redirecting to ${expectedRole}`);
-                window.location.href = `https://dashboard.skreenit.com/${expectedRole}-dashboard.html`;
-                return;
+            console.log(`⚠️ Wrong role! Redirecting to ${expectedRole} dashboard`);
+            window.location.href = `https://dashboard.skreenit.com/${expectedRole}-dashboard.html`;
+            return;
             }
+
             // Check if onboarded
+            console.log('🔍 Checking onboarded status:', onboarded);
             if (onboarded === false || onboarded === "false") {
-                console.log('User is not onboarded, redirecting to onboarding form');
-                const redirectURL = expectedRole === 'candidate'
+            console.log('⚠️ Not onboarded! Redirecting to onboarding form');
+            const redirectURL = expectedRole === 'candidate'
                 ? 'https://applicant.skreenit.com/detailed-application-form.html'
                 : 'https://recruiter.skreenit.com/recruiter-profile.html';
-                window.location.href = redirectURL;
-                return;
+            window.location.href = redirectURL;
+            return;
             }
-            //Authentication Successful
-            console.log('Authentication successful, loading dashboard');
+
+            console.log('🎉 All checks passed! Loading dashboard...');
             loadDashboard();
-            } catch (error) {
-            console.error('Authentication failed:', error);
+        
+        } catch (error) {
+            console.error('💥 CRITICAL ERROR in checkAuth:', error);
+            console.error('Stack trace:', error.stack);
             window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
-            }
+        }
         }
         // ---------------------------
         // LOAD DASHBOARD DATA
