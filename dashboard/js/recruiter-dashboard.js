@@ -68,22 +68,17 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             console.log(`🔐 Checking role: expected="${expectedRole}", actual="${role}"`);
         
             if (role !== expectedRole) {
-            console.log(`⚠️ Wrong role! Redirecting to correct dashboard`);
             window.location.href = "https://dashboard.skreenit.com/candidate-dashboard";
             return;
             }
 
             // Check if onboarded
-            console.log('🔍 Checking onboarded status:', onboarded);
             if (onboarded === false || onboarded === "false") {
-            console.log('⚠️ Not onboarded! Redirecting to onboarding form');
             const redirectURL = 'https://recruiter.skreenit.com/recruiter-profile';
-
             window.location.href = redirectURL;
             return;
             }
 
-            console.log('🎉 All checks passed! Loading dashboard...');
             loadDashboard();
         
         } catch (error) {
