@@ -37,7 +37,7 @@ form.addEventListener("submit", async (e) => {
     if(user){
       // 4. Store metadata manually
       localStorage.setItem("skreenit_role", user.user_metadata.role);
-      localStorage.setItem("user_id", user.user_metadata.id);
+      localStorage.setItem("user_id", user.id);
       localStorage.setItem("onboarded", user.user_metadata.onboarded.toString());
     }
     

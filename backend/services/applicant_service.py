@@ -99,10 +99,10 @@ class ApplicantService:
                 self._save_skills(candidate_id, skills)
 
             # Update onboarded status to True
-            self.supabase.auth.admin.update_user_by_id(
-                candidate_id,
-                {"user_metadata": {"onboarded": True}}
-            )
+            self.supabase.auth.update_user({
+                "id": candidate_id,
+                "data": {"onboarded": True}
+            })
 
             logger.info("Detailed form saved", extra={"candidate_id": candidate_id})
 

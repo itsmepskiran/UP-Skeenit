@@ -723,7 +723,7 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
       }
 
       if (!document.getElementById('termsAccept').checked || !document.getElementById('dataConsent').checked) {
-        alert('Please accept the terms and data consent before submitting.');
+        alert('Please accept terms and data consent before submitting.');
         showStep(6);
         return;
       }
@@ -734,6 +734,7 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
         await uploadDocuments();
         
         // Refresh user metadata to get updated onboarded status
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for backend update
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.user_metadata?.onboarded) {
             localStorage.setItem("onboarded", "true");
@@ -745,15 +746,6 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
         alert('Failed to submit application. Please try again.');
       }
     }
-
-    // ---------- EVENT BINDINGS ----------
-    nextBtn.addEventListener('click', async () => {
-      if (!validateStep(currentStep)) return;
-      await saveDraft();
-      if (currentStep < steps.length) {
-        showStep(currentStep + 1);
-      }
-    });
 
     prevBtn.addEventListener('click', async () => {
       await saveDraft();

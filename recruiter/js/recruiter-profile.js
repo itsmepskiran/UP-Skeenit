@@ -43,6 +43,7 @@ import { backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js
         await handleResponse(res);
 
         // Refresh user metadata to get updated onboarded status
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for backend update
         const { data: { user: updatedUser } } = await supabase.auth.getUser();
         if (updatedUser?.user_metadata?.onboarded) {
             localStorage.setItem("onboarded", "true");

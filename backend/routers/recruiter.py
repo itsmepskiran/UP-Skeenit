@@ -254,10 +254,10 @@ async def update_profile(request: Request, payload: RecruiterProfileUpdate):
         profile = svc.upsert_profile(data)
         
         # Update onboarded status to True
-        svc.supabase.auth.admin.update_user_by_id(
-            user["id"],
-            {"user_metadata": {"onboarded": True}}
-        )
+        svc.supabase.auth.update_user({
+            "id": user["id"],
+            "data": {"onboarded": True}
+        })
         
         return {"ok": True, "data": profile}
     except Exception as e:
