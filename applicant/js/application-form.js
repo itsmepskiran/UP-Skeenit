@@ -33,13 +33,13 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
     async function ensureCandidate() {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) {
-        window.location.href = 'https://www.skreenit.com/login';
+        window.location.href = 'https://login.skreenit.com/login';
         return null;
       }
       const user = data.user;
       const role = user.user_metadata?.role;
       if (role !== 'candidate') {
-        window.location.href = 'https://www.skreenit.com/recruiter';
+        window.location.href = 'https://recruiter.skreenit.com/recruiter-profile';
         return null;
       }
       const emailEl = document.getElementById('email');
@@ -732,6 +732,13 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
         const payload = collectFormData();
         await backendPost('/api/v1/applicant/detailed-form', payload);
         await uploadDocuments();
+        
+        // Refresh user metadata to get updated onboarded status
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata?.onboarded) {
+            localStorage.setItem("onboarded", "true");
+        }
+        
         successModal.classList.add('show');
       } catch (e) {
         console.error('Submit failed', e);
@@ -775,11 +782,11 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
 
     logoutBtn.addEventListener('click', async () => {
       await supabase.auth.signOut();
-      window.location.href = 'https://www.skreenit.com/login';
+      window.location.href = 'https://login.skreenit.com/login';
     });
 
     goToDashboardBtn.addEventListener('click', () => {
-      window.location.href = 'https://www.skreenit.com/applicant';
+      window.location.href = 'https://dashboard.skreenit.com/candidate-dashboard';
     });
 
     // Auto-save every 10 seconds

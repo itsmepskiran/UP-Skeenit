@@ -9,7 +9,7 @@ import { backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js
       const role = user?.user_metadata?.role;
 
       if (role !== "recruiter") {
-        window.location.href = "https://login.skreenit.com/login.html";
+        window.location.href = "https://login.skreenit.com/login";
       }
 
       return user;
@@ -24,7 +24,7 @@ import { backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         alert("Session expired. Please login again.");
-        window.location.href = "https://login.skreenit.com/login.html";
+        window.location.href = "https://login.skreenit.com/login";
         return;
       }
 
@@ -42,8 +42,14 @@ import { backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js
         const res = await backendPost("/recruiter/profile", payload);
         await handleResponse(res);
 
+        // Refresh user metadata to get updated onboarded status
+        const { data: { user: updatedUser } } = await supabase.auth.getUser();
+        if (updatedUser?.user_metadata?.onboarded) {
+            localStorage.setItem("onboarded", "true");
+        }
+
         alert("Profile saved! Redirecting to Recruiter Dashboard...");
-        window.location.href = "https://recruiter.skreenit.com/recruiter-profile.html";
+        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard";
 
       } catch (err) {
         console.error("Profile save failed:", err);
