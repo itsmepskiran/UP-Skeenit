@@ -10,7 +10,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     flowType: 'pkce',             // Required for cookie-based auth
     // Shared cookie across ALL Skreenit subdomains
     cookieOptions: {
-      name: 'sb-skreenit-auth',
+      name: 'sb-lgmvbmbzxsqrcclaynuh-auth-token',
       lifetime: 60*60*24*7, // 7 days
       domain: '.skreenit.com',
       path: '/',
