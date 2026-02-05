@@ -25,19 +25,19 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
 
             if (sessionError) {
             console.error('❌ Session error:', sessionError);
-            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
             return;
             }
 
             if (!session) {
             console.error('❌ No session object found');
-            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
             return;
             }
 
             if (!session.user) {
             console.error('❌ Session exists but no user found');
-            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
             return;
             }
 
@@ -68,7 +68,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         
             if (role !== expectedRole) {
             console.log(`⚠️ Wrong role! Redirecting to ${expectedRole} dashboard`);
-            window.location.href = `https://dashboard.skreenit.com/${expectedRole}-dashboard.html`;
+            window.location.href = `https://dashboard.skreenit.com/${expectedRole}-dashboard`;
             return;
             }
 
@@ -77,8 +77,8 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             if (onboarded === false || onboarded === "false") {
             console.log('⚠️ Not onboarded! Redirecting to onboarding form');
             const redirectURL = expectedRole === 'candidate'
-                ? 'https://applicant.skreenit.com/detailed-application-form.html'
-                : 'https://recruiter.skreenit.com/recruiter-profile.html';
+                ? 'https://applicant.skreenit.com/detailed-application-form'
+                : 'https://recruiter.skreenit.com/recruiter-profile';
             window.location.href = redirectURL;
             return;
             }
@@ -89,7 +89,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         } catch (error) {
             console.error('💥 CRITICAL ERROR in checkAuth:', error);
             console.error('Stack trace:', error.stack);
-            window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
         }
         }
         // ---------------------------
@@ -128,7 +128,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
                 <div class="list-item">
                     <div class="item-title">${app.job_title}</div>
                     <div class="item-meta">Status: ${app.status}</div>
-                    <a href="application-details.html?app_id=${app.id}" class="btn-primary">View Application</a>
+                    <a href="https://dashboard.skreenit.com/application-details?app_id=${app.id}" class="btn-primary">View Application</a>
                 </div>
             `).join("");
         }
@@ -146,7 +146,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
                 <div class="list-item">
                     <div class="item-title">${job.title}</div>
                     <div class="item-meta">${job.location} • ${job.job_type}</div>
-                    <a href="job-details.html?job_id=${job.id}" class="btn-primary">View Job</a>
+                    <a href="https://dashboard.skreenit.com/job-details?job_id=${job.id}" class="btn-primary">View Job</a>
                 </div>
             `).join("");
         }
@@ -156,7 +156,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // ---------------------------
         document.getElementById("logoutBtn").addEventListener("click", async () => {
             await supabase.auth.signOut();
-            window.location.href = "https://login.skreenit.com/login.html";
+            window.location.href = "https://login.skreenit.com/login";
         });
 
         // INIT

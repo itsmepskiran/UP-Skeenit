@@ -24,13 +24,15 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,     // Required for PKCE
     flowType: 'pkce',             // Required for cookie-based auth
     storage: storage,
+    redirectTo: 'https://www.skreenit.com',
     // ⭐ Shared cookie across ALL Skreenit subdomains
     cookieOptions: {
       name: 'sb-access-token',
       lifetime: 60*60*24*7, // 7 days
       domain: '.skreenit.com',
       path: '/',
-      sameSite: 'lax'
+      sameSite: 'lax',
+      secure: true
     }
   }
 })

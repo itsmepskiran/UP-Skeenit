@@ -27,7 +27,7 @@ export async function redirectByRole() {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session?.user) {
       console.log("No active session found, redirecting to login");
-      window.location.href = `https://login.skreenit.com/login.html?redirectTo=${encodeURIComponent(window.location.href)}`;
+      window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
       return;
     }
   const role = session.user.user_metadata?.role|| localStorage.getItem("skreenit_role");
@@ -40,21 +40,21 @@ export async function redirectByRole() {
     }
   if (role === "candidate") {
       window.location.href = onboarded
-      ? "https://dashboard.skreenit.com/candidate-dashboard.html"
-      : "https://applicant.skreenit.com/detailed-application-form.html";
+      ? "https://dashboard.skreenit.com/candidate-dashboard"
+      : "https://applicant.skreenit.com/detailed-application-form";
     }
     else if (role === "recruiter") {
     window.location.href = onboarded
-      ? "https://dashboard.skreenit.com/recruiter-dashboard.html"
-      : "https://recruiter.skreenit.com/recruiter-profile.html";
+      ? "https://dashboard.skreenit.com/recruiter-dashboard"
+      : "https://recruiter.skreenit.com/recruiter-profile";
     }
     else{
       console.warn("User role not found, redirecting to login");
-      window.location.href = "https://login.skreenit.com/login.html";
+      window.location.href = "https://login.skreenit.com/login";
     }
   } catch(error) {
     console.error("Error in redirectByRole", error);
-    window.location.href = "https://login.skreenit.com/login.html";
+    window.location.href = "https://login.skreenit.com/login";
   }
 }
 

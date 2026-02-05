@@ -44,6 +44,9 @@ form.addEventListener("submit", async (e) => {
     // ⭐ Store role
     await persistSessionToLocalStorage(); // ✅ Store role in localStorage - Refer auth-pages.js
 
+    // ⭐ Wait a moment for session to be fully established
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     // ⭐ Redirect based on role 
     await redirectByRole(); // ✅ Redirect to appropriate dashboard - Refer auth-pages.js
 
