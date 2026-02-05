@@ -24,9 +24,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,     // Required for PKCE
     flowType: 'pkce',             // Required for cookie-based auth
     storage: storage,
-    // ⭐ Shared cookie across ALL Skreenit subdomains
     cookieOptions: {
-      name: 'sb-access-token',
+      name: 'sb-skreenit-auth',
       lifetime: 60*60*24*7, // 7 days
       domain: '.skreenit.com',
       path: '/',
@@ -36,14 +35,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 })
 
-// Keep only role in localStorage
+// Keep track of auth state changes
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state change:', event, session)
 })
-// test the storage methos
-// Test the storage methods
-console.log('Testing storage methods...');
-storage.setItem('test_key', 'test_value');
-const value = storage.getItem('test_key');
-storage.removeItem('test_key');
-console.log('Storage test complete', { value });
