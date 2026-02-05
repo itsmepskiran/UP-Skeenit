@@ -3,3 +3,5 @@
   Access-Control-Allow-Methods: GET
   Access-Control-Allow-Headers: *
   Content-Type: application/javascript
+/*
+X-HTML-Serve: true
