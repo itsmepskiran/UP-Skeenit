@@ -1,4 +1,4 @@
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js';
+import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
 import { backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
 
     /* -------------------------------------------------------
