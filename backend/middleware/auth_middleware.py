@@ -8,6 +8,7 @@ import jwt
 from datetime import datetime
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse  # ✅ Added for graceful errors
 from utils_others.logger import logger
 
 # Load Supabase JWT secret
@@ -56,24 +57,30 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Allow CORS preflight
+        # 1. Allow CORS preflight
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        # Allow excluded paths (from main.py)
+        # 2. Allow excluded paths (from main.py)
         if path in self.excluded_paths:
             return await call_next(request)
 
-        # Allow public paths
+        # 3. ✅ FIX: Allow Static Files & Logos (Prefix Check)
+        # This prevents 401 errors for images
+        if path.startswith("/logos") or path.startswith("/static"):
+             return await call_next(request)
+
+        # 4. Allow public paths
         clean_path = path.split("?")[0].rstrip("/") 
         if clean_path in PUBLIC_PATHS:
             return await call_next(request)
 
-        # Require Authorization header
+        # 5. Require Authorization header
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             logger.warning("Missing Authorization header", extra={"path": path})
-            raise HTTPException(status_code=401, detail="Missing Authorization header")
+            # ✅ FIX: Return JSON instead of raising Exception to prevent stack trace
+            return JSONResponse(status_code=401, content={"detail": "Missing Authorization header"})
 
         token = auth_header.replace("Bearer ", "").strip()
 
@@ -91,19 +98,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # Check expiration manually (optional, but safe)
             exp = payload.get("exp")
             if exp and datetime.utcnow().timestamp() > exp:
-                raise jwt.ExpiredSignatureError("Token expired")
+                # ✅ FIX: Return JSON instead of raising Exception
+                return JSONResponse(status_code=401, content={"detail": "Token expired"})
 
         except jwt.ExpiredSignatureError:
             logger.warning("Expired token", extra={"path": path})
-            raise HTTPException(status_code=401, detail="Token expired")
+            return JSONResponse(status_code=401, content={"detail": "Token expired"})
 
         except jwt.InvalidTokenError as e:
             logger.warning(f"Invalid token: {str(e)}", extra={"path": path})
-            raise HTTPException(status_code=401, detail="Invalid token")
+            return JSONResponse(status_code=401, content={"detail": "Invalid token"})
 
         except Exception as e:
             logger.error(f"Token validation error: {str(e)}", extra={"path": path})
-            raise HTTPException(status_code=500, detail="Token validation error")
+            return JSONResponse(status_code=500, content={"detail": "Token validation error"})
 
         # Attach decoded user to request
         request.state.user = payload

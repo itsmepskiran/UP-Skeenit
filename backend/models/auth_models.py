@@ -1,3 +1,5 @@
+# backend/models/auth_models.py
+
 from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 
@@ -16,7 +18,7 @@ class LoginRequest(BaseModel):
 # REGISTER REQUEST
 # ---------------------------------------------------------
 class RegisterRequest(BaseModel):
-    full_name: str
+    full_name: str  # ✅ FIXED: Changed from 'fullname' to 'full_name' (matches frontend)
     email: EmailStr
     password: str
     role: str  # "recruiter" or "candidate"
@@ -48,7 +50,7 @@ class PasswordUpdateRequest(BaseModel):
 # ---------------------------------------------------------
 class PasswordChangedRequest(BaseModel):
     email: EmailStr
-    full_name: Optional[str] = None
+    full_name: Optional[str] = None # ✅ FIXED: Consistent naming
 
     model_config = ConfigDict(from_attributes=True)
 

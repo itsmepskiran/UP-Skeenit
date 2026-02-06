@@ -1,6 +1,12 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
+
+# 1. Define Base Directory (Absolute Path) - CRITICAL FOR LOGOS
+# This ensures we find the 'logos' folder no matter where you run the command from.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Load Environment from .env file
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from fastapi import FastAPI, APIRouter
 from fastapi.staticfiles import StaticFiles
@@ -23,12 +29,6 @@ from routers import (
     video
 )
 
-# ---------------------------------------------------------
-# Load Environment
-# ---------------------------------------------------------
-BASE_DIR = os.path.dirname(__file__)
-load_dotenv(os.path.join(BASE_DIR, ".env"))
-
 ENV = os.getenv("ENVIRONMENT", "development")
 IS_PROD = ENV == "production"
 
@@ -44,21 +44,30 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-app.mount("/logos", StaticFiles(directory="logos"), name="logos")
+# ---------------------------------------------------------
+# Mount Static Files (Logos) - CRITICAL FIX
+# ---------------------------------------------------------
+logos_dir = os.path.join(BASE_DIR, "logos")
+if os.path.exists(logos_dir):
+    app.mount("/logos", StaticFiles(directory=logos_dir), name="logos")
+    print(f"✅ Mounted logos from: {logos_dir}")
+else:
+    print(f"⚠️ Warning: Logos directory not found at {logos_dir}")
 
 # ---------------------------------------------------------
 # Browser Display (Root)
 # ---------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 async def root_page():
-    return """
+    # Uses f-string so {ENV} prints the actual value
+    return f"""
     <html>
         <head>
             <title>Skreenit Backend API</title>
             <meta http-equiv="refresh" content="5;url=https://www.skreenit.com" />
         </head>
         <body style="font-family: sans-serif; text-align: center; padding: 50px;">
-            <img src="https://backend.skreenit.com/logos/logobrand.png" alt="Skreenit Logo" style="max-width: 200px;" />
+            <img src="/logos/logobrand.png" alt="Skreenit Logo" style="max-width: 200px;" />
             <h2>Skreenit Backend API</h2>
             <p>Running in <strong>{ENV}</strong> mode.</p>
         </body>
@@ -128,7 +137,6 @@ app.add_middleware(PatchedAuthMiddleware, excluded_paths=EXCLUDED_PATHS)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # 1. CORS Middleware (Runs 1st - CRITICAL)
-# Must be added LAST in the code to run FIRST in the pipeline.
 DEFAULT_ALLOWED_ORIGINS = [
     "https://www.skreenit.com",
     "https://skreenit.com",
@@ -138,6 +146,7 @@ DEFAULT_ALLOWED_ORIGINS = [
     "https://recruiter.skreenit.com",
     "https://dashboard.skreenit.com",
     "https://backend.skreenit.com",
+    "https://aiskreenit.onrender.com",
 ]
 
 LOCAL_DEV_ORIGINS = [
