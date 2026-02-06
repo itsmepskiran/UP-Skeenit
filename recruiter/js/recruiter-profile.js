@@ -67,4 +67,12 @@ import { backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js
       document
         .getElementById("recruiterProfileForm")
         .addEventListener("submit", handleProfileSubmit);
+      // ✅ ADD THIS: Logout Logic
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+      window.location.href = "https://login.skreenit.com/login";
     });
+    }
+});
