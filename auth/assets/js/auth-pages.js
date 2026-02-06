@@ -25,6 +25,13 @@ export async function redirectByRole() {
   try{
     //First check if we have a valid session
     const { data: { session }, error } = await supabase.auth.getSession();
+    console.log('🔍 redirectByRole - Session check:', { 
+      hasSession: !!session, 
+      hasUser: !!session?.user, 
+      error: error?.message || 'none',
+      sessionData: session
+    });
+    
     if (error || !session?.user) {
       console.log("No active session found, redirecting to login");
       window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;

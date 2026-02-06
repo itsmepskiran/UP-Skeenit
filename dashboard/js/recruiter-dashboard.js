@@ -21,7 +21,8 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             console.log('📊 Session result:', { 
             hasSession: !!session, 
             hasUser: !!session?.user, 
-            error: sessionError?.message || 'none'
+            error: sessionError?.message || 'none',
+            sessionData: session
          });
 
             if (sessionError) {
