@@ -1,5 +1,5 @@
 import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
 
     const form = document.getElementById('detailedApplicationForm');
     const steps = Array.from(document.querySelectorAll('.form-step'));
@@ -511,7 +511,7 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
     async function saveDraft() {
       try {
         const payload = collectFormData();
-        await backendPost('/api/v1/applicant/draft', payload);
+        await backendPost('/applicant/draft', payload);
       } catch (e) {
         console.warn('Draft save failed', e);
       }
@@ -519,7 +519,7 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
 
     async function loadDraftAndProfile() {
       try {
-        const profileRes = await backendGet('/api/v1/applicant/detailed-form');
+        const profileRes = await backendGet('/applicant/detailed-form');
         const profileData = await handleResponse(profileRes).catch(() => null);
 
         if (profileData?.personal) {
@@ -586,7 +586,7 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
       }
 
       try {
-        const draftRes = await backendGet('/api/v1/applicant/draft');
+        const draftRes = await backendGet('/applicant/draft');
         const draftData = await handleResponse(draftRes).catch(() => null);
         const draft = draftData?.data || {};
 
@@ -730,7 +730,7 @@ import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.c
 
       try {
         const payload = collectFormData();
-        await backendPost('/api/v1/applicant/detailed-form', payload);
+        await backendPost('/applicant/detailed-form', payload);
         await uploadDocuments();
         
         // Refresh user metadata to get updated onboarded status

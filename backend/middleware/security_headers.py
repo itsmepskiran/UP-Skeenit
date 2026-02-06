@@ -10,9 +10,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response: Response = await call_next(request)
 
         # Modern cross-origin protections
+        # ✅ FIXED: 'unsafe-none' ensures external images/resources load without strict CORP headers
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none" 
+        response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
 
         # Permissions Policy
         response.headers["Permissions-Policy"] = (
@@ -23,6 +24,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Cache-Control"] = "no-store"
 
         # Content Security Policy (CSP)
+        # Allows scripts/styles from 'self' and https sources. 
+        # Allows connections to your backend and Supabase.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "

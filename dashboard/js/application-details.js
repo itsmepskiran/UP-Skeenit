@@ -1,5 +1,5 @@
 import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
         const detailsBox = document.getElementById("applicationDetails");
 
         // ---------------------------
@@ -43,7 +43,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
             }
 
             try {
-                const response = await backendGet(`/api/v1/applicant/application/${appId}`);
+                const response = await backendGet(`/applicant/application/${appId}`);
                 const data = await handleResponse(response);
 
                 renderDetails(data);

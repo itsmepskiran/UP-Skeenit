@@ -1,5 +1,5 @@
 import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
 
     /* -------------------------------------------------------
        ROLE CHECK

@@ -16,7 +16,7 @@ class LoginRequest(BaseModel):
 # REGISTER REQUEST
 # ---------------------------------------------------------
 class RegisterRequest(BaseModel):
-    fullname: str
+    full_name: str
     email: EmailStr
     password: str
     role: str  # "recruiter" or "candidate"
@@ -48,7 +48,7 @@ class PasswordUpdateRequest(BaseModel):
 # ---------------------------------------------------------
 class PasswordChangedRequest(BaseModel):
     email: EmailStr
-    fullname: Optional[str] = None
+    full_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

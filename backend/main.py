@@ -45,8 +45,9 @@ app = FastAPI(
 )
 
 app.mount("/logos", StaticFiles(directory="logos"), name="logos")
+
 # ---------------------------------------------------------
-# Browser Display
+# Browser Display (Root)
 # ---------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 async def root_page():
@@ -55,90 +56,79 @@ async def root_page():
         <head>
             <title>Skreenit Backend API</title>
             <meta http-equiv="refresh" content="5;url=https://www.skreenit.com" />
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    padding: 60px 20px;
-                    background: #f7f9fc;
-                    color: #333;
-                }
-                img {
-                    max-width: 240px;
-                    margin-bottom: 25px;
-                }
-                .box {
-                    display: inline-block;
-                    padding: 25px 35px;
-                    border-radius: 10px;
-                    background: white;
-                    border: 1px solid #e0e0e0;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-                }
-                h2 {
-                    margin-bottom: 10px;
-                    color: #2c3e50;
-                }
-                p {
-                    margin: 6px 0;
-                    color: #555;
-                }
-                a {
-                    color: #007bff;
-                    text-decoration: none;
-                }
-                a:hover {
-                    text-decoration: underline;
-                }
-            </style>
         </head>
-        <body>
-            <img src="https://backend.skreenit.com/logos/logobrand.png" alt="Skreenit Logo" />
-            <div class="box">
-            <h2>Welcome to Skreenit Backend API</h2>
-            <p>This server powers the Skreenit platform.</p>
-            <p>Direct access is not required for users.</p>
-
-            <p style="font-size: 13px; color: #888;">
-            If you reached this page by mistake, you will be redirected to 
-            <a href="https://www.skreenit.com">Skreenit</a> shortly.
-            <br>
-            If the redirect does not happen automatically, 
-            <a href="https://www.skreenit.com">click here</a>.
-            </p>
-            </div>
+        <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <img src="https://backend.skreenit.com/logos/logobrand.png" alt="Skreenit Logo" style="max-width: 200px;" />
+            <h2>Skreenit Backend API</h2>
+            <p>Running in <strong>{ENV}</strong> mode.</p>
         </body>
     </html>
     """
+
 # ---------------------------------------------------------
-# Masked Env Logging
+# Logging
 # ---------------------------------------------------------
 def _mask(v: str | None) -> str | None:
-    if not v:
-        return None
+    if not v: return None
     v = str(v)
     return (v[:8] + "...") if len(v) > 12 else "***"
 
 logger.info("Backend Startup", extra={
     "environment": ENV,
     "supabase_url": _mask(os.getenv("SUPABASE_URL")),
-    "service_role_key_present": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY")),
 })
 
 # ---------------------------------------------------------
-# Health Check (Root)
+# Health Check
 # ---------------------------------------------------------
 @app.get("/health")
 async def health_root():
-    return {
-        "status": "healthy",
-        "version": "1.0.0",
-        "environment": ENV
-    }
+    return {"status": "healthy", "version": "1.0.0", "environment": ENV}
 
 # ---------------------------------------------------------
-# CORS Configuration
+# Exception Handlers
 # ---------------------------------------------------------
+register_exception_handlers(app)
+
+# ---------------------------------------------------------
+# API Router
+# ---------------------------------------------------------
+api = APIRouter(prefix="/api/v1")
+api.include_router(auth.router, tags=["Authentication"])
+api.include_router(applicant.router, tags=["Applicant"])
+api.include_router(recruiter.router, tags=["Recruiter"])
+api.include_router(dashboard.router, tags=["Dashboard"])
+api.include_router(analytics.router, tags=["Analytics"])
+api.include_router(notification.router, tags=["Notification"])
+api.include_router(video.router, tags=["Video"])
+
+@api.get("/health")
+async def versioned_health():
+    return {"status": "healthy", "version": "1.0.0"}
+
+app.include_router(api)
+
+# ---------------------------------------------------------
+# MIDDLEWARE SETUP (Order is Critical)
+# ---------------------------------------------------------
+# In FastAPI, "add_middleware" adds to the OUTSIDE.
+# The middleware added LAST runs FIRST.
+
+# 3. Auth Middleware (Runs 3rd)
+class PatchedAuthMiddleware(AuthMiddleware): 
+    async def dispatch(self, request, call_next):
+        # We allow OPTIONS to pass through so CORS middleware can handle it
+        if request.method == "OPTIONS":
+             return await call_next(request)
+        return await super().dispatch(request, call_next)
+
+app.add_middleware(PatchedAuthMiddleware, excluded_paths=EXCLUDED_PATHS)
+
+# 2. Security Headers (Runs 2nd)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 1. CORS Middleware (Runs 1st - CRITICAL)
+# Must be added LAST in the code to run FIRST in the pipeline.
 DEFAULT_ALLOWED_ORIGINS = [
     "https://www.skreenit.com",
     "https://skreenit.com",
@@ -148,8 +138,6 @@ DEFAULT_ALLOWED_ORIGINS = [
     "https://recruiter.skreenit.com",
     "https://dashboard.skreenit.com",
     "https://backend.skreenit.com",
-    "https://aiskreenit.onrender.com",
-    "https://backskreenit.onrender.com",
 ]
 
 LOCAL_DEV_ORIGINS = [
@@ -157,87 +145,29 @@ LOCAL_DEV_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://localhost:8000",  # Added for local testing
-    "http://127.0.0.1:8000",  # Added for local testing
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
 origins = DEFAULT_ALLOWED_ORIGINS if IS_PROD else DEFAULT_ALLOWED_ORIGINS + LOCAL_DEV_ORIGINS
 
-# Enhanced CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods including OPTIONS
-    allow_headers=["*"],  # Allow all headers
-    expose_headers=["*"],  # Expose all headers to the client
-    max_age=600,  # Cache preflight response for 10 minutes
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
-@app.options("/{path:path}") 
-async def options_handler(path: str): 
-    return Response(status_code=200)
-# ---------------------------------------------------------
-# Middleware
-# ---------------------------------------------------------
-app.add_middleware(SecurityHeadersMiddleware)
-class PatchedAuthMiddleware(AuthMiddleware): 
-    async def dispatch(self, request, call_next): 
-        if request.method == "OPTIONS": 
-            return Response(status_code=200) 
-        return await super().dispatch(request, call_next)
-
-app.add_middleware(PatchedAuthMiddleware, excluded_paths=EXCLUDED_PATHS)
 
 # ---------------------------------------------------------
-# Exception Handlers
-# ---------------------------------------------------------
-register_exception_handlers(app)
-
-# ---------------------------------------------------------
-# API Router (Versioned)
-# ---------------------------------------------------------
-api = APIRouter(prefix="/api/v1")
-
-api.include_router(auth.router, tags=["Authentication"])
-api.include_router(applicant.router, tags=["Applicant"])
-api.include_router(recruiter.router, tags=["Recruiter"])
-api.include_router(dashboard.router, tags=["Dashboard"])
-api.include_router(analytics.router, tags=["Analytics"])
-api.include_router(notification.router, tags=["Notification"])
-api.include_router(video.router, tags=["Video"])
-
-# Versioned health check
-@api.get("/health")
-async def versioned_health():
-    return {
-        "status": "healthy",
-        "version": "1.0.0",
-        "environment": ENV
-    }
-
-# System info endpoint
-@api.get("/system/info")
-async def system_info():
-    return {
-        "environment": ENV,
-        "python_version": os.sys.version,
-        "fastapi_version": "1.0.0",
-    }
-
-# DB health placeholder
-@api.get("/system/db-health")
-async def db_health():
-    return {"status": "ok"}
-
-app.include_router(api)
-
-# ---------------------------------------------------------
-# Startup / Shutdown Events
+# Events
 # ---------------------------------------------------------
 @app.on_event("startup")
 async def on_startup():
-    logger.info("Skreenit Backend Started", extra={"event": "startup"})
+    logger.info("Backend Started")
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    logger.info("Skreenit Backend Stopped", extra={"event": "shutdown"})
+    logger.info("Backend Stopped")

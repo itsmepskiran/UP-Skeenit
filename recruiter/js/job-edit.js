@@ -4,7 +4,7 @@ import {
       backendPut,
       backendDelete,
       handleResponse
-} from 'https://auth.skreenit.com/assets/js/backend-client.js';
+} from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
 
     // --- Role check ---
     async function ensureRecruiter() {

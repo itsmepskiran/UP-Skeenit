@@ -1,5 +1,5 @@
 import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
         const statApplied = document.getElementById("statApplied");
         const statPending = document.getElementById("statPending");
         const statInterview = document.getElementById("statInterview");
@@ -97,7 +97,7 @@ import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/
         // ---------------------------
         async function loadDashboard() {
             try {
-                const response = await backendGet("/api/v1/applicant/dashboard");
+                const response = await backendGet("/applicant/dashboard");
                 const data = await handleResponse(response);
 
                 statApplied.textContent = data.applied_jobs;

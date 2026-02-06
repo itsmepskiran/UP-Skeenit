@@ -1,5 +1,5 @@
 import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js';
+import { backendGet, backendPost, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
 
 const jobBox = document.getElementById("jobDetails");
 const applyBtn = document.getElementById("applyBtn");
@@ -98,7 +98,7 @@ applyBtn.addEventListener("click", async () => {
     applyBtn.disabled = true;
     applyBtn.textContent = "Applying...";
 
-    const response = await backendPost(`/api/v1/applicant/apply/${jobId}`);
+    const response = await backendPost(`/applicant/apply/${jobId}`);
     const result = await handleResponse(response);
 
     if (result.ok) {

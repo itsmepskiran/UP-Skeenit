@@ -23,7 +23,7 @@ import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js
       btnText.style.display = "none";
       btnLoader.style.display = "inline-flex";
 
-      const redirectUrl = "https://lohin.skreenit.com/update-password.html";
+      const redirectUrl = "https://login.skreenit.com/update-password.html";
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
