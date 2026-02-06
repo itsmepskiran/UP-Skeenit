@@ -33,12 +33,14 @@ form.addEventListener("submit", async (e) => {
     }
     // 3. Fetch metadata (this is the missing piece)
     const { data: {user} } = await supabase.auth.getUser();
-    
-    if(user){
-      // 4. Store metadata manually
-      localStorage.setItem("skreenit_role", user.user_metadata.role);
-      localStorage.setItem("user_id", user.id);
-      localStorage.setItem("onboarded", user.user_metadata.onboarded.toString());
+    if (user) {
+      console.log("✅ Login successful. Session established in cookies.");
+  
+      // Wait 1.5 seconds to ensure the cookie is set and propagated
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+  // Redirect logic using the session we just created
+      await redirectByRole(); 
     }
     
     // ⭐ Store role
