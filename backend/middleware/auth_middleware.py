@@ -1,5 +1,3 @@
-# backend/middleware/auth_middleware.py
-
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -8,14 +6,22 @@ import jwt
 from datetime import datetime
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse  # ✅ Added for graceful errors
+from fastapi.responses import JSONResponse
 from utils_others.logger import logger
 
-# Load Supabase JWT secret
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
-if not SUPABASE_JWT_SECRET:
-    raise RuntimeError("SUPABASE_JWT_SECRET is not set in environment variables")
+# ---------------------------------------------------------
+# LOAD & CLEAN SECRET
+# ---------------------------------------------------------
+# ✅ FIX: Strip whitespace to prevent copy-paste errors
+raw_secret = os.getenv("SUPABASE_JWT_SECRET", "")
+SUPABASE_JWT_SECRET = raw_secret.strip()
 
+# 🔍 DEBUG: Print the first 5 chars to logs (Safe to share)
+if SUPABASE_JWT_SECRET:
+    print(f"🔒 LOADED JWT SECRET: {SUPABASE_JWT_SECRET[:5]}... (Length: {len(SUPABASE_JWT_SECRET)})")
+else:
+    print("❌ ERROR: SUPABASE_JWT_SECRET is Missing!")
+    raise RuntimeError("SUPABASE_JWT_SECRET is not set")
 
 # Public endpoints that do NOT require authentication
 PUBLIC_PATHS = [

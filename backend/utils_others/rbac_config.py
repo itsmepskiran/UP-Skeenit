@@ -1,30 +1,11 @@
-# ---------------------------------------------------------
-# ROLE DEFINITIONS (RBAC CONFIG)
-# ---------------------------------------------------------
-
 ROLES = {
     "admin": {
         "inherits": ["recruiter", "candidate"],
         "permissions": [
-            # Job management
-            "jobs:create",
-            "jobs:update",
-            "jobs:delete",
-            "jobs:view",
-
-            # Applications
-            "applications:view",
-            "applications:update",
-
-            # Analytics + Dashboard
-            "analytics:view",
-            "dashboard:view",
-
-            # User management
-            "users:manage",
-
-            # Notifications
-            "notifications:create",
+            "jobs:create", "jobs:update", "jobs:delete", "jobs:view",
+            "applications:view", "applications:update",
+            "analytics:view", "dashboard:view",
+            "users:manage", "notifications:create",
         ],
     },
 
@@ -41,28 +22,27 @@ ROLES = {
             "applications:view",
             "applications:update",
 
+            # Profile (Explicitly added)
+            "profile:update",  # ✅ ADDED THIS
+
             # Dashboard
             "dashboard:view",
 
             # Notifications
             "notifications:create",
+            
+            # Analytics
+            "analytics:view",
         ],
     },
 
     "candidate": {
         "inherits": [],
         "permissions": [
-            # Applications
             "applications:create",
             "applications:view",
-
-            # Profile
             "profile:update",
-
-            # Video uploads
             "video:upload",
-
-            # Dashboard
             "dashboard:view",
         ],
     },

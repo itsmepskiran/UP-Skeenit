@@ -59,19 +59,37 @@ class BackendClient {
     );
   }
 
-  // ------------------------------------------------------------
-  // SUPABASE JWT RETRIEVAL (always fresh)
+// ------------------------------------------------------------
+  // SUPABASE JWT RETRIEVAL (Robust & Debugging)
   // ------------------------------------------------------------
   async getAuthToken() {
     try {
-      const { data } = await supabase.auth.getSession();
-      return data?.session?.access_token || null;
+      // 1. Try getting existing session
+      let { data } = await supabase.auth.getSession();
+      
+      // 2. If no token, force a refresh (Critical for split-domain)
+      if (!data?.session?.access_token) {
+          console.warn("⚠️ [BackendClient] Token missing in session. Attempting refresh...");
+          const refresh = await supabase.auth.refreshSession();
+          data = refresh.data;
+      }
+
+      const token = data?.session?.access_token || null;
+
+      // 3. DEBUG LOG: Tell us exactly what is happening
+      if (token) {
+          console.log(`✅ [BackendClient] Token ready: ${token.substring(0, 10)}...`);
+      } else {
+          console.error("❌ [BackendClient] CRITICAL: No Auth Token found! Request will fail.");
+      }
+
+      return token;
+
     } catch (err) {
       console.warn("[BackendClient] Failed to get Supabase session", err);
       return null;
     }
   }
-
   // ------------------------------------------------------------
   // TIMEOUT WRAPPER
   // ------------------------------------------------------------
