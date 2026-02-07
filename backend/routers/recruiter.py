@@ -107,7 +107,6 @@ async def list_candidates(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
 # ---------------------------------------------------------
 # ANALYTICS
 # ---------------------------------------------------------
@@ -150,8 +149,9 @@ async def approve_application(request: Request, application_id: str):
             .execute()
         )
 
-        if getattr(res, "error", None):
-            raise RuntimeError(res.error)
+        data = getattr(res, "data", None)
+        if data is None or not data:
+            raise RuntimeError("Failed to update application status")
 
         return {"ok": True}
 
@@ -251,14 +251,19 @@ async def update_profile(request: Request, payload: RecruiterProfileUpdate):
     data["user_id"] = user["id"]
 
     try:
+        # 1. Update the profile in the database
         profile = svc.upsert_profile(data)
         
-        # Update onboarded status to True
-        svc.supabase.auth.update_user({
-            "id": user["id"],
-            "data": {"onboarded": True}
-        })
+        # 2. ✅ FIX: Use 'admin.update_user_by_id' for metadata
+        # This requires the Backend to be initialized with the Service Role Key
+        svc.supabase.auth.admin.update_user_by_id(
+            user["id"], 
+            {"user_metadata": {"onboarded": True}}
+        )
         
         return {"ok": True, "data": profile}
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Log the error so you can see it in Render logs
+        print(f"❌ PROFILE UPDATE ERROR: {str(e)}") 
+        raise HTTPException(status_code=400, detail=f"Update failed: {str(e)}")
