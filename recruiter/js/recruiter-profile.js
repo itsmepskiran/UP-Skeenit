@@ -1,5 +1,5 @@
 import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-// ✅ FIX: Import backendPut instead of backendPost
+// ✅ FIX 1: Import backendPut
 import { backendPut, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
 
 /* -------------------------------------------------------
@@ -14,12 +14,12 @@ async function ensureRecruiter() {
     return null;
   }
 
-  // ✅ FIX: Auto-populate Contact Name & Email from Registration Data
+  // ✅ FIX 2: Auto-populate Contact Name & Email from Registration Data
   if (user) {
     const nameInput = document.getElementById("contact_name");
     const emailInput = document.getElementById("contact_email");
 
-    // Only fill if empty (so we don't overwrite if user edits and reloads)
+    // Only fill if empty (so we don't overwrite if user edits)
     if (user.user_metadata?.full_name && !nameInput.value) {
       nameInput.value = user.user_metadata.full_name;
     }
@@ -44,15 +44,14 @@ async function handleProfileSubmit(event) {
     return;
   }
 
-  // ✅ FIX: Enforce HTTPS on Website
+  // ✅ FIX 3: Enforce HTTPS on Website
   let website = document.getElementById("company_website").value.trim();
   if (website && !website.match(/^https?:\/\//)) {
     website = `https://${website}`;
   }
 
   const payload = {
-    // Note: user_id is typically handled by backend from the token, 
-    // but we can send it if the model requires it.
+    user_id: user.id,
     company_name: document.getElementById("company_name").value.trim(),
     company_website: website || null,
     contact_name: document.getElementById("contact_name").value.trim(),
@@ -62,19 +61,15 @@ async function handleProfileSubmit(event) {
   };
 
   try {
-    // ✅ FIX: Changed backendPost to backendPut to match router @router.put("/profile")
+    // ✅ FIX 4: Use backendPut to match @router.put("/profile")
     const res = await backendPut("/recruiter/profile", payload);
     await handleResponse(res);
 
     // Refresh user metadata to get updated onboarded status
-    // The backend updates 'onboarded' to true upon success
     await new Promise(resolve => setTimeout(resolve, 500)); 
-    
-    // Force refresh session to get new metadata
     const { data: { session } } = await supabase.auth.refreshSession();
     
     if (session?.user?.user_metadata?.onboarded) {
-        // Optional: Update local storage if your logic relies on it
         localStorage.setItem("onboarded", "true");
     }
 
@@ -102,7 +97,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async (e) => {
-      e.preventDefault(); // Extra safety
+      e.preventDefault();
       await supabase.auth.signOut();
       window.location.href = "https://login.skreenit.com/login";
     });
