@@ -120,27 +120,23 @@ class InterviewQuestionResponse(BaseModel):
 # ---------------------------------------------------------
 # RECRUITER PROFILE
 # ---------------------------------------------------------
+# ✅ FIX: Match the fields sent by recruiter-profile.js
 class RecruiterProfileUpdate(BaseModel):
-    fullname: Optional[str] = None
-    email: Optional[str] = None
+    company_name: Optional[str] = None
+    company_website: Optional[str] = None
+    contact_name: Optional[str] = None  # Matches 'contact_name' in JS
+    contact_email: Optional[str] = None # Matches 'contact_email' in JS
+    location: Optional[str] = None
+    about: Optional[str] = None
+    
+    # Keep these if you still use them elsewhere, otherwise they are optional
+    full_name: Optional[str] = None
     phone: Optional[str] = None
     position: Optional[str] = None
     linkedin_url: Optional[str] = None
+    user_id: Optional[str] = None       # Added to allow user_id in payload
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class RecruiterProfileRequest(BaseModel):
-    user_id: str
-    company_id: Optional[str] = None
-    fullname: str
-    email: str
-    phone: Optional[str] = None
-    position: Optional[str] = None
-    linkedin_url: Optional[str] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
 
 # ---------------------------------------------------------
 # APPLICATION RESPONSE
