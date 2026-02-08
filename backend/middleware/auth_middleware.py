@@ -1,3 +1,5 @@
+# backend/middleware/auth_middleware.py
+
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,21 +14,18 @@ from utils_others.logger import logger
 # ---------------------------------------------------------
 # LOAD & CLEAN SECRET
 # ---------------------------------------------------------
-# ✅ FIX: Strip whitespace to prevent copy-paste errors
+# ✅ FIX 1: Strip whitespace to prevent copy-paste errors
 raw_secret = os.getenv("SUPABASE_JWT_SECRET", "")
 SUPABASE_JWT_SECRET = raw_secret.strip()
 
-# 🔍 DEBUG: Print the first 5 chars to logs (Safe to share)
-if SUPABASE_JWT_SECRET:
-    print(f"🔒 LOADED JWT SECRET: {SUPABASE_JWT_SECRET[:5]}... (Length: {len(SUPABASE_JWT_SECRET)})")
-else:
-    print("❌ ERROR: SUPABASE_JWT_SECRET is Missing!")
-    raise RuntimeError("SUPABASE_JWT_SECRET is not set")
+if not SUPABASE_JWT_SECRET:
+    raise RuntimeError("SUPABASE_JWT_SECRET is not set in environment variables")
+
 
 # Public endpoints that do NOT require authentication
 PUBLIC_PATHS = [
     "/",                        # Root
-    "",                         # ⭐ REQUIRED because clean_path becomes "" for "/"
+    "",                         # Required because clean_path becomes "" for "/"
     "/favicon.ico",
     "/docs",
     "/openapi.json",
@@ -67,12 +66,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        # 2. Allow excluded paths (from main.py)
+        # 2. Allow excluded paths
         if path in self.excluded_paths:
             return await call_next(request)
 
-        # 3. ✅ FIX: Allow Static Files & Logos (Prefix Check)
-        # This prevents 401 errors for images
+        # 3. Allow Static Files & Logos
         if path.startswith("/logos") or path.startswith("/static"):
              return await call_next(request)
 
@@ -85,13 +83,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             logger.warning("Missing Authorization header", extra={"path": path})
-            # ✅ FIX: Return JSON instead of raising Exception to prevent stack trace
             return JSONResponse(status_code=401, content={"detail": "Missing Authorization header"})
 
         token = auth_header.replace("Bearer ", "").strip()
 
         # ---------------------------------------------------------
-        # Validate Supabase JWT (inline, no external module)
+        # Validate Supabase JWT (inline)
         # ---------------------------------------------------------
         try:
             payload = jwt.decode(
@@ -101,11 +98,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 options={"verify_aud": False}  # Supabase tokens do not include 'aud'
             )
 
-            # Check expiration manually (optional, but safe)
+            # Check expiration manually
             exp = payload.get("exp")
             if exp and datetime.utcnow().timestamp() > exp:
-                # ✅ FIX: Return JSON instead of raising Exception
                 return JSONResponse(status_code=401, content={"detail": "Token expired"})
+            
+            # ✅ FIX 2: Map 'sub' to 'id'
+            # The app expects user['id'], but JWT provides user['sub']
+            payload["id"] = payload.get("sub")
 
         except jwt.ExpiredSignatureError:
             logger.warning("Expired token", extra={"path": path})
