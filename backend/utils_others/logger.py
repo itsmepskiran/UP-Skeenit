@@ -3,8 +3,11 @@ import sys
 from logging.handlers import RotatingFileHandler
 import os
 import json
+import contextvars  # ✅ Added
 from datetime import datetime
 
+# ✅ Define ContextVar for Request ID (Global within the request)
+request_id_context = contextvars.ContextVar("request_id", default=None)
 
 # ---------------------------------------------------------
 # JSON Log Formatter
@@ -24,8 +27,14 @@ class JSONFormatter(logging.Formatter):
             "thread": record.thread,
         }
 
-        # Request metadata (middleware attaches these)
-        for field in ["request_id", "request_path", "request_method", "user_id", "role", "ip"]:
+        # Request metadata
+        # "request_id" is special because we might grab it from context
+        request_id = getattr(record, "request_id", None)
+        if request_id is not None:
+            log_record["request_id"] = request_id
+
+        # Other fields (only if explicitly passed in extra={})
+        for field in ["request_path", "request_method", "user_id", "role", "ip"]:
             if hasattr(record, field):
                 log_record[field] = getattr(record, field)
 
@@ -41,8 +50,12 @@ class JSONFormatter(logging.Formatter):
 # ---------------------------------------------------------
 class RequestIDFilter(logging.Filter):
     def filter(self, record):
+        # 1. Check if it was passed explicitly (logger.info(..., extra={"request_id": "..."}))
         if not hasattr(record, "request_id"):
-            record.request_id = None
+            # 2. If not, try to grab it from the ContextVar
+            ctx_id = request_id_context.get()
+            record.request_id = ctx_id if ctx_id else None
+            
         return True
 
 
@@ -60,17 +73,17 @@ def setup_logging():
 
     formatter = JSONFormatter()
 
-    # Remove existing handlers (Uvicorn adds its own)
+    # Remove existing handlers
     for handler in list(logger.handlers):
         logger.removeHandler(handler)
 
-    # Console handler (always enabled)
+    # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     console_handler.addFilter(RequestIDFilter())
     logger.addHandler(console_handler)
 
-    # File handler (only for local/dev)
+    # File handler
     if os.getenv("ENVIRONMENT", "development") != "production":
         file_handler = RotatingFileHandler(
             os.path.join(log_dir, "app.log"),
