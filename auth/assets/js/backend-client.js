@@ -1,245 +1,91 @@
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
+// auth/assets/js/backend-client.js
+import { supabase } from './supabase-config.js';
+import { CONFIG } from './config.js';
 
 class BackendClient {
   constructor() {
-    this.backendUrls = this.getBackendUrls();
+    this.backendUrls = [CONFIG.API_BASE]; // Get URL from Config
     this.currentUrlIndex = 0;
-
-    this.requestTimeout = 12000; // 12s
-    this.maxRetries = 3;
-
-    this.analytics = {
-      totalRequests: 0,
-      failures: 0,
-      failovers: 0,
-      avgLatencyMs: 0,
-    };
-  }
-
-  // ------------------------------------------------------------
-  // ENVIRONMENT-AWARE BASE URL
-  // ------------------------------------------------------------
-  normalizeApiBaseUrl(url) {
-    if (!url) return url;
-    let u = String(url).trim().replace(/\/+$/, "");
-    return u.endsWith("/api/v1") ? u : `${u}/api/v1`;
-  }
-
-  getBackendUrls() {
-    const host = window.location.hostname;
-    const isLocal =
-      host === "localhost" || host === "127.0.0.1" || host === "";
-
-    if (isLocal) {
-      return [this.normalizeApiBaseUrl("http://localhost:8000")];
-    }
-
-    // Allow override via global variable
-    const configured =
-      typeof window !== "undefined" && window.__SKREENIT_BACKEND_URL__
-        ? window.__SKREENIT_BACKEND_URL__
-        : null;
-
-    if (configured) return [this.normalizeApiBaseUrl(configured)];
-
-    // Default production backend
-    return [this.normalizeApiBaseUrl("https://backend.skreenit.com")];
+    this.requestTimeout = 15000; // 15 seconds
   }
 
   getCurrentUrl() {
     return this.backendUrls[this.currentUrlIndex];
   }
 
-  switchToNextUrl() {
-    this.currentUrlIndex =
-      (this.currentUrlIndex + 1) % this.backendUrls.length;
-    this.analytics.failovers++;
-    console.warn(
-      `[BackendClient] Failover → ${this.getCurrentUrl()}`
-    );
-  }
-
-// ------------------------------------------------------------
-  // SUPABASE JWT RETRIEVAL (Robust & Debugging)
-  // ------------------------------------------------------------
   async getAuthToken() {
     try {
-      // 1. Try getting existing session
       let { data } = await supabase.auth.getSession();
       
-      // 2. If no token, force a refresh (Critical for split-domain)
+      // Auto-refresh token if needed
       if (!data?.session?.access_token) {
-          console.warn("⚠️ [BackendClient] Token missing in session. Attempting refresh...");
           const refresh = await supabase.auth.refreshSession();
           data = refresh.data;
       }
-
-      const token = data?.session?.access_token || null;
-
-      // 3. DEBUG LOG: Tell us exactly what is happening
-      if (token) {
-          console.log(`✅ [BackendClient] Token ready: ${token.substring(0, 10)}...`);
-      } else {
-          console.error("❌ [BackendClient] CRITICAL: No Auth Token found! Request will fail.");
-      }
-
-      return token;
-
+      return data?.session?.access_token || null;
     } catch (err) {
-      console.warn("[BackendClient] Failed to get Supabase session", err);
+      console.warn("[BackendClient] Failed to get session", err);
       return null;
     }
   }
-  // ------------------------------------------------------------
-  // TIMEOUT WRAPPER
-  // ------------------------------------------------------------
-  async fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    try {
-      return await fetch(url, { ...options, signal: controller.signal });
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  // ------------------------------------------------------------
-  // CORE REQUEST HANDLER (with retries + failover)
-  // ------------------------------------------------------------
   async request(endpoint, options = {}) {
     const { method = "GET", body = null, headers = {}, timeout } = options;
-
     const token = await this.getAuthToken();
+    
+    // Auto-detect JSON vs FormData
     const isFormData = body instanceof FormData;
-
     const finalHeaders = { ...headers };
+    
     if (!isFormData && body && !finalHeaders["Content-Type"]) {
       finalHeaders["Content-Type"] = "application/json";
     }
-    if (token) finalHeaders["Authorization"] = `Bearer ${token}`;
+    
+    if (token) {
+        finalHeaders["Authorization"] = `Bearer ${token}`;
+    }
 
-    const maxAttempts = Math.max(1, this.maxRetries);
-    let lastError = null;
+    // Construct URL
+    const baseUrl = this.getCurrentUrl().replace(/\/+$/, ""); // Remove trailing slash
+    const cleanEndpoint = endpoint.replace(/^\/+/, "");       // Remove leading slash
+    const url = `${baseUrl}/${cleanEndpoint}`;
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const baseUrl = this.getCurrentUrl();
-      const url = `${baseUrl}${endpoint}`;
+    // Setup Timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout || this.requestTimeout);
 
-      const start = performance.now();
-      this.analytics.totalRequests++;
-
-      try {
-        const resp = await this.fetchWithTimeout(
-          url,
-          {
+    try {
+        const resp = await fetch(url, {
             method,
             headers: finalHeaders,
-            body: isFormData
-              ? body
-              : body
-              ? typeof body === "string"
-                ? body
-                : JSON.stringify(body)
-              : null,
-          },
-          timeout || this.requestTimeout
-        );
+            body: isFormData ? body : (body && typeof body !== 'string' ? JSON.stringify(body) : body),
+            signal: controller.signal
+        });
 
-        const latency = performance.now() - start;
-        this.updateLatency(latency);
+        clearTimeout(timeoutId);
 
-        // Failover only on 5xx
         if (resp.status >= 500) {
-          lastError = new Error(`Server error ${resp.status}`);
-          this.switchToNextUrl();
-          continue;
+            throw new Error(`Server Error (${resp.status})`);
         }
-
         return resp;
-      } catch (err) {
-        lastError = err;
-        this.analytics.failures++;
-        this.switchToNextUrl();
-        continue;
-      }
-    }
 
-    throw lastError || new Error("Backend request failed");
-  }
-
-  updateLatency(latency) {
-    const a = this.analytics;
-    a.avgLatencyMs =
-      a.avgLatencyMs === 0
-        ? latency
-        : Math.round((a.avgLatencyMs + latency) / 2);
-  }
-
-  // ------------------------------------------------------------
-  // PUBLIC HELPERS
-  // ------------------------------------------------------------
-  async get(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: "GET" });
-  }
-
-  async post(endpoint, data = null, options = {}) {
-    return this.request(endpoint, { ...options, method: "POST", body: data });
-  }
-
-  async put(endpoint, data = null, options = {}) {
-    return this.request(endpoint, { ...options, method: "PUT", body: data });
-  }
-
-  async delete(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: "DELETE" });
-  }
-
-  async uploadFile(endpoint, formData, options = {}) {
-    return this.request(endpoint, {
-      method: "POST",
-      body: formData,
-      ...options,
-    });
-  }
-
-  // ------------------------------------------------------------
-  // HEALTH CHECK
-  // ------------------------------------------------------------
-  async healthCheck() {
-    try {
-      const baseUrl = this.getCurrentUrl();
-      const root = baseUrl.replace(/\/api\/v1$/, "");
-      const resp = await this.fetchWithTimeout(`${root}/health`, {
-        method: "GET",
-      });
-      return resp.ok;
-    } catch {
-      return false;
+    } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+            throw new Error("Request timed out");
+        }
+        throw err;
     }
   }
 
-  async getAllBackendStatus() {
-    const results = {};
-    for (let i = 0; i < this.backendUrls.length; i++) {
-      const original = this.currentUrlIndex;
-      this.currentUrlIndex = i;
-
-      const healthy = await this.healthCheck();
-      results[this.backendUrls[i]] = {
-        healthy,
-        latency: this.analytics.avgLatencyMs,
-      };
-
-      this.currentUrlIndex = original;
-    }
-    return results;
-  }
+  // Helpers
+  async get(endpoint, options = {}) { return this.request(endpoint, { ...options, method: "GET" }); }
+  async post(endpoint, data = null, options = {}) { return this.request(endpoint, { ...options, method: "POST", body: data }); }
+  async put(endpoint, data = null, options = {}) { return this.request(endpoint, { ...options, method: "PUT", body: data }); }
+  async delete(endpoint, options = {}) { return this.request(endpoint, { ...options, method: "DELETE" }); }
 }
 
-// ------------------------------------------------------------
-// GLOBAL INSTANCE + EXPORTS
-// ------------------------------------------------------------
+// Export Singleton Instance
 const backendClient = new BackendClient();
 
 export const backendFetch = (...args) => backendClient.request(...args);
@@ -247,30 +93,37 @@ export const backendGet = (...args) => backendClient.get(...args);
 export const backendPost = (...args) => backendClient.post(...args);
 export const backendPut = (...args) => backendClient.put(...args);
 export const backendDelete = (...args) => backendClient.delete(...args);
-export const backendUploadFile = (...args) =>
-  backendClient.uploadFile(...args);
 
-export const backendUrl = () => backendClient.getCurrentUrl();
-export const backendHealth = () => backendClient.healthCheck();
-export const backendStatus = () => backendClient.getAllBackendStatus();
-
+// ✅ FIXED handleResponse to show Pydantic validation errors
 export const handleResponse = async (response) => {
   if (!response.ok) {
     let msg = `HTTP ${response.status}`;
     try {
       const data = await response.json();
-      msg = data.error || data.message || msg;
-    } catch {
+      
+      // Check for Pydantic/FastAPI validation array
+      if (data.detail && Array.isArray(data.detail)) {
+          // Join the array into a readable string
+          msg = data.detail.map(err => {
+              const field = err.loc ? err.loc.join('.') : 'Field';
+              return `${field}: ${err.msg}`;
+          }).join('\n');
+      } 
+      // Check for standard error messages
+      else {
+          msg = data.detail || data.error || data.message || msg;
+      }
+    } catch (e) {
+      // Fallback if JSON parsing fails
       msg = response.statusText || msg;
     }
     throw new Error(msg);
   }
-
-  try {
-    return await response.json();
-  } catch {
-    return await response.text();
+  
+  // Handle success response
+  try { 
+      return await response.json(); 
+  } catch { 
+      return await response.text(); 
   }
 };
-
-export { backendClient };

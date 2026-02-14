@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request, HTTPException
 from models.notification_models import NotificationRequest
 from services.notification_service import NotificationService
-from utils_others.rbac import ensure_permission
+# ✅ FIX: Correct Import
+from middleware.role_required import ensure_permission
 from utils_others.logger import logger
 
 router = APIRouter(prefix="/notification", tags=["Notification"])
@@ -14,6 +15,7 @@ svc = NotificationService()
 @router.post("/")
 async def send_notification(request: Request, payload: NotificationRequest):
     # Recruiters and admins can send notifications
+    # ✅ FIX: Check permission
     ensure_permission(request, "notifications:create")
 
     user = request.state.user

@@ -2,92 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Skreenit – Redirecting...</title>
-  <meta name="description" content="Redirecting you to your Skreenit dashboard based on your role." />
-
-  <!-- Favicons -->
-  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
-  <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Inter, sans-serif;
-      background: #f9fafb;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #333;
-    }
-    .container {
-      text-align: center;
-    }
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #ddd;
-      border-top-color: #0066ff;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .logo {
-      height: 40px;
-      margin-bottom: 16px;
-    }
-    .text {
-      font-size: 16px;
-      font-weight: 500;
-    }
-  </style>
+  <title>Skreenit Dashboard</title>
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+    })();
+  </script>
 </head>
-
 <body>
-  <div class="container">
-    <img src="https://auth.skreenit.com/assets/images/logo.png" class="logo" alt="Skreenit" />
-    <div class="spinner"></div>
-    <div class="text">Redirecting to your dashboard...</div>
-  </div>
-
+  <p>Redirecting...</p>
   <script type="module">
-    import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
+    import { supabase } from '@shared/js/supabase-config.js';
+    import { redirectByRole } from '@shared/js/auth-pages.js';
+    import { CONFIG } from '@shared/js/config.js';
 
     async function init() {
-      // 1. Check Supabase session
-      const { data, error } = await supabase.auth.getUser();
-
-      if (error || !data?.user) {
-        window.location.href = "https://login.skreenit.com/login.html";
-        return;
-      }
-
-      const user = data.user;
-      const role = user.user_metadata?.role;
-
-      // 2. Redirect based on role
-      if (role === "candidate") {
-        window.location.href = "https://dashboard.skreenit.com/candidate-dashboard.html";
-        return;
-      }
-
-      if (role === "recruiter") {
-        window.location.href = "https://dashboard.skreenit.com/recruiter-dashboard.html";
-        return;
-      }
-
-      // 3. Unknown role → send to login
-      window.location.href = "https://login.skreenit.com/login.html";
+       await redirectByRole();
     }
-
     init();
   </script>
 </body>

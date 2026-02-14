@@ -4,93 +4,91 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Create Job – Skreenit</title>
-
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
-  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+      window.loadSharedCSS = function(file) {
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
+      };
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
+    })();
+  </script>
+  <script> loadSharedCSS('shared-styles.css'); loadSharedCSS('dashboard-styles.css'); </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
-
 <body>
   <div class="dashboard-container">
-
-    <!-- Sidebar -->
     <nav class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">
-          <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
-        </div>
-      </div>
-
+      <div class="sidebar-header"><div class="logo"><img src="" id="logoImg" alt="Skreenit" /></div></div>
       <ul class="nav-menu">
         <li class="nav-item" data-section="overview"><i class="fas fa-tachometer-alt"></i><span>Overview</span></li>
         <li class="nav-item active" data-section="jobs"><i class="fas fa-briefcase"></i><span>Jobs</span></li>
         <li class="nav-item" data-section="candidates"><i class="fas fa-users"></i><span>Candidates</span></li>
         <li class="nav-item" data-section="analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></li>
       </ul>
-
       <div class="sidebar-footer">
         <div class="user-info">
-          <img src="https://via.placeholder.com/40" class="user-avatar" />
-          <div class="user-details">
-            <span class="user-name">Loading...</span>
-            <span class="user-role">Recruiter</span>
+          <div id="userAvatar" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #555;">
+            <img src="../auth/assets/images/logo.png" alt="User" style="width: 100%; height: 100%; object-fit: cover;">
           </div>
+          <div class="user-details"><span id="userName" class="user-name">Loading...</span><span class="user-role">Recruiter</span></div>
         </div>
         <button id="logoutBtn" class="logout-btn" aria-label="Logout"><i class="fas fa-sign-out-alt"></i></button>
       </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="main-content">
       <section class="dashboard-section">
-        <div class="section-header">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
           <h1>Create Job</h1>
+          <button id="backBtn" class="btn" style="background-color: #6c757d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;"><i class="fas fa-arrow-left"></i> Back</button>
         </div>
-
         <form id="createJobForm" class="form-card">
-
-          <div class="form-group">
-            <label for="job_title">Job Title *</label>
-            <input type="text" id="job_title" required />
-          </div>
-
-          <div class="form-group">
-            <label for="job_location">Location *</label>
-            <input type="text" id="job_location" required />
-          </div>
-
+          <div class="form-group"><label for="job_title">Job Title *</label><input type="text" id="job_title" required /></div>
+          <div class="form-group"><label for="job_location">Location *</label><input type="text" id="job_location" required /></div>
           <div class="form-group">
             <label for="job_type">Job Type *</label>
             <select id="job_type" required>
               <option value="">Select Type</option>
-              <option>Full-time</option>
-              <option>Part-time</option>
-              <option>Contract</option>
-              <option>Internship</option>
+              <option value="full-time">Full-time</option>
+              <option value="part-time">Part-time</option>
+              <option value="contract">Contract</option>
+              <option value="internship">Internship</option>
+              <option value="freelance">Freelance</option>
+              <option value="remote">Remote</option>
+              <option value="onsite">Onsite</option>
+              <option value="hybrid">Hybrid</option>
             </select>
           </div>
-
           <div class="form-group">
             <label for="salary_range">Salary Range</label>
-            <input type="text" id="salary_range" placeholder="e.g., ₹6,00,000 – ₹10,00,000" />
+            <select id="salary_range">
+              <option value="">Select Salary Range</option>
+              <option value="100000-300000">₹1L - ₹3L</option>
+              <option value="300000-400000">₹3L - ₹4L</option>
+              <option value="400000-500000">₹4L - ₹5L</option>
+              <option value="500000-600000">₹5L - ₹6L</option>
+              <option value="600000-800000">₹6L - ₹8L</option>
+              <option value="800000-1000000">₹8L - ₹10L</option>
+              <option value="1000000-1500000">₹10L - ₹15L</option>
+              <option value="1500000-2000000">₹15L - ₹20L</option>
+              <option value="2000000-0">Above ₹20L+</option>
+            </select>
           </div>
-
-          <div class="form-group">
-            <label for="job_description">Job Description *</label>
-            <textarea id="job_description" rows="6" required></textarea>
           </div>
-
-          <div class="form-group">
-            <label for="requirements">Requirements *</label>
-            <textarea id="requirements" rows="5" required></textarea>
           </div>
-
+          <div class="form-group"><label for="job_description">Job Description *</label><textarea id="job_description" rows="6" required></textarea></div>
+          <div class="form-group"><label for="requirements">Requirements *</label><textarea id="requirements" rows="5" required></textarea></div>
           <button type="submit" class="btn btn-primary">Publish Job</button>
         </form>
       </section>
     </main>
   </div>
-  <script type="module" src="https://recruiter.skreenit.com/js/job-create.js"></script>
+  <script type="module" src="js/job-create.js"></script>
 </body>
 </html>

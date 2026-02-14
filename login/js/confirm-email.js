@@ -1,3 +1,11 @@
+// login/js/confirm-email.js
+import { CONFIG } from '@shared/js/config.js';
+
+// Setup Assets
+const isLocal = CONFIG.IS_LOCAL;
+const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+document.getElementById('brandImg').src = `${authBase}/assets/images/logobrand.png`;
+
 document.addEventListener("DOMContentLoaded", () => {
     const messageEl = document.getElementById("message");
 
@@ -5,6 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
     messageEl.className = "message success";
 
     setTimeout(() => {
-        window.location.href = "https://login.skreenit.com/login?confirmed=true";
+        window.location.href = `${CONFIG.PAGES.LOGIN}?confirmed=true`;
     }, 3000);
 });

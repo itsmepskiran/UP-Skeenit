@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, UploadFile, File, HTTPException
 from services.video_service import VideoService
-from utils_others.rbac import ensure_permission
+# ✅ FIX: Correct Import
+from middleware.role_required import ensure_permission
 
 router = APIRouter(prefix="/video", tags=["Video"])
 svc = VideoService()

@@ -1,33 +1,37 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// Double check no spaces/newlines are inside these quotes
 const SUPABASE_URL = 'https://lgmvbmbzxsqrcclaynuh.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnbXZibWJ6eHNxcmNjbGF5bnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMzgxODQsImV4cCI6MjA4NDcxNDE4NH0.F63Fe9zFBuYni-qxZXwIzJNgCvM-rDxAi5_gFDGrXAM'
 
-// --- Custom Cookie Storage (Required for Subdomains) ---
+// Custom Storage Adapter to share cookies across subdomains
 const CookieStorage = {
   getItem: (key) => {
-    const cookies = document.cookie.split('; ');
-    const cookie = cookies.find(row => row.startsWith(`${key}=`));
-    return cookie ? decodeURIComponent(cookie.split('=')[1]) : null;
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      let c = cookies[i].trim();
+      if (c.indexOf(key + '=') == 0) return decodeURIComponent(c.substring(key.length + 1, c.length));
+    }
+    return null;
   },
   setItem: (key, value) => {
-    const domain = '.skreenit.com';
-    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
-    document.cookie = `${key}=${encodeURIComponent(value)}; domain=${domain}; path=/; expires=${expires}; SameSite=Lax; Secure`;
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // If Production, set domain to .skreenit.com to share cookies
+    const domainPart = isLocal ? '' : '; domain=.skreenit.com';
+    const securePart = isLocal ? '' : '; Secure; SameSite=Lax';
+    document.cookie = `${key}=${encodeURIComponent(value)}; path=/${domainPart}${securePart}; max-age=31536000`;
   },
   removeItem: (key) => {
-    const domain = '.skreenit.com';
-    document.cookie = `${key}=; domain=${domain}; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`;
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const domainPart = isLocal ? '' : '; domain=.skreenit.com';
+    document.cookie = `${key}=; path=/${domainPart}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
   }
 };
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
+    storage: CookieStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    storage: CookieStorage, // ✅ This forces cookies to work
+    detectSessionInUrl: true
   }
-})
+});

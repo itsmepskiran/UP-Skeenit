@@ -1,67 +1,29 @@
-# backend/middleware/role_required.py
-
-from functools import wraps
 from fastapi import Request, HTTPException
-from utils_others.logger import logger
+from utils_others.rbac import has_permission
 
-
-def _extract_role(user: dict):
+def ensure_permission(request: Request, required_perm: str):
     """
-    Extract role from Supabase JWT.
-    Supports multiple possible locations.
+    Dependency/Helper to check if the current user has the required permission.
+    Raises 403 if not authorized.
     """
-    return (
-        user.get("role") or
-        user.get("user_metadata", {}).get("role") or
-        user.get("app_metadata", {}).get("role")
-    )
+    # 1. Get User from Request State (set by AuthMiddleware)
+    user = getattr(request.state, "user", None)
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    # 2. Extract Role (Default to 'candidate' if missing)
+    # Supabase stores role in user_metadata usually
+    meta = user.get("user_metadata", {})
+    role = meta.get("role", "candidate").lower()
+    
+    # 3. Check Permission using RBAC Utility
+    if not has_permission(role, required_perm):
+        print(f"⛔ ACCESS DENIED: User Role '{role}' tried to access '{required_perm}'")
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Access denied. Role '{role}' does not have permission '{required_perm}'."
+        )
 
-
-def require_role(required_roles):
-    """
-    Decorator for role-based access control.
-    Supports:
-        @require_role("recruiter")
-        @require_role(["recruiter", "admin"])
-    """
-
-    # Normalize to list
-    if isinstance(required_roles, str):
-        required_roles = [required_roles]
-
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(request: Request, *args, **kwargs):
-            user = getattr(request.state, "user", None)
-            request_id = getattr(request.state, "request_id", "unknown")
-
-            if not user:
-                logger.error("Missing user in request.state", extra={
-                    "request_id": request_id,
-                    "path": request.url.path
-                })
-                raise HTTPException(
-                    status_code=401,
-                    detail="Authentication required"
-                )
-
-            actual_role = _extract_role(user)
-
-            if actual_role not in required_roles:
-                logger.warning("Forbidden role access", extra={
-                    "request_id": request_id,
-                    "path": request.url.path,
-                    "required_roles": required_roles,
-                    "actual_role": actual_role,
-                    "user_id": user.get("sub")
-                })
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Forbidden: requires {required_roles}, got {actual_role}"
-                )
-
-            return await func(request, *args, **kwargs)
-
-        return wrapper
-
-    return decorator
+    # 4. Success
+    return True

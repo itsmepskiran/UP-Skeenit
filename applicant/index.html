@@ -2,105 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skreenit – Checking Application Status...</title>
-
-  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
-  <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Inter, sans-serif;
-      background: #f9fafb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      color: #333;
-    }
-    .loader-container {
-      text-align: center;
-    }
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #ddd;
-      border-top-color: #0066ff;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .loading-text {
-      font-size: 16px;
-      font-weight: 500;
-      color: #444;
-    }
-  </style>
+  <title>Skreenit Applicant</title>
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+    })();
+  </script>
 </head>
-
 <body>
-  <div class="loader-container">
-    <div class="spinner"></div>
-    <div class="loading-text">Checking your application status...</div>
-  </div>
-
+  <p>Redirecting...</p>
   <script type="module">
-    import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
-    import { backendGet, handleResponse } from "https://auth.skreenit.com/assets/js/backend-client.js";
+    import { supabase } from '@shared/js/supabase-config.js';
+    import { CONFIG } from '@shared/js/config.js';
 
     async function init() {
-      // 1. Check Supabase session
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data?.user) {
-        window.location.href = "https://www.skreenit.com/login";
-        return;
-      }
+       const { data: { session } } = await supabase.auth.getSession();
+       
+       if (!session?.user) {
+           window.location.href = CONFIG.PAGES.LOGIN;
+           return;
+       }
 
-      const user = data.user;
+       if (session.user.user_metadata?.role !== 'candidate') {
+           window.location.href = CONFIG.PAGES.LOGIN;
+           return;
+       }
 
-      // 2. Role check
-      const role = user.user_metadata?.role;
-      if (role !== "candidate") {
-        window.location.href = "https://www.skreenit.com/recruiter";
-        return;
-      }
-
-      // 3. Check application status from backend
-      try {
-        const res = await backendGet("/api/v1/applicant/application-status");
-        const statusData = await handleResponse(res);
-
-        const status = statusData?.status || "not_started";
-
-        switch (status) {
-          case "not_started":
-          case "draft":
-          case "incomplete":
-            window.location.href = "https://www.skreenit.com/update-profile";
-            break;
-
-          case "submitted":
-          case "accepted":
-          case "rejected":
-            window.location.href = "https://www.skreenit.com/applicant";
-            break;
-
-          default:
-            window.location.href = "https://www.skreenit.com/update-profile";
-        }
-      } catch (e) {
-        console.warn("Status check failed", e);
-        window.location.href = "https://www.skreenit.com/update-profile";
-      }
+       const onboarded = session.user.user_metadata?.onboarded;
+       if (onboarded && onboarded !== "false") {
+           window.location.href = CONFIG.PAGES.DASHBOARD_CANDIDATE;
+       } else {
+           window.location.href = CONFIG.PAGES.APPLY_FORM;
+       }
     }
-
     init();
   </script>
 </body>

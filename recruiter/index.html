@@ -3,89 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Skreenit – Redirecting...</title>
-  <meta name="description" content="Redirecting you to your recruiter dashboard." />
 
-  <!-- Favicons -->
-  <link rel="icon" type="image/x-icon" href="https://auth.skreenit.com/assets/images/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="https://auth.skreenit.com/assets/images/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="https://auth.skreenit.com/assets/images/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="https://auth.skreenit.com/assets/images/apple-touch-icon.png" />
-  <link rel="manifest" href="https://auth.skreenit.com/assets/images/site.webmanifest" />
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+      
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+
+      const icon = document.createElement('link');
+      icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`;
+      document.head.appendChild(icon);
+      
+      const logo = document.createElement('img');
+      logo.src = `${authBase}/assets/images/logo.png`;
+      logo.className = 'logo';
+      // We will append this logo in body via JS below or just setting it here
+    })();
+  </script>
 
   <style>
     body {
-      margin: 0;
-      font-family: Inter, sans-serif;
-      background: #f9fafb;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #333;
+      margin: 0; font-family: Inter, sans-serif; background: #f9fafb;
+      height: 100vh; display: flex; align-items: center; justify-content: center; color: #333;
     }
-    .container {
-      text-align: center;
-    }
+    .container { text-align: center; }
     .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #ddd;
-      border-top-color: #0066ff;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      margin: 0 auto 16px;
+      width: 48px; height: 48px; border: 4px solid #ddd; border-top-color: #0066ff;
+      border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 16px;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .logo {
-      height: 40px;
-      margin-bottom: 16px;
-    }
-    .text {
-      font-size: 16px;
-      font-weight: 500;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .logo { height: 40px; margin-bottom: 16px; }
+    .text { font-size: 16px; font-weight: 500; }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <img src="https://auth.skreenit.com/assets/images/logo.png" class="logo" alt="Skreenit" />
+    <div id="logoContainer"></div>
     <div class="spinner"></div>
     <div class="text">Redirecting to recruiter dashboard...</div>
   </div>
 
   <script type="module">
-  import { supabase } from "https://auth.skreenit.com/assets/js/supabase-config.js";
+  import { supabase } from "@shared/js/supabase-config.js";
+  import { CONFIG } from "@shared/js/config.js";
+
+  // Set Logo
+  const isLocal = CONFIG.IS_LOCAL;
+  const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+  const logo = document.createElement('img');
+  logo.src = `${authBase}/assets/images/logo.png`;
+  logo.className = 'logo';
+  document.getElementById('logoContainer').appendChild(logo);
 
   async function init() {
-    // 1. Check Supabase session
     const { data, error } = await supabase.auth.getUser();
 
     if (error || !data?.user) {
-      window.location.href = "https://www.skreenit.com/login";
+      window.location.href = CONFIG.PAGES.LOGIN;
       return;
     }
 
     const user = data.user;
     const role = user.user_metadata?.role;
 
-    // 2. Redirect based on role
     if (role === "recruiter") {
-      window.location.href = "https://www.skreenit.com/recruiter";
+      window.location.href = CONFIG.PAGES.DASHBOARD_RECRUITER;
       return;
     }
-
     if (role === "candidate") {
-      window.location.href = "https://www.skreenit.com/applicant";
+      window.location.href = CONFIG.PAGES.DASHBOARD_CANDIDATE; // or Applicant portal
       return;
     }
 
-    // 3. Unknown role → send to login
-    window.location.href = "https://www.skreenit.com/login";
+    window.location.href = CONFIG.PAGES.LOGIN;
   }
 
   init();

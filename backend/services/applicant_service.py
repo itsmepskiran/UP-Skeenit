@@ -7,88 +7,59 @@ from utils_others.logger import logger
 
 
 class ApplicantService:
-    """
-    Handles all candidate-side operations:
-    - Draft save/load
-    - Detailed profile form (profile, education, experience, skills)
-    - Resume upload + signed URL retrieval
-    - General video info
-    - Application details
-    """
-
     def __init__(self, client: Optional[Client] = None):
         self.supabase = client or get_client()
 
     # ---------------------------------------------------------
-    # DRAFT HANDLING
+    # PROFILE UPDATE (Unified Method)
     # ---------------------------------------------------------
-    def save_draft(self, candidate_id: str, draft_payload: Dict[str, Any]) -> None:
-        """
-        Upsert candidate draft JSON into candidate_drafts table.
-        """
-        try:
-            row = {"candidate_id": candidate_id, "draft": draft_payload}
-            res = (
-                self.supabase.table("candidate_drafts")
-                .upsert(row, on_conflict="candidate_id")
-                .execute()
-            )
-
-            if getattr(res, "error", None):
-                raise Exception(res.error)
-
-            logger.info("Draft saved", extra={"candidate_id": candidate_id})
-
-        except Exception as e:
-            logger.error(f"Draft save failed: {str(e)}", extra={"candidate_id": candidate_id})
-            raise RuntimeError("Failed to save draft")
-
-    def get_draft(self, candidate_id: str) -> Dict[str, Any]:
-        """
-        Fetch candidate draft JSON from candidate_drafts table.
-        Returns {} if not found or on error.
-        """
-        try:
-            res = (
-                self.supabase.table("candidate_drafts")
-                .select("draft")
-                .eq("candidate_id", candidate_id)
-                .single()
-                .execute()
-            )
-
-            if getattr(res, "error", None):
-                return {}
-
-            data = getattr(res, "data", None) or {}
-            return data.get("draft") or {}
-
-        except Exception as e:
-            logger.error(f"Draft fetch failed: {str(e)}", extra={"candidate_id": candidate_id})
-            return {}
-
-    # ---------------------------------------------------------
-    # DETAILED FORM (PROFILE + EDUCATION + EXPERIENCE + SKILLS)
-    # ---------------------------------------------------------
-    def save_detailed_form(
+    def update_profile(
         self,
         candidate_id: str,
-        profile: Optional[Dict[str, Any]] = None,
+        profile_data: Dict[str, Any],
         education: Optional[List[Dict[str, Any]]] = None,
         experience: Optional[List[Dict[str, Any]]] = None,
-        skills: Optional[List[Dict[str, Any]]] = None,
-    ) -> None:
+        skills: Optional[List[str]] = None,
+        resume_file: Optional[bytes] = None,
+        resume_filename: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Save full candidate details:
-        - candidate_profiles
-        - candidate_education
-        - candidate_experience
-        - candidate_skills
+        Updates the candidate's profile by splitting data between 'users' and 'candidate_profiles' tables.
         """
         try:
-            if profile is not None:
-                self._save_profile(candidate_id, profile)
+            # 1. Handle Resume Upload (if provided)
+            if resume_file and resume_filename:
+                resume_url = self._upload_resume_internal(candidate_id, resume_filename, resume_file)
+                profile_data["resume_url"] = resume_url
 
+            # 2. Split Data for Tables
+            # Fields that belong to the 'users' table
+            user_fields = ["full_name", "phone", "location", "avatar_url"]
+            user_updates = {k: v for k, v in profile_data.items() if k in user_fields}
+
+            # Fields that belong to the 'candidate_profiles' table
+            # (Everything else, excluding special keys)
+            profile_updates = {
+                k: v for k, v in profile_data.items() 
+                if k not in user_fields and k not in ["contact_email", "email"]
+            }
+            profile_updates["user_id"] = candidate_id
+
+            # 3. Update 'users' Table
+            if user_updates:
+                try:
+                    self.supabase.table("users").update(user_updates).eq("id", candidate_id).execute()
+                except Exception as e:
+                    logger.error(f"Failed to update users table: {e}")
+
+            # 4. Upsert 'candidate_profiles' Table
+            # We use on_conflict="user_id" to ensure we update if exists, insert if not
+            if profile_updates:
+                self.supabase.table("candidate_profiles").upsert(
+                    profile_updates, on_conflict="user_id"
+                ).execute()
+
+            # 5. Update Related Tables (Skills, Edu, Exp)
             if education is not None:
                 self._save_education(candidate_id, education)
 
@@ -98,325 +69,187 @@ class ApplicantService:
             if skills is not None:
                 self._save_skills(candidate_id, skills)
 
-            # Update onboarded status to True
-            self.supabase.auth.update_user({
-                "id": candidate_id,
-                "data": {"onboarded": True}
-            })
-
-            logger.info("Detailed form saved", extra={"candidate_id": candidate_id})
-
-        except Exception as e:
-            logger.error(f"Detailed form save failed: {str(e)}", extra={"candidate_id": candidate_id})
-            raise RuntimeError("Failed to save detailed form")
-
-    def get_detailed_form(self, candidate_id: str) -> Dict[str, Any]:
-        """
-        Fetch full candidate details:
-        - profile
-        - education
-        - experience
-        - skills
-        """
-        try:
-            result: Dict[str, Any] = {}
-
-            prof = (
-                self.supabase.table("candidate_profiles")
-                .select("*")
-                .eq("user_id", candidate_id)
-                .single()
-                .execute()
-            )
-            result["profile"] = getattr(prof, "data", None)
-
-            edu = (
-                self.supabase.table("candidate_education")
-                .select("*")
-                .eq("candidate_id", candidate_id)
-                .execute()
-            )
-            result["education"] = getattr(edu, "data", []) or []
-
-            exp = (
-                self.supabase.table("candidate_experience")
-                .select("*")
-                .eq("candidate_id", candidate_id)
-                .execute()
-            )
-            result["experience"] = getattr(exp, "data", []) or []
-
-            skl = (
-                self.supabase.table("candidate_skills")
-                .select("*")
-                .eq("candidate_id", candidate_id)
-                .execute()
-            )
-            result["skills"] = getattr(skl, "data", []) or []
-
-            return result
-
-        except Exception as e:
-            logger.error(f"Detailed form fetch failed: {str(e)}", extra={"candidate_id": candidate_id})
-            raise RuntimeError("Failed to fetch detailed form")
-
-    # ---------------------------------------------------------
-    # RESUME HANDLING
-    # ---------------------------------------------------------
-    def upload_resume(
-        self,
-        candidate_id: str,
-        filename: str,
-        content: bytes,
-        content_type: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Upload resume to 'resumes' bucket and update candidate_profiles.resume_url.
-        Returns signed URL.
-        """
-        try:
-            safe_name = (filename or "resume").replace(" ", "_")
-            path = f"{candidate_id}/{int(time.time() * 1000)}-{safe_name}"
-
-            # Upload to storage
-            upload_res = self.supabase.storage.from_("resumes").upload(
-                path,
-                content,
-                {
-                    "content-type": content_type or "application/octet-stream",
-                    "upsert": True,
-                },
-            )
-
-            if getattr(upload_res, "error", None):
-                raise Exception(upload_res.error)
-
-            # Update profile with resume path
+            # 6. Mark Onboarded in Auth
             try:
-                self.supabase.table("candidate_profiles").update(
-                    {"resume_url": path}
-                ).eq("user_id", candidate_id).execute()
-            except Exception as e:
-                logger.error(
-                    f"Failed to update resume_url in profile: {str(e)}",
-                    extra={"candidate_id": candidate_id, "path": path},
+                self.supabase.auth.admin.update_user_by_id(
+                    candidate_id, 
+                    {"user_metadata": {"onboarded": True}}
                 )
+            except Exception:
+                pass 
 
-            # Generate signed URL
-            signed_res = self.supabase.storage.from_("resumes").create_signed_url(
-                path, 3600
-            )
-
-            if getattr(signed_res, "error", None):
-                raise Exception(signed_res.error)
-
-            signed_url = signed_res.get("signedURL") or signed_res.get("signed_url")
-
-            logger.info("Resume uploaded", extra={"candidate_id": candidate_id, "path": path})
-
-            return {"resume_path": path, "resume_url": signed_url}
+            logger.info("Profile updated successfully", extra={"candidate_id": candidate_id})
+            return {"status": "success"}
 
         except Exception as e:
-            logger.error(f"Resume upload failed: {str(e)}", extra={"candidate_id": candidate_id})
-            raise RuntimeError("Failed to upload resume")
-            
-    def get_resume_url(self, candidate_id: str) -> Dict[str, Any]:
-        """
-        Get signed resume URL for candidate.
-        """
-        try:
-            path = self._get_resume_path_from_profile(candidate_id)
-
-            if not path:
-                path = self._get_latest_resume_from_storage(candidate_id)
-
-            if not path:
-                raise RuntimeError("Resume not found")
-
-            signed_res = self.supabase.storage.from_("resumes").create_signed_url(
-                path, 3600
-            )
-
-            if getattr(signed_res, "error", None):
-                raise Exception(signed_res.error)
-
-            signed_url = signed_res.get("signedURL") or signed_res.get("signed_url")
-
-            logger.info("Resume URL fetched", extra={"candidate_id": candidate_id})
-
-            return {"resume_url": signed_url}
-
-        except Exception as e:
-            logger.error(f"Resume URL fetch failed: {str(e)}", extra={"candidate_id": candidate_id})
-            raise RuntimeError("Failed to fetch resume URL")
-
-    # ---------------------------------------------------------
-    # GENERAL VIDEO
-    # ---------------------------------------------------------
-    def get_general_video(self, candidate_id: str) -> Dict[str, Any]:
-        """
-        Fetch general video interview info for candidate.
-        Returns:
-        - status
-        - video_url
-        - scores (if ai_analysis present)
-        """
-        try:
-            res = (
-                self.supabase.table("general_video_interviews")
-                .select("*")
-                .eq("candidate_id", candidate_id)
-                .single()
-                .execute()
-            )
-
-            if getattr(res, "error", None):
-                return {"status": "missing"}
-
-            data = getattr(res, "data", None)
-            if not data:
-                return {"status": "missing"}
-
-            out: Dict[str, Any] = {
-                "status": data.get("status") or "completed",
-                "video_url": data.get("video_url"),
-            }
-
-            ai = data.get("ai_analysis") or {}
-            if isinstance(ai, dict) and ai:
-                out["scores"] = ai.get("scores") or ai
-
-            return out
-
-        except Exception as e:
-            logger.error(f"General video fetch failed: {str(e)}", extra={"candidate_id": candidate_id})
-            return {"status": "missing"}
-
-    # ---------------------------------------------------------
-    # APPLICATION DETAILS
-    # ---------------------------------------------------------
-    def get_application_details(self, application_id: str) -> Dict[str, Any]:
-        """
-        Fetch a single job application by ID.
-        """
-        try:
-            res = (
-                self.supabase.table("job_applications")
-                .select("*")
-                .eq("id", application_id)
-                .single()
-                .execute()
-            )
-
-            if getattr(res, "error", None):
-                raise Exception(res.error)
-
-            data = getattr(res, "data", None)
-            if not data:
-                raise RuntimeError("Application not found")
-
-            return data
-
-        except Exception as e:
-            logger.error(
-                f"Application details fetch failed: {str(e)}",
-                extra={"application_id": application_id},
-            )
-            raise RuntimeError("Failed to fetch application details")
+            logger.error(f"Profile update failed: {str(e)}", extra={"candidate_id": candidate_id})
+            raise RuntimeError(f"Failed to update profile: {str(e)}")
 
     # ---------------------------------------------------------
     # PRIVATE HELPERS
     # ---------------------------------------------------------
-    def _save_profile(self, candidate_id: str, profile: Dict[str, Any]) -> None:
-        profile = {**profile}
-        profile["user_id"] = candidate_id
+    def _upload_resume_internal(self, candidate_id: str, filename: str, content: bytes) -> str:
+        safe_name = f"{int(time.time())}_{filename.replace(' ', '_')}"
+        path = f"{candidate_id}/{safe_name}"
+        # Use string "true" for upsert header
+        self.supabase.storage.from_("resumes").upload(path, content, {"upsert": "true"})
+        return path
 
-        res = (
-            self.supabase.table("candidate_profiles")
-            .upsert(profile, on_conflict="user_id")
-            .execute()
-        )
-        err = getattr(res, "error", None)
-        if err:
-            raise Exception(f"Profile save error: {err}")
+    def _save_education(self, candidate_id: str, items: List[Dict[str, Any]]):
+        self.supabase.table("candidate_education").delete().eq("candidate_id", candidate_id).execute()
+        if not items: return
+        data = [{**item, "candidate_id": candidate_id} for item in items]
+        self.supabase.table("candidate_education").insert(data).execute()
 
-    def _save_education(self, candidate_id: str, education: List[Dict[str, Any]]) -> None:
-        self.supabase.table("candidate_education").delete().eq(
-            "candidate_id", candidate_id
-        ).execute()
+    def _save_experience(self, candidate_id: str, items: List[Dict[str, Any]]):
+        self.supabase.table("candidate_experience").delete().eq("candidate_id", candidate_id).execute()
+        if not items: return
+        data = [{**item, "candidate_id": candidate_id} for item in items]
+        self.supabase.table("candidate_experience").insert(data).execute()
 
-        if not education:
-            return
+    def _save_skills(self, candidate_id: str, items: List[str]):
+        self.supabase.table("candidate_skills").delete().eq("candidate_id", candidate_id).execute()
+        if not items: return
+        data = [{"candidate_id": candidate_id, "skill_name": s} for s in items]
+        self.supabase.table("candidate_skills").insert(data).execute()
 
-        to_insert = [{**e, "candidate_id": candidate_id} for e in education]
-        res = self.supabase.table("candidate_education").insert(to_insert).execute()
-        err = getattr(res, "error", None)
-        if err:
-            raise Exception(f"Education save error: {err}")
-
-    def _save_experience(self, candidate_id: str, experience: List[Dict[str, Any]]) -> None:
-        self.supabase.table("candidate_experience").delete().eq(
-            "candidate_id", candidate_id
-        ).execute()
-
-        if not experience:
-            return
-
-        to_insert = [{**e, "candidate_id": candidate_id} for e in experience]
-        res = self.supabase.table("candidate_experience").insert(to_insert).execute()
-        err = getattr(res, "error", None)
-        if err:
-            raise Exception(f"Experience save error: {err}")
-
-    def _save_skills(self, candidate_id: str, skills: List[Dict[str, Any]]) -> None:
-        self.supabase.table("candidate_skills").delete().eq(
-            "candidate_id", candidate_id
-        ).execute()
-
-        if not skills:
-            return
-
-        normalized: List[Dict[str, Any]] = []
-        for s in skills:
-            normalized.append(
-                {
-                    "candidate_id": candidate_id,
-                    "skill_name": s.get("skill_name") or s.get("name"),
-                    "proficiency_level": s.get("proficiency_level") or s.get("level"),
-                    "years_experience": s.get("years_experience") or s.get("years") or 0,
-                }
-            )
-
-        to_insert = [row for row in normalized if row.get("skill_name")]
-        if not to_insert:
-            return
-
-        res = self.supabase.table("candidate_skills").insert(to_insert).execute()
-        err = getattr(res, "error", None)
-        if err:
-            raise Exception(f"Skills save error: {err}")
-
-    def _get_resume_path_from_profile(self, candidate_id: str) -> Optional[str]:
+    # ---------------------------------------------------------
+    # READ OPERATIONS
+    # ---------------------------------------------------------
+    def get_profile(self, candidate_id: str) -> Dict[str, Any]:
         try:
-            prof = (
-                self.supabase.table("candidate_profiles")
-                .select("resume_url")
-                .eq("user_id", candidate_id)
-                .single()
+            # Join users and profiles
+            user_res = self.supabase.table("users").select("full_name, email, phone, location, avatar_url").eq("id", candidate_id).maybe_single().execute()
+            prof_res = self.supabase.table("candidate_profiles").select("*").eq("user_id", candidate_id).maybe_single().execute()
+            
+            # Combine data
+            user_data = user_res.data or {}
+            prof_data = prof_res.data or {}
+            
+            # Merge (profile takes precedence if duplicates, but users has core info)
+            combined = {**prof_data, **user_data}
+            
+            # Fetch relations
+            edu = self.supabase.table("candidate_education").select("*").eq("candidate_id", prof_data.get("id")).execute() if prof_data.get("id") else None
+            exp = self.supabase.table("candidate_experience").select("*").eq("candidate_id", prof_data.get("id")).execute() if prof_data.get("id") else None
+            skills = self.supabase.table("candidate_skills").select("skill_name").eq("candidate_id", prof_data.get("id")).execute() if prof_data.get("id") else None
+
+            combined["education"] = edu.data if edu else []
+            combined["experience"] = exp.data if exp else []
+            combined["skills"] = [s["skill_name"] for s in (skills.data or [])] if skills else []
+            
+            return combined
+        except Exception as e:
+            logger.error(f"Get Profile Failed: {e}")
+            return {}
+            
+    def submit_application(self, data: Dict[str, Any]):
+        return self.supabase.table("job_applications").insert(data).execute()
+    
+    # ---------------------------------------------------------
+    # JOB APPLICATIONS
+    # ---------------------------------------------------------
+    def check_application_status(self, candidate_id: str, job_id: str) -> bool:
+        """
+        Returns True if the candidate has already applied for this job.
+        """
+        try:
+            res = (
+                self.supabase.table("job_applications")
+                .select("id")
+                .eq("candidate_id", candidate_id)
+                .eq("job_id", job_id)
                 .execute()
             )
-            data = getattr(prof, "data", {}) or {}
-            return data.get("resume_url")
-        except Exception:
-            return None
+            return len(res.data) > 0
+        except Exception as e:
+            logger.error(f"Check status failed: {e}")
+            return False
 
-    def _get_latest_resume_from_storage(self, candidate_id: str) -> Optional[str]:
+    def submit_application(self, data: Dict[str, Any]):
+        """
+        Inserts a new record into job_applications.
+        """
+        if self.check_application_status(data["candidate_id"], data["job_id"]):
+            raise RuntimeError("You have already applied for this job")
+
+            clean_data = {
+                "job_id": data["job_id"],
+                "candidate_id": data["candidate_id"],
+                "cover_letter": data.get("cover_letter"),
+                "status": "pending"
+            }
+            res = self.supabase.table("job_applications").insert(clean_data).execute()
+            return res.data[0] if res.data else {}
         try:
-            listing = self.supabase.storage.from_("resumes").list(candidate_id)
-            files = getattr(listing, "data", []) or []
-            files.sort(key=lambda f: f.get("name", ""), reverse=True)
-            if not files:
-                return None
-            return f"{candidate_id}/{files[0]['name']}"
-        except Exception:
-            return None
+            # 1. Verify Job Exists and is Active
+            job_res = self.supabase.table("jobs").select("status").eq("id", data["job_id"]).single().execute()
+            if not job_res.data or job_res.data.get("status") != "active":
+                 raise RuntimeError("Job is no longer active")
+
+            # 2. Check for Duplicate
+            if self.check_application_status(data["candidate_id"], data["job_id"]):
+                raise RuntimeError("You have already applied for this job")
+
+            # 3. Insert Application
+            # Ensure we only insert valid columns
+            clean_data = {
+                "job_id": data["job_id"],
+                "candidate_id": data["candidate_id"],
+                "cover_letter": data.get("cover_letter"),
+                # "custom_answers": data.get("custom_answers") # If you have this column
+            }
+            
+            res = self.supabase.table("job_applications").insert(clean_data).execute()
+            
+            if getattr(res, "error", None):
+                raise Exception(res.error)
+                
+            logger.info(f"Application submitted", extra={"candidate_id": data["candidate_id"], "job_id": data["job_id"]})
+            return res.data[0] if res.data else {}
+
+        except Exception as e:
+            logger.error(f"Application submission failed: {str(e)}")
+            raise RuntimeError(f"Application failed: {str(e)}")
+    
+    # ---------------------------------------------------------
+    # GET ALL APPLICATIONS (For Candidate Dashboard)
+    # ---------------------------------------------------------
+    def get_candidate_applications(self, candidate_id: str) -> List[Dict[str, Any]]:
+        try:
+            # 1. Get Applications
+            res = (
+                self.supabase.table("job_applications")
+                .select("*")
+                .eq("candidate_id", candidate_id)
+                .order("applied_at", desc=True)
+                .execute()
+            )
+            apps = getattr(res, "data", []) or []
+            
+            if not apps: return []
+            
+            # 2. Get Job Details for these applications
+            job_ids = [a["job_id"] for a in apps]
+            if job_ids:
+                jobs_res = self.supabase.table("jobs").select("id, title, company_id").in_("id", job_ids).execute()
+                jobs_map = {j["id"]: j for j in getattr(jobs_res, "data", [])}
+                
+                # 3. Get Company Names (Optional)
+                comp_ids = list(set(j["company_id"] for j in jobs_map.values() if j.get("company_id")))
+                comp_map = {}
+                if comp_ids:
+                    c_res = self.supabase.table("companies").select("id, name").in_("id", comp_ids).execute()
+                    comp_map = {c["id"]: c["name"] for c in getattr(c_res, "data", [])}
+
+                # 4. Merge
+                for app in apps:
+                    job = jobs_map.get(app["job_id"])
+                    if job:
+                        app["job_title"] = job.get("title")
+                        app["company_name"] = comp_map.get(job.get("company_id"), "Unknown Company")
+            
+            return apps
+        except Exception as e:
+            logger.error(f"Fetch candidate applications failed: {e}")
+            return []

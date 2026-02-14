@@ -1,3 +1,4 @@
+import traceback # Make sure to import this at top
 from fastapi import APIRouter, Request, HTTPException, Form
 from typing import Optional
 
@@ -53,9 +54,12 @@ async def register(
     email_redirect_to: Optional[str] = Form(None)
 ):
     """Register a new user."""
-    service = get_auth_service()
+    # 🔍 DEBUG: Print input arguments
+    print(f"🚀 ROUTER HIT: {email} | Mobile: {mobile}") 
 
     try:
+        service = get_auth_service()
+        
         result = service.register(
             full_name=full_name, 
             email=email, 
@@ -74,10 +78,14 @@ async def register(
         return {"ok": True, "data": result}
 
     except Exception as e:
+        # 🔥 PRINT THE REAL ERROR TO TERMINAL
+        print(f"\n❌ REGISTRATION CRASHED: {str(e)}")
+        traceback.print_exc() 
+        
         logger.error(f"Registration failed: {str(e)}")
+        
+        # Return the REAL error message to frontend
         raise HTTPException(status_code=400, detail=str(e))
-
-
 # ---------------------------------------------------------
 # UPDATE PASSWORD
 # ---------------------------------------------------------

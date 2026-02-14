@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile – Skreenit</title>
+
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+      window.loadSharedCSS = function(file) {
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
+      };
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
+    })();
+  </script>
+
+  <script>
+    loadSharedCSS('shared-styles.css');
+    loadSharedCSS('dashboard-styles.css');
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+  <style>
+    /* Profile Specific Styles */
+    .profile-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .profile-header-info {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 2rem;
+    }
+    .profile-avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    .profile-details h2 { margin: 0 0 0.5rem 0; font-size: 1.8rem; }
+    .profile-details p { margin: 0; color: #666; font-size: 1rem; }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .info-item label { display: block; font-size: 0.85rem; color: #888; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-item div { font-weight: 500; color: #333; font-size: 1.05rem; }
+    
+    .list-group-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .list-group-item:last-child { border-bottom: none; }
+    .list-title { font-weight: 600; display: block; font-size: 1.1rem; color: #2d3748; }
+    .list-subtitle { color: #718096; font-size: 0.95rem; margin-top: 0.25rem; display: block; }
+    
+    .skill-tag {
+        display: inline-block;
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        margin: 0 0.5rem 0.5rem 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    h3 { color: #2d3748; margin-bottom: 1rem; font-size: 1.25rem; border-left: 4px solid #667eea; padding-left: 10px; }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo"><img src="" id="logoImg" alt="Skreenit" /></div>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item" id="navDashboard"><i class="fas fa-home"></i><span>Dashboard</span></li>
+        <li class="nav-item" id="navApplications"><i class="fas fa-briefcase"></i><span>My Applications</span></li>
+        <li class="nav-item active" id="navProfile"><i class="fas fa-user"></i><span>My Profile</span></li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div id="userAvatar" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #555;">
+             <i class="fas fa-user" style="color:#888"></i>
+          </div>
+          <div class="user-details"><span id="userName" class="user-name">Loading...</span><span class="user-role">Candidate</span></div>
+        </div>
+        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <header class="dashboard-header" style="justify-content: space-between;">
+        <h1>My Profile</h1>
+        <button id="editProfileBtn" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Profile</button>
+      </header>
+
+      <div class="dashboard-content">
+        
+        <div class="profile-section">
+            <div class="profile-header-info">
+                <div class="profile-avatar-large" id="viewAvatar">?</div>
+                <div class="profile-details">
+                    <h2 id="viewName">Loading...</h2>
+                    <p id="viewRole">Candidate</p>
+                    <p id="viewLocation" style="margin-top: 5px;"><i class="fas fa-map-marker-alt" style="color:#667eea"></i> <span>...</span></p>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item"><label>Email</label><div id="viewEmail">...</div></div>
+                <div class="info-item"><label>Phone</label><div id="viewPhone">...</div></div>
+                <div class="info-item"><label>LinkedIn</label><div id="viewLinkedin"><span class="text-muted">-</span></div></div>
+                <div class="info-item"><label>Portfolio</label><div id="viewPortfolio"><span class="text-muted">-</span></div></div>
+            </div>
+            
+            <div class="info-item">
+                <label>Professional Summary</label>
+                <div id="viewSummary" style="line-height: 1.6; color: #4a5568; margin-top: 0.5rem;">...</div>
+            </div>
+
+             <div class="info-item" style="margin-top: 1.5rem;">
+                <label>Resume</label>
+                <div id="viewResume"><span class="text-muted">No resume uploaded.</span></div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            
+            <div class="profile-section">
+                <h3>Experience</h3>
+                <div id="viewExperience">
+                    <p class="text-muted">No experience listed.</p>
+                </div>
+            </div>
+
+            <div>
+                <div class="profile-section">
+                    <h3>Education</h3>
+                    <div id="viewEducation">
+                        <p class="text-muted">No education listed.</p>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Skills</h3>
+                    <div id="viewSkills">
+                        <p class="text-muted">No skills listed.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <script type="module" src="js/candidate-profile.js"></script>
+</body>
+</html>

@@ -1,98 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Application Details – Skreenit</title>
-
-    <!-- Shared Styles -->
-    <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-    <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
-
-    <style>
-        .details-container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        .details-card {
-            background: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .details-row {
-            margin-bottom: 20px;
-        }
-
-        .details-label {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 4px;
-        }
-
-        .details-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: #222;
-        }
-
-        .section-title {
-            font-size: 20px;
-            margin: 30px 0 10px;
-            font-weight: 600;
-        }
-
-        .timeline-box {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        .timeline-item {
-            margin-bottom: 10px;
-        }
-
-        .timeline-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .btn-primary {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 18px;
-            background: #0066ff;
-            color: #fff;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 14px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Application Details – Skreenit</title>
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+      window.loadSharedCSS = function(file) {
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
+      };
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
+    })();
+  </script>
+  <script> loadSharedCSS('shared-styles.css'); loadSharedCSS('dashboard-styles.css'); </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
-
 <body>
+  <div class="dashboard-container">
+    
+    <nav class="sidebar">
+      <div class="sidebar-header"><div class="logo"><img src="" id="logoImg" alt="Skreenit" /></div></div>
+      <ul class="nav-menu">
+        <li class="nav-item" onclick="window.location.href='recruiter-dashboard.html'"><i class="fas fa-tachometer-alt"></i><span>Overview</span></li>
+        <li class="nav-item" onclick="window.location.href='my-jobs.html'"><i class="fas fa-briefcase"></i><span>My Jobs</span></li>
+        <li class="nav-item active" onclick="window.location.href='application-list.html'"><i class="fas fa-users"></i><span>Applications</span></li>
+        <li class="nav-item" onclick="window.location.href='recruiter-profile.html'"><i class="fas fa-user-circle"></i><span>My Profile</span></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+      </div>
+    </nav>
 
-    <!-- HEADER -->
-    <header class="header">
-        <div class="header-left">
-            <img src="https://auth.skreenit.com/assets/images/logo.png" class="logo" alt="Skreenit Logo" />
-            <h2>Application Details</h2>
+    <main class="main-content">
+      <header class="dashboard-header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button id="backBtn" class="btn-sm btn-outline-secondary" style="border:none; background:transparent; font-size:1.2rem;">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1>Application Details</h1>
         </div>
+        <div class="user-profile"><span id="recruiterName">Recruiter</span></div>
+      </header>
 
-        <div class="header-right">
-            <button id="logoutBtn" class="logout-btn">Logout</button>
+      <div class="dashboard-content">
+        <div id="loadingState" class="loading-spinner"></div>
+        
+        <div id="detailsContent" style="display: none;">
+            <div class="card" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 50px; height: 50px; background: #3182ce; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
+                        <span id="avatarInitials">C</span>
+                    </div>
+                    <div>
+                        <h2 id="candidateName" style="margin: 0; font-size: 1.4rem;">Candidate Name</h2>
+                        <p style="margin: 0; color: #718096;">Applied for: <strong id="jobTitle" style="color: #2d3748;">Job Title</strong></p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="statusSelect" class="form-select" style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e0;">
+                        <option value="pending">Pending</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="interviewing">Interviewing</option>
+                        <option value="hired">Hired</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <button id="updateStatusBtn" class="btn btn-primary btn-sm">Update Status</button>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="card" style="padding: 20px; height: fit-content;">
+                    <div class="info-group">
+                        <label>Email Address</label>
+                        <p id="candidateEmail">email@example.com</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Applied On</label>
+                        <p id="appliedDate">-</p>
+                    </div>
+                    
+                    <hr style="border:0; border-top:1px solid #eee; margin: 15px 0;">
+                    
+                    <div class="info-group">
+                        <label>Resume</label>
+                        <a id="resumeLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary" style="display: block; text-align: center; margin-top: 5px;">
+                            <i class="fas fa-file-pdf"></i> View Resume
+                        </a>
+                        <p id="noResume" class="text-muted" style="display:none; font-size:0.9rem;">No resume attached.</p>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Skills</label>
+                        <div id="skillsContainer" style="margin-top: 5px;">
+                            </div>
+                    </div>
+
+                    <div id="linkedinGroup" class="info-group" style="display:none;">
+                        <label>LinkedIn</label>
+                        <a id="linkedinLink" href="#" target="_blank" style="color:#0077b5; text-decoration:none; font-size:0.9rem;">
+                            <i class="fab fa-linkedin"></i> View Profile
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 25px;">
+                    <h3 style="margin-top: 0; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; margin-bottom: 15px;">Cover Letter</h3>
+                    <div id="coverLetter" style="line-height: 1.6; color: #4a5568; white-space: pre-wrap;">
+                        No cover letter provided.
+                    </div>
+                </div>
+            </div>
         </div>
-    </header>
+      </div>
+    </main>
+  </div>
+  <div id="interviewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; padding:25px; border-radius:8px; width:90%; max-width:600px; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#2d3748;">Set Interview Questions</h3>
+        <p class="text-muted" style="font-size:0.9rem; margin-bottom:15px;">
+            You are moving this candidate to <strong>Interviewing</strong>. <br>
+            Please define the questions they must answer via video.
+        </p>
+        
+        <div id="modalQuestionsContainer" style="max-height:300px; overflow-y:auto; margin-bottom:15px; padding-right:5px;">
+            </div>
 
-    <!-- MAIN CONTENT -->
-    <div class="details-container">
-        <div id="applicationDetails" class="details-card">
-            <p>Loading application details...</p>
+        <button id="addQuestionBtn" class="btn-sm btn-outline-primary" style="margin-bottom:20px; width:100%;">
+            <i class="fas fa-plus"></i> Add Question
+        </button>
+        
+        <div style="border-top:1px solid #eee; padding-top:15px; text-align:right; display:flex; gap:10px; justify-content:flex-end;">
+            <button id="cancelModalBtn" class="btn btn-sm btn-outline-secondary">Cancel</button>
+            <button id="confirmInterviewBtn" class="btn btn-sm btn-primary">Send to Candidate</button>
         </div>
     </div>
-    <script type="module" src="https://dashboard.skreenit.com/js/application-details.js"></script>
+</div>
+  <script type="module" src="js/application-details.js"></script>
 </body>
 </html>

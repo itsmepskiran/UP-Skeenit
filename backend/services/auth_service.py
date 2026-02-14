@@ -1,6 +1,10 @@
 import os
 from typing import Optional, Dict, Any
 
+# ✅ NEW IMPORTS for the Dependency Logic
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from supabase import Client
 from services.supabase_client import get_client
 from utils_others.logger import logger
@@ -78,11 +82,14 @@ class AuthService:
     ) -> Dict[str, Any]:
         """
         Register a new user.
-        Company details are NOT collected here.
-        Recruiter will fill company info later in recruiter-profile.html.
         """
         try:
+            # Check for redirect URL (Handle None case)
             redirect_to = email_redirect_to or f"{self.frontend_url}/confirm-email"
+            
+            # 🔍 DEBUG: Print what we are sending to Supabase
+            print(f"🔹 SERVICE: Registering {email} | Mobile: {mobile} | Role: {role}")
+
             auth_res = self.supabase.auth.sign_up({
                 "email": email,
                 "password": password,
@@ -95,18 +102,19 @@ class AuthService:
                         "role": role,
                         "onboarded": False,
                         "password_set": True,
-                        }
+                    }
                 }
             })
 
             user = getattr(auth_res, "user", None)
             session = getattr(auth_res, "session", None)
 
+            # Supabase sometimes returns a user but no session if email confirmation is on. 
+            # That is OK.
             if not user:
-                raise ValueError("Failed to create user")
+                raise ValueError("Supabase returned no user object.")
 
             metadata = user.user_metadata or {}
-
             logger.info("User registered successfully", extra={"email": email})
 
             return {
@@ -126,12 +134,15 @@ class AuthService:
             }
 
         except Exception as e:
+            # 🔥 CRITICAL FIX: Raise the original error so we can see it!
+            print(f"❌ AUTH SERVICE ERROR: {str(e)}") 
+            
             msg = str(e).lower()
             if "already registered" in msg or "already exists" in msg:
                 raise ValueError("This email is already registered")
-
-            logger.error(f"Registration failed: {str(e)}", extra={"email": email})
-            raise RuntimeError("Registration failed")
+            
+            # Raise 'e' directly so the Router sees "AuthApiError: Password too short"
+            raise e
 
     # ---------------------------------------------------------
     # UPDATE PASSWORD
@@ -172,3 +183,44 @@ class AuthService:
         except Exception as e:
             logger.error(f"Password reset failed: {str(e)}")
             raise RuntimeError("Failed to send password reset email")
+
+
+# =========================================================
+# ✅ NEW: DEPENDENCY FUNCTION (Must be outside the class)
+# =========================================================
+security = HTTPBearer()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Validates the Bearer Token sent by the frontend.
+    Returns a dictionary with user info if valid.
+    """
+    token = credentials.credentials
+    supabase = get_client()
+    
+    try:
+        # 1. Ask Supabase if this token is valid
+        user_response = supabase.auth.get_user(token)
+        
+        if not user_response or not user_response.user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Invalid authentication credentials"
+            )
+        
+        user = user_response.user
+        
+        # 2. Return the User Data as a Dictionary
+        return {
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.user_metadata.get("role", "candidate"),
+            "full_name": user.user_metadata.get("full_name", "")
+        }
+        
+    except Exception as e:
+        print(f"❌ Auth Error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Session expired or invalid"
+        )

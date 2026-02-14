@@ -1,8 +1,24 @@
-// 1. Import only what we need. 
-// Note: We added '?v=2' to force the browser to re-download the new versions.
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-import { redirectByRole } from 'https://auth.skreenit.com/assets/js/auth-pages.js?v=2';
+// login/js/login.js
+import { supabase } from '@shared/js/supabase-config.js';
+import { redirectByRole } from '@shared/js/auth-pages.js';
+import { CONFIG } from '@shared/js/config.js';
 
+// 1. Setup Dynamic Assets (Images & Links)
+const isLocal = CONFIG.IS_LOCAL;
+const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+
+// Set Images
+document.getElementById('logoImg').src = `${authBase}/assets/images/logo.png`;
+document.getElementById('brandImg').src = `${authBase}/assets/images/logobrand.png`;
+
+// Set Links
+document.getElementById('homeLink').href = CONFIG.PAGES.INDEX;
+document.getElementById('registerLink').href = CONFIG.PAGES.REGISTER;
+document.getElementById('forgotLink').href = CONFIG.PAGES.FORGOT_PASSWORD;
+document.getElementById('termsLink').href = CONFIG.PAGES.TERMS;
+document.getElementById('privacyLink').href = CONFIG.PAGES.PRIVACY;
+
+// 2. Form Logic
 const form = document.getElementById("loginForm");
 const errorBox = document.getElementById("errorBox");
 
@@ -29,29 +45,17 @@ form.addEventListener("submit", async (e) => {
     const email = fd.get("email").trim();
     const password = fd.get("password").trim();
 
-    // ---------------------------------------------------------
-    // STEP 1: LOGIN
-    // The new 'supabase-config.js' will automatically capture 
-    // the session and save it to a Shared Cookie (.skreenit.com)
-    // ---------------------------------------------------------
+    // Sign In
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     
     if (error) throw error;
 
-    console.log("✅ Login successful. Session established in cookies.");
+    console.log("✅ Login successful.");
 
-    // ---------------------------------------------------------
-    // STEP 2: WAIT (Safety Buffer)
-    // We wait 1 second to ensure the cookie is fully written 
-    // and available to the dashboard subdomain.
-    // ---------------------------------------------------------
+    // Wait for cookie/session propagation
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // ---------------------------------------------------------
-    // STEP 3: REDIRECT
-    // This function checks the Cookie, finds the role, 
-    // and sends the user to the correct Dashboard.
-    // ---------------------------------------------------------
+    // Redirect using the shared helper
     await redirectByRole(); 
 
   } catch (err) {

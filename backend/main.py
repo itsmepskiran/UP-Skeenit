@@ -1,18 +1,13 @@
 import os
 from dotenv import load_dotenv
-
-# 1. Define Base Directory (Absolute Path) - CRITICAL FOR LOGOS
-# This ensures we find the 'logos' folder no matter where you run the command from.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Load Environment from .env file
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from fastapi import FastAPI, APIRouter
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.openapi.utils import get_openapi
 from utils_others.logger import logger
 from utils_others.error_handler import register_exception_handlers
 
@@ -44,6 +39,34 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    # 1. Define the Security Scheme (Bearer Token)
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    }
+    
+    # 2. Apply it globally to all endpoints
+    # This tells Swagger: "Every endpoint needs this token"
+    openapi_schema["security"] = [{"BearerAuth": []}]
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 # ---------------------------------------------------------
 # Mount Static Files (Logos) - CRITICAL FIX
 # ---------------------------------------------------------
@@ -118,25 +141,25 @@ async def versioned_health():
 app.include_router(api)
 
 # ---------------------------------------------------------
-# MIDDLEWARE SETUP (Order is Critical)
+# MIDDLEWARE SETUP (CRITICAL ORDER)
 # ---------------------------------------------------------
-# In FastAPI, "add_middleware" adds to the OUTSIDE.
-# The middleware added LAST runs FIRST.
+# FastAPI executes middleware in REVERSE order of addition.
+# Last added = First executed.
+# Desired Execution Flow: CORS -> Security -> Auth -> App
 
-# 3. Auth Middleware (Runs 3rd)
+# 3. Auth Middleware (Added First, Executed Last - Inner Layer)
 class PatchedAuthMiddleware(AuthMiddleware): 
     async def dispatch(self, request, call_next):
-        # We allow OPTIONS to pass through so CORS middleware can handle it
         if request.method == "OPTIONS":
-             return await call_next(request)
+            return await call_next(request)
         return await super().dispatch(request, call_next)
 
 app.add_middleware(PatchedAuthMiddleware, excluded_paths=EXCLUDED_PATHS)
 
-# 2. Security Headers (Runs 2nd)
+# 2. Security Headers (Added Second, Executed Middle)
 app.add_middleware(SecurityHeadersMiddleware)
 
-# 1. CORS Middleware (Runs 1st - CRITICAL)
+# 1. CORS Middleware (Added Third, Executed First)
 DEFAULT_ALLOWED_ORIGINS = [
     "https://www.skreenit.com",
     "https://skreenit.com",
@@ -156,9 +179,15 @@ LOCAL_DEV_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://localhost:8001",
+    "http://127.0.0.1:8001",
 ]
+if IS_PROD:
+    origins = DEFAULT_ALLOWED_ORIGINS
+else:
+    origins = DEFAULT_ALLOWED_ORIGINS + LOCAL_DEV_ORIGINS
 
-origins = DEFAULT_ALLOWED_ORIGINS if IS_PROD else DEFAULT_ALLOWED_ORIGINS + LOCAL_DEV_ORIGINS
+print(f"✅ DEBUG: CORS Origins set to: {origins}")
 
 app.add_middleware(
     CORSMiddleware,

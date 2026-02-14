@@ -1,161 +1,160 @@
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
-import { backendGet, handleResponse } from 'https://auth.skreenit.com/assets/js/backend-client.js?v=2';
+import { supabase } from '@shared/js/supabase-config.js';
+import { backendGet, handleResponse } from '@shared/js/backend-client.js';
+import { CONFIG } from '@shared/js/config.js';
 
-        const jobsList = document.getElementById("jobsList");
-        const applicationsList = document.getElementById("applicationsList");
+const isLocal = CONFIG.IS_LOCAL;
+const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+const logoImg = document.getElementById('logoImg');
+if(logoImg) logoImg.src = `${authBase}/assets/images/logo.png`;
 
-        const statTotalJobs = document.getElementById("statTotalJobs");
-        const statTotalApplications = document.getElementById("statTotalApplications");
-        const statShortlisted = document.getElementById("statShortlisted");
-        const statPending = document.getElementById("statPending");
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    setupEventListeners();
+});
 
-        // ---------------------------
-        // AUTH CHECK
-        // ---------------------------
-        async function checkAuth() {
-        console.log('🔍 checkAuth started');
+async function checkAuth() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session || !session.user) { window.location.href = CONFIG.PAGES.LOGIN; return; }
+    
+    const user = session.user;
+    // Role Guard
+    if ((user.user_metadata?.role || '').toLowerCase() !== 'recruiter') {
+        window.location.href = CONFIG.PAGES.DASHBOARD_CANDIDATE; 
+        return;
+    }
+
+    updateSidebarProfile(user.user_metadata, user.email);
+    updateUserInfo(); 
+    loadDashboardData(user.id);
+}
+
+function updateSidebarProfile(meta, email) {
+    const nameEl = document.getElementById('recruiterName');
+    const avatarEl = document.getElementById('userAvatar');
+    if(nameEl) nameEl.textContent = meta.full_name || email.split('@')[0];
+}
+
+async function updateUserInfo() {
+  try {
+    const res = await backendGet('/recruiter/profile');
+    const data = await handleResponse(res);
+    const profile = data.data || data; 
+    if (profile && profile.contact_name) {
+      const el = document.getElementById('recruiterName');
+      if (el) el.textContent = profile.contact_name;
+    }
+  } catch (error) { console.warn('Error loading user info:', error); }
+}
+
+function setupEventListeners() {
+    // Logout
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) logoutBtn.addEventListener("click", async () => { 
+        await supabase.auth.signOut(); 
+        window.location.href = CONFIG.PAGES.LOGIN; 
+    });
+
+    // --- BANNER CLICK EVENTS ---
+    // ✅ FIX: These should point to LIST pages, not details pages
+    const btnJobs = document.getElementById('btnActiveJobs');
+    if(btnJobs) btnJobs.addEventListener('click', () => window.location.href = 'my-jobs.html');
+
+    const btnCands = document.getElementById('btnCandidates');
+    if(btnCands) btnCands.addEventListener('click', () => window.location.href = 'application-list.html');
+
+    const btnApps = document.getElementById('btnNewApps');
+    if(btnApps) btnApps.addEventListener('click', () => window.location.href = 'application-list.html');
+}
+
+async function loadDashboardData(userId) {
+    try {
+        // A. Fetch Jobs
+        const jobsRes = await backendGet(`/recruiter/jobs?user_id=${userId}`);
+        const jobsData = await handleResponse(jobsRes);
+        let jobsList = jobsData?.data?.jobs || jobsData?.data || [];
+        if(!Array.isArray(jobsList)) jobsList = [];
+        
+        // Update Stats
+        const activeJobsCount = jobsList.filter(j => j.status === 'active').length;
+        setText("statActiveJobs", activeJobsCount);
+
+        // ✅ FIX: Actually Render the jobs list
+        renderJobs(jobsList.slice(0, 5));
+
+        // B. Fetch Applications
+        let appsList = [];
         try {
-            console.log('📡 Calling supabase.auth.getSession()...');
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-            console.log('📊 Session result:', { 
-            hasSession: !!session, 
-            hasUser: !!session?.user, 
-            error: sessionError?.message || 'none',
-            sessionData: session
-         });
+            const appsRes = await backendGet(`/recruiter/applications`); 
+            const appsData = await handleResponse(appsRes);
+            appsList = appsData?.data || appsData || [];
+        } catch (e) { console.warn("Apps fetch error", e); }
 
-            if (sessionError) {
-            console.error('❌ Session error:', sessionError);
-            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
-            return;
-            }
-
-            if (!session) {
-            console.error('❌ No session object found');
-            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
-            return;
-            }
-
-            if (!session.user) {
-            console.error('❌ Session exists but no user found');
-            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
-            return;
-            }
-
-            console.log('✅ Session found, user ID:', session.user.id);
-            const user = session.user;
-        
-            console.log('📋 User metadata:', user.user_metadata);
-        
-            const role = user.user_metadata?.role || localStorage.getItem("skreenit_role");
-            const onboarded = user.user_metadata?.onboarded !== undefined 
-            ? user.user_metadata.onboarded 
-            : localStorage.getItem("onboarded") === "true";
-
-            console.log('🎭 Role determined:', role);
-            console.log('✔️ Onboarded status:', onboarded);
-
-            // Update localStorage
-            if (user.user_metadata?.role) {
-            console.log('💾 Updating localStorage with fresh data');
-            localStorage.setItem("skreenit_role", user.user_metadata.role);
-            localStorage.setItem("onboarded", user.user_metadata.onboarded?.toString() || 'false');
-            localStorage.setItem("user_id", user.id);
+        if (Array.isArray(appsList)) {
+            renderApplications(appsList.slice(0, 6)); 
+            
+            // Update Stats
+            const totalCandidates = new Set(appsList.map(a => a.candidate_id)).size;
+            const newAppsCount = appsList.filter(a => a.status === 'pending').length;
+            
+            setText("statTotalCandidates", totalCandidates);
+            setText("statNewApplications", newAppsCount);
         }
 
-            // Check role
-            const expectedRole = 'recruiter';
-            console.log(`🔐 Checking role: expected="${expectedRole}", actual="${role}"`);
-        
-            if (role !== expectedRole) {
-            window.location.href = "https://dashboard.skreenit.com/candidate-dashboard";
-            return;
-            }
+    } catch (err) { console.error("Dashboard load error:", err); }
+}
 
-            // Check if onboarded
-            if (onboarded === false || onboarded === "false") {
-            const redirectURL = 'https://recruiter.skreenit.com/recruiter-profile';
-            window.location.href = redirectURL;
-            return;
-            }
+// ✅ NEW FUNCTION: Missing in your original code
+function renderJobs(jobs) {
+    const list = document.getElementById("recentJobsList");
+    if(!list) return;
 
-            loadDashboard();
-        
-        } catch (error) {
-            console.error('💥 CRITICAL ERROR in checkAuth:', error);
-            console.error('Stack trace:', error.stack);
-            window.location.href = `https://login.skreenit.com/login?redirectTo=${encodeURIComponent(window.location.href)}`;
-        }
-        }
-        // ---------------------------
-        // LOAD DASHBOARD DATA
-        // ---------------------------
-        export async function loadDashboard() {
-            try {
-                const response = await backendGet("/recruiter/dashboard");
-                const data = await handleResponse(response);
+    if (!jobs || !jobs.length) { 
+        list.innerHTML = "<p class='text-muted' style='padding:1rem'>No active jobs posted.</p>"; 
+        return; 
+    }
+    
+    list.innerHTML = jobs.map(job => `
+        <div class="job-item" style="padding: 10px; border-bottom: 1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+            <div class="job-info">
+                <h4 style="margin:0; font-size:1rem;">${job.title}</h4>
+                <p style="margin:0; color:#718096; font-size:0.85rem;">
+                    <i class="fas fa-map-marker-alt"></i> ${job.location || 'Remote'} &bull; ${new Date(job.created_at).toLocaleDateString()}
+                </p>
+            </div>
+            <a href="job-details.html?job_id=${job.id}" class="btn-sm btn-outline-primary" style="font-size:0.8rem;">View</a>
+        </div>
+    `).join("");
+}
 
-                // Stats
-                statTotalJobs.textContent = data.total_jobs;
-                statTotalApplications.textContent = data.total_applications;
-                statShortlisted.textContent = data.shortlisted;
-                statPending.textContent = data.pending_review;
+function renderApplications(apps) {
+    const list = document.getElementById("recentAppsList"); 
+    if(!list) return;
 
-                // Jobs
-                renderJobs(data.recent_jobs);
-
-                // Applications
-                renderApplications(data.recent_applications);
-
-            } catch (error) {
-                console.error("Dashboard load error:", error);
-                jobsList.innerHTML = "<p>Error loading dashboard.</p>";
-                applicationsList.innerHTML = "<p>Error loading dashboard.</p>";
-            }
-        }
-
-        // ---------------------------
-        // RENDER JOBS
-        // ---------------------------
-        function renderJobs(jobs) {
-            if (!jobs || jobs.length === 0) {
-                jobsList.innerHTML = "<p>No jobs posted yet.</p>";
-                return;
-            }
-
-            jobsList.innerHTML = jobs.map(job => `
-                <div class="job-item">
-                    <div class="job-title">${job.title}</div>
-                    <div class="job-meta">${job.location} • ${job.job_type}</div>
-                    <a href="job-details?job_id=${job.id}" class="btn-primary">View Job</a>
+    if (!apps || !apps.length) { 
+        list.innerHTML = "<p class='text-muted' style='padding:1rem'>No applications received yet.</p>"; 
+        return; 
+    }
+    
+    list.innerHTML = apps.map(app => `
+        <div class="card" onclick="window.location.href='application-details.html?id=${app.id}'" style="cursor:pointer; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div class="card-body" style="padding: 1rem;">
+                <h4 style="margin:0; font-size:1.05rem; color:#2d3748;">${app.candidate_name || 'Candidate'}</h4>
+                <p style="margin:4px 0 8px; color:#718096; font-size:0.9rem;">
+                    Applied for: <strong>${app.job_title}</strong>
+                </p>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="status-badge status-${(app.status || 'pending').toLowerCase()}" 
+                          style="padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold; background:#edf2f7; color:#4a5568;">
+                        ${app.status || 'Pending'}
+                    </span>
+                    <small style="color:#a0aec0;">${new Date(app.applied_at).toLocaleDateString()}</small>
                 </div>
-            `).join("");
-        }
+            </div>
+        </div>
+    `).join("");
+}
 
-        // ---------------------------
-        // RENDER APPLICATIONS
-        // ---------------------------
-        function renderApplications(apps) {
-            if (!apps || apps.length === 0) {
-                applicationsList.innerHTML = "<p>No recent applications.</p>";
-                return;
-            }
-            applicationsList.innerHTML = apps.map(app => `
-                <div class="application-item">
-                    <div class="job-title">${app.candidate_name}</div>
-                    <div class="job-meta">Applied for: ${app.job_title}</div>
-                    <a href="https://dashboard.skreenit.com/application-details?app_id=${app.id}" class="btn-primary">View Application</a>
-                </div>
-            `).join("");
-        }
-
-        // ---------------------------
-        // LOGOUT
-        // ---------------------------
-        document.getElementById("logoutBtn").addEventListener("click", async () => {
-            await supabase.auth.signOut();
-            window.location.href = "https://login.skreenit.com/login";
-        });
-        // INIT
-        checkAuth();
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if(el) el.textContent = val;
+}

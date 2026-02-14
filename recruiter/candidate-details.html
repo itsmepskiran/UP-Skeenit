@@ -5,26 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Candidate Details – Skreenit</title>
 
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/shared-styles.css" />
-  <link rel="stylesheet" href="https://auth.skreenit.com/assets/css/dashboard-styles.css" />
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+
+      window.loadSharedCSS = function(file) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `${authBase}/assets/css/${file}`;
+        document.head.appendChild(link);
+      };
+
+      const icon = document.createElement('link');
+      icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`;
+      document.head.appendChild(icon);
+    })();
+  </script>
+
+  <script>
+    loadSharedCSS('shared-styles.css');
+    loadSharedCSS('dashboard-styles.css');
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
 
 <body>
   <div class="dashboard-container">
-
-    <!-- Sidebar -->
     <nav class="sidebar">
       <div class="sidebar-header">
         <div class="logo">
-          <img src="https://auth.skreenit.com/assets/images/logo.png" alt="Skreenit" />
+          <img src="" id="logoImg" alt="Skreenit" />
         </div>
       </div>
 
       <ul class="nav-menu">
         <li class="nav-item" data-section="overview"><i class="fas fa-tachometer-alt"></i><span>Overview</span></li>
-        <li class="nav-item" data-section="jobs"><i class="fas fa-briefcase"></i><span>Jobs</span></li>
         <li class="nav-item active" data-section="candidates"><i class="fas fa-users"></i><span>Candidates</span></li>
+        <li class="nav-item" data-section="jobs"><i class="fas fa-briefcase"></i><span>Jobs</span></li>
         <li class="nav-item" data-section="analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></li>
       </ul>
 
@@ -40,19 +63,15 @@
       </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="main-content">
       <section class="dashboard-section">
         <div class="section-header">
           <h1>Candidate Details</h1>
         </div>
-
-        <div id="candidateDetails" class="details-card">
-          <!-- JS will populate candidate details -->
-        </div>
+        <div id="candidateDetails" class="details-card"></div>
       </section>
     </main>
   </div>
-  <script type="module" src="https://recruiter.skreenit.com/js/candidate-details.js"></script>
+  <script type="module" src="js/candidate-details.js"></script>
 </body>
 </html>

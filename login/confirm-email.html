@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <title>Email Confirmed - Skreenit</title>
 
+    <script>
+      (function() {
+        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+
+        const im = document.createElement('script');
+        im.type = 'importmap';
+        im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+        document.head.appendChild(im);
+
+        const icon = document.createElement('link');
+        icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`;
+        document.head.appendChild(icon);
+      })();
+    </script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,12 +31,7 @@
             animation: fadeIn 0.8s ease-out forwards;
             opacity: 0;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .brand {
             max-width: 220px;
             margin: 0 auto 25px auto;
@@ -28,12 +39,7 @@
             animation: slideUp 0.9s ease-out forwards;
             opacity: 0;
         }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .checkmark {
             font-size: 60px;
             color: #28a745;
@@ -41,18 +47,8 @@
             animation: popIn 0.6s ease-out forwards, glow 1.5s ease-in-out infinite alternate;
             opacity: 0;
         }
-
-        @keyframes popIn {
-            0% { transform: scale(0.4); opacity: 0; }
-            60% { transform: scale(1.15); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes glow {
-            from { text-shadow: 0 0 4px #8ff5b8; }
-            to { text-shadow: 0 0 12px #28a745; }
-        }
-
+        @keyframes popIn { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+        @keyframes glow { from { text-shadow: 0 0 4px #8ff5b8; } to { text-shadow: 0 0 12px #28a745; } }
         .message {
             margin: 25px 0;
             padding: 18px;
@@ -64,7 +60,6 @@
             animation: fadeIn 1.2s ease-out forwards;
             opacity: 0;
         }
-
         .redirect-note {
             margin-top: 15px;
             font-size: 14px;
@@ -76,8 +71,7 @@
 </head>
 
 <body>
-
-    <img src="https://auth.skreenit.com/assets/images/logobrand.png" class="brand" alt="Skreenit" />
+    <img src="" id="brandImg" class="brand" alt="Skreenit" />
 
     <div class="checkmark">✔</div>
 
@@ -89,6 +83,6 @@
         You will be redirected shortly.
     </div>
 
-    <script type="module" src="https://login.skreenit.com/js/confirm-email.js"></script>
+    <script type="module" src="js/confirm-email.js"></script>
 </body>
 </html>

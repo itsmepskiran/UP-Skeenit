@@ -1,173 +1,125 @@
-// api-services.js
-import { supabase } from 'https://auth.skreenit.com/assets/js/supabase-config.js?v=2';
+//// 1. Import
+//import { ApiService } from '@shared/js/api-services.js';
 
-/* -------------------------------------------------------
-   AUTH HELPERS
-------------------------------------------------------- */
-async function getCurrentUserId() {
-  const { data } = await supabase.auth.getUser();
-  return data?.user?.id || null;
-}
+// 2. Use
+//await ApiService.Recruiter.createJob(payload);
 
-/* -------------------------------------------------------
-   JOB SERVICES
-------------------------------------------------------- */
-export const jobService = {
-  async getJobs(filters = {}) {
-    let query = supabase
-      .from('jobs')
-      .select(`
-        *,
-        companies (name, logo_url),
-        job_skills (*)
-      `)
-      .order('created_at', { ascending: false });
 
-    if (filters.status) query.eq('status', filters.status);
-    if (filters.recruiter_id) query.eq('recruiter_id', filters.recruiter_id);
-    if (filters.search) {
-      query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+
+
+import { 
+    backendGet, 
+    backendPost, 
+    backendPut, 
+    backendDelete, 
+    handleResponse 
+} from './backend-client.js';
+
+export const ApiService = {
+    
+    // ============================================================
+    // RECRUITER SERVICES
+    // ============================================================
+    Recruiter: {
+        async getProfile() {
+            const res = await backendGet('/recruiter/profile');
+            return handleResponse(res);
+        },
+
+        async updateProfile(payload) {
+            const res = await backendPut('/recruiter/profile', payload);
+            return handleResponse(res);
+        },
+
+        async getDashboardStats() {
+            const res = await backendGet('/recruiter/stats'); // Ensure this endpoint exists in backend
+            return handleResponse(res);
+        },
+
+        async getJobs(filters = {}) {
+            // Convert filters object to query string if needed
+            const query = new URLSearchParams(filters).toString();
+            const res = await backendGet(`/recruiter/jobs?${query}`);
+            return handleResponse(res);
+        },
+
+        async getJobById(jobId) {
+            const res = await backendGet(`/recruiter/jobs/${jobId}`);
+            return handleResponse(res);
+        },
+
+        async createJob(payload) {
+            const res = await backendPost('/recruiter/jobs', payload);
+            return handleResponse(res);
+        },
+
+        async updateJob(jobId, payload) {
+            const res = await backendPut(`/recruiter/jobs/${jobId}`, payload);
+            return handleResponse(res);
+        },
+
+        async deleteJob(jobId) {
+            const res = await backendDelete(`/recruiter/jobs/${jobId}`);
+            return handleResponse(res);
+        },
+
+        async getCandidateDetails(candidateId, jobId = null) {
+            let url = `/recruiter/candidate-details?candidate_id=${candidateId}`;
+            if (jobId) url += `&job_id=${jobId}`;
+            const res = await backendGet(url);
+            return handleResponse(res);
+        }
+    },
+
+    // ============================================================
+    // CANDIDATE SERVICES
+    // ============================================================
+    Candidate: {
+        async getProfile() {
+            const res = await backendGet('/applicant/profile');
+            return handleResponse(res);
+        },
+
+        async createOrUpdateProfile(payload) {
+            const res = await backendPost('/applicant/detailed-form', payload);
+            return handleResponse(res);
+        },
+
+        async uploadResume(formData) {
+            // formData must contain 'resume' file
+            const res = await backendPost('/applicant/resume', formData);
+            return handleResponse(res);
+        },
+
+        async getApplications() {
+            const res = await backendGet('/applicant/applications');
+            return handleResponse(res);
+        },
+
+        async applyForJob(jobId) {
+            const res = await backendPost('/applicant/apply', { job_id: jobId });
+            return handleResponse(res);
+        },
+
+        async checkApplicationStatus(jobId) {
+            const res = await backendGet(`/applicant/check-status?job_id=${jobId}`);
+            return handleResponse(res);
+        }
+    },
+
+    // ============================================================
+    // SHARED / PUBLIC SERVICES
+    // ============================================================
+    Shared: {
+        async getPublicJobs(filters = {}) {
+            const query = new URLSearchParams(filters).toString();
+            const res = await backendGet(`/dashboard/jobs?${query}`);
+            return handleResponse(res);
+        },
+
+        async getJobDetails(jobId) {
+            const res = await backendGet(`/dashboard/jobs/${jobId}`);
+            return handleResponse(res);
+        }
     }
-
-    return await query;
-  },
-
-  async getJobById(id) {
-    return await supabase
-      .from('jobs')
-      .select(`
-        *,
-        companies (*),
-        job_skills (*)
-      `)
-      .eq('id', id)
-      .single();
-  },
-
-  async createJob(jobData) {
-    const userId = await getCurrentUserId();
-    if (!userId) return { error: 'Not authenticated' };
-
-    const job = {
-      ...jobData,
-      recruiter_id: userId
-    };
-
-    const { data, error } = await supabase
-      .from('jobs')
-      .insert(job)
-      .select()
-      .single();
-
-    return { data, error };
-  },
-
-  async updateJob(id, updates) {
-    return await supabase
-      .from('jobs')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-  },
-
-  async deleteJob(id) {
-    return await supabase
-      .from('jobs')
-      .delete()
-      .eq('id', id);
-  }
-};
-
-/* -------------------------------------------------------
-   APPLICATION SERVICES
-------------------------------------------------------- */
-export const applicationService = {
-  async getApplicationsByJob(jobId) {
-    return await supabase
-      .from('job_applications')
-      .select(`
-        *,
-        candidate_profiles (*),
-        jobs (title, location)
-      `)
-      .eq('job_id', jobId)
-      .order('applied_at', { ascending: false });
-  },
-
-  async getCandidateApplications() {
-    const userId = await getCurrentUserId();
-    if (!userId) return { error: 'Not authenticated' };
-
-    return await supabase
-      .from('job_applications')
-      .select(`
-        *,
-        jobs (title, location)
-      `)
-      .eq('candidate_id', userId)
-      .order('applied_at', { ascending: false });
-  },
-
-  async submitApplication(applicationData) {
-    const userId = await getCurrentUserId();
-    if (!userId) return { error: 'Not authenticated' };
-
-    const payload = {
-      ...applicationData,
-      candidate_id: userId
-    };
-
-    return await supabase
-      .from('job_applications')
-      .insert(payload)
-      .select()
-      .single();
-  }
-};
-
-/* -------------------------------------------------------
-   CANDIDATE PROFILE SERVICES
-------------------------------------------------------- */
-export const candidateService = {
-  async getProfile() {
-    const userId = await getCurrentUserId();
-    if (!userId) return { error: 'Not authenticated' };
-
-    return await supabase
-      .from('candidate_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-  },
-
-  async updateProfile(profileData) {
-    const userId = await getCurrentUserId();
-    if (!userId) return { error: 'Not authenticated' };
-
-    return await supabase
-      .from('candidate_profiles')
-      .upsert({
-        user_id: userId,
-        ...profileData
-      })
-      .select()
-      .single();
-  }
-};
-
-/* -------------------------------------------------------
-   REALTIME SERVICES
-------------------------------------------------------- */
-export const realtimeService = {
-  subscribeToJobApplications(jobId, callback) {
-    return supabase
-      .channel(`job_applications_${jobId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'job_applications', filter: `job_id=eq.${jobId}` },
-        callback
-      )
-      .subscribe();
-  }
 };

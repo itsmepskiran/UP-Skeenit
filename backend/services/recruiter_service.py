@@ -133,6 +133,67 @@ class RecruiterService:
             raise RuntimeError("Failed to delete job")
 
     # ---------------------------------------------------------
+    # NEW: GET APPLICATIONS FOR RECRUITER'S JOBS ONLY
+    # ---------------------------------------------------------
+    def get_recruiter_applications(self, recruiter_id: str) -> List[Dict[str, Any]]:
+        try:
+            # 1. Fetch ONLY jobs created by this recruiter
+            jobs_res = self.supabase.table("jobs").select("id, title").eq("created_by", recruiter_id).execute()
+            jobs = getattr(jobs_res, "data", []) or []
+            
+            if not jobs:
+                return [] 
+                
+            # Extract IDs and map them
+            job_ids = [j["id"] for j in jobs]
+            job_map = {j["id"]: j["title"] for j in jobs}
+
+            # 2. Fetch applications ONLY for these job IDs
+            apps_res = (
+                self.supabase.table("job_applications")
+                .select("*")
+                .in_("job_id", job_ids)
+                .order("applied_at", desc=True)
+                .limit(50)
+                .execute()
+            )
+            
+            applications = getattr(apps_res, "data", []) or []
+            
+            if not applications:
+                return []
+
+            # 3. Get Candidate Names from 'users' table (FIXED)
+            candidate_ids = list(set(a["candidate_id"] for a in applications))
+            cand_map = {}
+            
+            if candidate_ids:
+                # Query the 'users' table where full_name actually lives
+                users_res = self.supabase.table("users")\
+                    .select("id, full_name, email")\
+                    .in_("id", candidate_ids)\
+                    .execute()
+                
+                users_data = getattr(users_res, "data", []) or []
+                
+                for u in users_data:
+                    # Priority: Name > Email > "Candidate"
+                    cand_map[u["id"]] = u.get("full_name") or u.get("email") or "Candidate"
+
+            # 4. Format the Data
+            results = []
+            for app in applications:
+                enriched_app = dict(app)
+                enriched_app["job_title"] = job_map.get(app["job_id"], "Unknown Job")
+                enriched_app["candidate_name"] = cand_map.get(app["candidate_id"], "Unknown Candidate")
+                results.append(enriched_app)
+                
+            return results
+
+        except Exception as e:
+            logger.error(f"Get recruiter applications failed: {str(e)}")
+            return []
+    # ---------------------------------------------------------
     # JOB SKILLS CRUD
     # ---------------------------------------------------------
     def add_job_skill(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -242,7 +303,9 @@ class RecruiterService:
             return res.data
         except Exception as e:
             logger.error(f"Upsert recruiter profile failed: {str(e)}")
-            raise RuntimeError("Failed to save recruiter profile")
+            print(f"❌ DATABASE ERROR: {str(e)}")
+            print(f"❌ PAYLOAD: {payload}")
+            raise RuntimeError(f"Failed to save recruiter profile: {str(e)}")
 
     def get_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
         try:
@@ -349,3 +412,68 @@ class RecruiterService:
             .execute()
         )
         return res.data or []
+    # ---------------------------------------------------------
+    # NEW: GET SINGLE APPLICATION DETAILS (For Details Page)
+    # ---------------------------------------------------------
+    def get_application_by_id(self, app_id: str) -> Dict[str, Any]:
+        try:
+            # 1. Get Application Data
+            res = self.supabase.table("job_applications").select("*").eq("id", app_id).single().execute()
+            app = getattr(res, "data", None)
+            if not app: return None
+
+            # 2. Get Job Title
+            job_res = self.supabase.table("jobs").select("title").eq("id", app["job_id"]).single().execute()
+            app["job_title"] = job_res.data["title"] if job_res.data else "Unknown Job"
+
+            # 3. Get Candidate Name & Email (from Users table)
+            user_res = self.supabase.table("users").select("full_name, email").eq("id", app["candidate_id"]).single().execute()
+            if user_res.data:
+                app["candidate_name"] = user_res.data.get("full_name") or "Candidate"
+                app["candidate_email"] = user_res.data.get("email")
+
+            # 4. Get Resume & Skills (from Candidate Profile)
+            profile_res = self.supabase.table("candidate_profiles").select("*").eq("user_id", app["candidate_id"]).single().execute()
+            if profile_res.data:
+                profile = profile_res.data
+                app["skills"] = profile.get("skills", [])
+                app["linkedin"] = profile.get("linkedin_url")
+                
+                # Generate Resume Link
+                if profile.get("resume_url"):
+                    try:
+                        # Create a signed URL valid for 1 hour
+                        signed = self.supabase.storage.from_("resumes").create_signed_url(profile["resume_url"], 3600)
+                        app["resume_link"] = signed.get("signedURL")
+                    except Exception:
+                        app["resume_link"] = None
+
+            return app
+        except Exception as e:
+            logger.error(f"Get application detail failed: {str(e)}")
+            return None
+
+    # ---------------------------------------------------------
+    # NEW: UPDATE APPLICATION STATUS & SAVE QUESTIONS
+    # ---------------------------------------------------------
+    # ---------------------------------------------------------
+    # UPDATE STATUS (Now with questions support)
+    # ---------------------------------------------------------
+    def update_application_status(self, app_id: str, new_status: str, questions: list = None) -> bool:
+        try:
+            # 1. Prepare the update data
+            update_data = {"status": new_status}
+            
+            # 2. If questions were sent (not None), add them to the update
+            if questions is not None:
+                update_data["interview_questions"] = questions
+
+            # 3. Execute Update
+            self.supabase.table("job_applications").update(update_data).eq("id", app_id).execute()
+            return True
+            
+        except Exception as e:
+            logger.error(f"Update status failed: {str(e)}")
+            # Print error to console so you can see if it's a DB issue
+            print(f"❌ DB UPDATE ERROR: {str(e)}") 
+            return False

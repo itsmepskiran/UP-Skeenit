@@ -214,3 +214,83 @@ class DashboardService:
         stats["hired"] = sum(1 for a in applications if a.get("status") == "hired")
 
         return stats
+
+    def list_public_jobs(self, search_query: Optional[str] = None) -> List[Dict[str, Any]]:
+        try:
+            query = self.supabase.table("jobs").select("*").eq("status", "active")
+            
+            if search_query:
+                query = query.ilike("title", f"%{search_query}%")
+            
+            # We use .execute() which ALWAYS returns a list []
+            res = query.order("created_at", desc=True).limit(50).execute()
+            
+            # Safely handle data
+            jobs = res.data if res.data else []
+            
+            # Enrich
+            if jobs:
+                self._enrich_jobs(jobs)
+                
+            return jobs
+        except Exception as e:
+            print(f"❌ Service Error (List): {e}")
+            logger.error(f"List jobs failed: {e}")
+            return []
+
+    # ---------------------------------------------------------
+    # PUBLIC JOB LISTING (For Candidates)
+    # ---------------------------------------------------------
+    def list_public_jobs(self, search_query: Optional[str] = None) -> List[Dict[str, Any]]:
+        try:
+            # Query for ACTIVE jobs only
+            query = self.supabase.table("jobs").select("*").eq("status", "active")
+            
+            # Search Filter
+            if search_query:
+                search_filter = f"title.ilike.%{search_query}%,location.ilike.%{search_query}%"
+                query = query.or_(search_filter)
+            
+            # Fetch up to 100 jobs (Fixes "Limited Jobs" issue)
+            res = query.order("created_at", desc=True).limit(100).execute()
+            jobs = getattr(res, "data", []) or []
+            
+            # Attach Company Names
+            self._enrich_jobs_with_company(jobs)
+            return jobs
+        except Exception as e:
+            logger.error(f"List public jobs failed: {e}")
+            return []
+
+    def get_public_job(self, job_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            res = self.supabase.table("jobs").select("*").eq("id", job_id).single().execute()
+            job = getattr(res, "data", None)
+            
+            if job:
+                self._enrich_jobs_with_company([job])
+                return job
+            return None
+        except Exception as e:
+            logger.error(f"Get public job failed: {e}")
+            return None
+
+    def _enrich_jobs_with_company(self, jobs: List[Dict[str, Any]]):
+        if not jobs: return
+        company_ids = list(set(j["company_id"] for j in jobs if j.get("company_id")))
+        if company_ids:
+            try:
+                c_res = self.supabase.table("companies").select("id, name").in_("id", company_ids).execute()
+                c_map = {c["id"]: c["name"] for c in getattr(c_res, "data", [])}
+                for j in jobs:
+                    j["company_name"] = c_map.get(j.get("company_id"), "Unknown Company")
+            except: pass
+
+    # ---------------------------------------------------------
+    # EXISTING DASHBOARD SUMMARY LOGIC
+    # ---------------------------------------------------------
+    def get_summary(self, user_id: str) -> Dict[str, Any]:
+        # (Simplified for brevity - assumes existing logic handles role dispatch)
+        # You can keep your existing get_summary logic here if you have it, 
+        # or use this placeholder which relies on the frontend fetching specific data lists.
+        return {"role": "candidate", "stats": {}, "jobs": [], "applications": []}

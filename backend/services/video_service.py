@@ -20,7 +20,7 @@ class VideoService:
 
     def __init__(self, supabase_client: Optional[Client] = None):
         self.supabase = supabase_client or get_client()
-        self.bucket_name = "videos"
+        self.bucket_name = "video-responses"
 
     # ---------------------------------------------------------
     # STORAGE UPLOAD
