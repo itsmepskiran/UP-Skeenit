@@ -6,7 +6,7 @@
   <title>Application Details – Skreenit</title>
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
       const im = document.createElement('script');
       im.type = 'importmap';
@@ -18,10 +18,28 @@
       const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
-  <script> loadSharedCSS('shared-styles.css'); loadSharedCSS('dashboard-styles.css'); </script>
+  <style>
+    /* Update your existing .app-item-row class */
+  .app-item-row {
+    cursor: pointer; /* This changes the mouse to a hand */
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+
+  .app-item-row:hover {
+    background-color: #f8fafc;
+    /* Optional: adds a tiny lift effect */
+    transform: translateX(4px); 
+  }
+  </style>
+  <script>
+  loadSharedCSS('core.css');    // Base typography
+  loadSharedCSS('layout.css');  // Sidebar and Grid layouts
+  loadSharedCSS('forms.css');   // Input and button states
+  loadSharedCSS('special.css'); // Special page styles
+</script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
-<body>
+<body class="auth-page-body">
   <div class="dashboard-container">
     
     <nav class="sidebar">
@@ -33,19 +51,23 @@
         <li class="nav-item" onclick="window.location.href='recruiter-profile.html'"><i class="fas fa-user-circle"></i><span>My Profile</span></li>
       </ul>
       <div class="sidebar-footer">
-        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
-      </div>
+    <div class="user-info">
+        <div class="user-details">
+            <span class="user-name" id="recruiterName">Loading...</span>
+            <span class="user-role">Recruiter</span> 
+        </div>
+    </div>
+</div>
     </nav>
 
     <main class="main-content">
       <header class="dashboard-header">
         <div style="display:flex; align-items:center; gap:15px;">
-            <button id="backBtn" class="btn-sm btn-outline-secondary" style="border:none; background:transparent; font-size:1.2rem;">
+            <button id="backBtn" class="btn-back" style="border:none; background:transparent; font-size:1.2rem; cursor:pointer; padding:5px 10px;">
                 <i class="fas fa-arrow-left"></i>
             </button>
             <h1>Application Details</h1>
         </div>
-        <div class="user-profile"><span id="recruiterName">Recruiter</span></div>
       </header>
 
       <div class="dashboard-content">

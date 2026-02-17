@@ -7,7 +7,7 @@
 
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
       const im = document.createElement('script');
       im.type = 'importmap';
@@ -19,12 +19,12 @@
       const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
-
-  <script>
-    loadSharedCSS('shared-styles.css');
-    loadSharedCSS('dashboard-styles.css');
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<script>
+  loadSharedCSS('core.css');   // Base typography
+  loadSharedCSS('layout.css'); // Sidebar and Grid layouts
+  loadSharedCSS('forms.css');  // Input and button states
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
 
 <body>
@@ -39,7 +39,7 @@
       <div class="sidebar-footer">
         <div class="user-info">
           <div id="userAvatar" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #555;"><i class="fas fa-user"></i></div>
-          <div class="user-details"><span id="userName">Loading...</span><span class="user-role">Candidate</span></div>
+          <div class="user-details"><span id="userName" class="user-name">Loading...</span><span id="userDesignation" class="userRole">Candidate</span></div>
         </div>
         <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
       </div>
@@ -57,6 +57,27 @@
       </div>
     </main>
   </div>
+  
+  <!-- Response Modal -->
+  <div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="responseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="responseModalLabel">My Responses</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="responseModalBody">
+          <!-- Content will be loaded here -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="js/my-applications.js"></script>
 </body>
 </html>

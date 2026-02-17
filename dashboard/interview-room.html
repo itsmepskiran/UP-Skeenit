@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Video Interview Room – Skreenit</title>
+  
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
       const im = document.createElement('script');
       im.type = 'importmap';
@@ -17,14 +18,117 @@
       };
     })();
   </script>
-  <script> loadSharedCSS('shared-styles.css'); loadSharedCSS('dashboard-styles.css'); </script>
+
+  <style>
+    /* Modern UI Layout Adjustments */
+    body { background-color: #f4f7fa; margin: 0; font-family: 'Inter', sans-serif; }
+    
+    .interview-container {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr; /* Balanced split */
+      gap: 30px;
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 0 20px;
+      align-items: start;
+    }
+
+    .question-panel {
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .video-panel {
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      position: sticky;
+      top: 40px;
+    }
+
+    #cameraFeed, #playbackFeed {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Modern Record Button */
+    .action-footer {
+      margin-top: auto;
+      padding-top: 30px;
+      border-top: 1px solid #edf2f7;
+    }
+
+    .record-btn-modern {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 14px 28px;
+      background: #fff;
+      border: 2px solid #e53e3e;
+      color: #e53e3e;
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 1rem;
+    }
+
+    .record-btn-modern:hover { background: #fff5f5; transform: translateY(-2px); }
+
+    .record-btn-modern.recording {
+      background: #e53e3e;
+      color: #fff;
+      border-color: #c53030;
+    }
+
+    .record-icon {
+      width: 12px;
+      height: 12px;
+      background: #e53e3e;
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .recording .record-icon {
+      background: #fff;
+      border-radius: 2px;
+      animation: pulse-red 1.5s infinite;
+    }
+
+    @keyframes pulse-red {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Progress Indicators */
+    .step-indicator { display: flex; gap: 8px; margin-bottom: 25px; }
+    .step-dot { height: 6px; flex: 1; background: #e2e8f0; border-radius: 3px; }
+    .step-dot.active { background: #3182ce; }
+    .step-dot.completed { background: #48bb78; }
+  </style>
+
+  <script>
+    loadSharedCSS('core.css');
+    loadSharedCSS('layout.css');
+    loadSharedCSS('forms.css');
+    loadSharedCSS('special.css');
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
 <body>
 
-  <header class="interview-header">
-      <div class="logo"><img src="" id="logoImg" alt="Skreenit" /></div>
-      <button id="exitBtn" class="btn btn-sm btn-outline-danger">Exit Interview</button>
+  <header class="interview-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-bottom: 1px solid #e2e8f0;">
+      <div class="logo"><img src="" id="logoImg" alt="Skreenit" style="height: 35px;" /></div>
+      <button id="exitBtn" class="btn btn-sm btn-outline-danger" style="border-radius: 6px; font-weight: 600;">Exit Interview</button>
   </header>
 
   <div class="interview-container">
@@ -32,46 +136,76 @@
       <div class="question-panel">
           <div id="loadingQuestions" class="loading-spinner"></div>
           
+          <div id="instructionContent" style="display: none;">
+            <h2 style="font-size: 2rem; color: #1a202c; margin-bottom: 20px;">Ready to start?</h2>
+            <div style="background: #ebf8ff; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 5px solid #3182ce;">
+                <ul style="list-style: none; padding: 0; margin: 0; color: #2a4365; font-size: 1.05rem;">
+                    <li style="margin-bottom: 15px;"><i class="fas fa-video" style="margin-right: 12px; opacity: 0.7;"></i> Questions will appear here one by one.</li>
+                    <li style="margin-bottom: 15px;"><i class="fas fa-microphone" style="margin-right: 12px; opacity: 0.7;"></i> Record your answer using the controls below.</li>
+                    <li style="margin-bottom: 15px;"><i class="fas fa-redo" style="margin-right: 12px; opacity: 0.7;"></i> You can retake any answer before submitting.</li>
+                    <li><i class="fas fa-check-circle" style="margin-right: 12px; opacity: 0.7;"></i> Your video is stored securely for the recruiter.</li>
+                </ul>
+            </div>
+            <button id="startInterviewBtn" class="btn btn-primary" style="width: 100%; padding: 18px; font-weight: 700; font-size: 1.1rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);">
+                Begin Interview
+            </button>
+          </div>
+
           <div id="questionContent" style="display: none;">
               <div class="step-indicator" id="stepDots"></div>
               
-              <h4 style="color: #718096; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">Question <span id="currentQNum">1</span> of <span id="totalQNum">3</span></h4>
+              <h4 style="color: #718096; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1.5px; font-weight: 800; margin-bottom: 10px;">
+                Question <span id="currentQNum">1</span> of <span id="totalQNum">3</span>
+              </h4>
               
-              <h2 id="questionText" style="font-size: 2rem; margin: 20px 0; color: #2d3748; line-height: 1.3;">
+              <h2 id="questionText" style="font-size: 2.2rem; margin-bottom: 25px; color: #2d3748; line-height: 1.2; font-weight: 700;">
                   Tell us about yourself.
               </h2>
               
-              <p class="text-muted">Take a deep breath. When you are ready, press the record button on the right.</p>
+              <p class="text-muted" style="font-size: 1rem; margin-bottom: 40px;">When you're ready, click <b>Start Recording</b> to begin your answer.</p>
 
-              <div id="uploadProgress" style="display: none; margin-top: 30px;">
-                  <p>Uploading answer... <span id="progressPercent">0%</span></p>
-                  <div style="width: 100%; height: 8px; background: #edf2f7; border-radius: 4px; overflow: hidden;">
-                      <div id="progressBar" style="width: 0%; height: 100%; background: #3182ce; transition: width 0.2s;"></div>
-                  </div>
+              <div class="action-footer">
+                <div id="recordingControls" style="display: flex; align-items: center; gap: 20px;">
+                    <button id="recordBtn" class="record-btn-modern">
+                        <span class="record-icon"></span>
+                        <span id="recordBtnText">Start Recording</span>
+                    </button>
+                    <span id="timerDisplay" style="font-family: monospace; font-weight: 600; color: #e53e3e; display: none;">00:00</span>
+                </div>
+
+                <div id="reviewControls" style="display: none; gap: 15px;">
+                    <button id="retakeBtn" class="btn btn-outline-secondary" style="flex: 1; padding: 14px; border-radius: 8px;">
+                        <i class="fas fa-redo"></i> Retake
+                    </button>
+                    <button id="submitAnswerBtn" class="btn btn-primary" style="flex: 2; padding: 14px; border-radius: 8px; background: #3182ce;">
+                        <i class="fas fa-check"></i> Submit Answer
+                    </button>
+                </div>
+
+                <div id="uploadProgress" style="display: none; margin-top: 20px;">
+                    <p style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px;">Uploading your response...</p>
+                    <div style="width: 100%; height: 8px; background: #edf2f7; border-radius: 10px; overflow: hidden;">
+                        <div id="progressBar" style="width: 0%; height: 100%; background: #3182ce; transition: width 0.4s ease;"></div>
+                    </div>
+                </div>
               </div>
           </div>
           
-          <div id="completionContent" style="display: none; text-align: center;">
-              <i class="fas fa-check-circle" style="font-size: 4rem; color: #48bb78; margin-bottom: 20px;"></i>
-              <h2>Interview Completed!</h2>
-              <p>Thank you. Your responses have been submitted to the recruiter.</p>
-              <button onclick="window.location.href='candidate-dashboard.html'" class="btn btn-primary" style="margin-top: 20px;">Return to Dashboard</button>
+          <div id="completionContent" style="display: none; text-align: center; margin-top: 60px;">
+              <div style="width: 80px; height: 80px; background: #f0fff4; color: #48bb78; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 2.5rem;">
+                  <i class="fas fa-check"></i>
+              </div>
+              <h2 style="font-size: 2rem; font-weight: 800; color: #1a202c;">All set!</h2>
+              <p style="color: #4a5568; font-size: 1.1rem; margin-bottom: 30px;">Your interview has been successfully recorded and sent to the recruiter.</p>
+              <button onclick="window.location.href='candidate-dashboard.html'" class="btn btn-primary" style="padding: 15px 40px; border-radius: 8px;">Back to Dashboard</button>
           </div>
       </div>
 
       <div class="video-panel">
           <video id="cameraFeed" autoplay muted playsinline></video>
           <video id="playbackFeed" controls style="display: none;"></video>
-          
-          <div class="video-controls" id="recordingControls">
-              <button id="recordBtn" class="record-btn" title="Start Recording"></button>
-          </div>
-
-          <div class="video-controls" id="reviewControls" style="display: none;">
-              <button id="retakeBtn" class="control-btn"><i class="fas fa-redo"></i> Retake</button>
-              <button id="submitAnswerBtn" class="control-btn" style="background: #48bb78;"><i class="fas fa-check"></i> Submit Answer</button>
-          </div>
       </div>
+
   </div>
 
   <script type="module" src="js/interview-room.js"></script>

@@ -96,7 +96,7 @@ class VideoService:
     def save_video_response(
         self,
         application_id: str,
-        question_id: str,
+        question: str, # Changed from question_id to match actual data
         video_url: str,
         transcript: Optional[str] = None,
         duration: Optional[int] = None,
@@ -104,13 +104,10 @@ class VideoService:
         candidate_id: Optional[str] = None,
         ai_analysis: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Save a per-question video response for an application.
-        """
         try:
             payload: Dict[str, Any] = {
                 "application_id": application_id,
-                "question_id": question_id,
+                "question": question, # Ensure column name in Supabase is 'question'
                 "video_url": video_url,
                 "transcript": transcript,
                 "duration": duration,
@@ -118,7 +115,7 @@ class VideoService:
                 "recorded_at": datetime.now(timezone.utc).isoformat(),
                 "ai_analysis": ai_analysis or {},
             }
-
+            
             if candidate_id:
                 payload["candidate_id"] = candidate_id
 
@@ -134,7 +131,7 @@ class VideoService:
                 "Video response saved",
                 extra={
                     "application_id": application_id,
-                    "question_id": question_id,
+                    "question": question,
                     "candidate_id": candidate_id,
                 },
             )
@@ -146,7 +143,7 @@ class VideoService:
                 f"Save video response failed: {str(e)}",
                 extra={
                     "application_id": application_id,
-                    "question_id": question_id,
+                    "question": question,
                     "candidate_id": candidate_id,
                 },
             )
@@ -273,3 +270,48 @@ class VideoService:
                 extra={"candidate_id": candidate_id},
             )
             raise RuntimeError("Failed to fetch candidate videos")
+def get_interview_responses(self, application_id: str) -> List[Dict[str, Any]]:
+    """
+    Get all video responses for a specific interview application.
+    Returns a list of responses with their details.
+    """
+    try:
+        # First get all responses for this application
+        response = (
+            self.supabase
+            .table("interview_responses")
+            .select("*")
+            .eq("application_id", application_id)
+            .order("created_at", desc=False)  # Oldest first
+            .execute()
+        )
+
+        if not response.data:
+            return []
+
+        # Process each response to include signed URLs if needed
+        processed_responses = []
+        for resp in response.data:
+            # If the URL is a path (not a full URL), get a signed URL
+            video_url = resp.get("video_url", "")
+            if video_url and not video_url.startswith(("http://", "https://")):
+                try:
+                    video_url = self.create_signed_url(video_url)
+                except Exception as e:
+                    logger.error(f"Failed to create signed URL: {str(e)}")
+                    continue  # Skip this response if we can't generate a URL
+
+            processed_responses.append({
+                "id": resp.get("id"),
+                "question": resp.get("question"),
+                "video_url": video_url,
+                "status": resp.get("status", "pending_review"),
+                "created_at": resp.get("created_at"),
+                "updated_at": resp.get("updated_at")
+            })
+
+        return processed_responses
+
+    except Exception as e:
+        logger.error(f"Error getting interview responses: {str(e)}")
+        raise RuntimeError("Failed to retrieve interview responses")

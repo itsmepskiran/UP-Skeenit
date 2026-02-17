@@ -5,7 +5,7 @@
   <title>Skreenit Auth</title>
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
       const authBase = isLocal ? '.' : 'https://auth.skreenit.com'; // Note: '.' because we are IN auth folder
 
       const im = document.createElement('script');
@@ -15,8 +15,13 @@
       document.head.appendChild(im);
     })();
   </script>
+  <script>
+  loadSharedCSS('core.css');     // Base typography
+  loadSharedCSS('branding.css'); // Premium background
+  loadSharedCSS('forms.css');    // Input and button states
+</script>
 </head>
-<body>
+<body class="auth-page-body">
   <p>Redirecting to login...</p>
   <script type="module">
     import { CONFIG } from '@shared/js/config.js';

@@ -3,52 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skreenit - Registration</title>
+  <title>Skreenit - Authentication</title>
 
-  <script>
+    <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
-
       const im = document.createElement('script');
       im.type = 'importmap';
       im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
       document.head.appendChild(im);
-
       window.loadSharedCSS = function(file) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = `${authBase}/assets/css/${file}`;
-        document.head.appendChild(link);
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
       };
-
-      const icon = document.createElement('link');
-      icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`;
-      document.head.appendChild(icon);
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
 
+
   <script>
-    loadSharedCSS('shared-styles.css');
-    loadSharedCSS('auth.css');
+    loadSharedCSS('core.css');     // Base tokens
+    loadSharedCSS('branding.css'); // Gradients & Floating Circles
+    loadSharedCSS('forms.css');    // Input field styling
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
-  <style>
-    .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
-    .form-row .form-group { flex: 1; }
-    .password-hint { font-size: 12px; color: #666; margin-top: 4px; }
-    .auth-actions { text-align: center; margin-top: 20px; color: #666; }
-    .auth-actions a { color: #1976d2; text-decoration: none; font-weight: 500; }
-    .auth-actions a:hover { text-decoration: underline; }
-    .form-group select {
-      width: 100%; padding: 10px; border: 1px solid #ddd;
-      border-radius: 4px; font-size: 14px;
-    }
-  </style>
 </head>
 
-<body>
+<body class="auth-page-body"> 
   <div class="floating-elements" style="pointer-events:none;">
     <div class="floating-circle"></div>
     <div class="floating-circle"></div>

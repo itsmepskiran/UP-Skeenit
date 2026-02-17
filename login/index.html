@@ -8,12 +8,11 @@
   <script>
     (function() {
       // 1. Detect Environment
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-      
-      // 2. Define Base URL
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
 
-      // 3. Inject Import Map (so we can import config.js)
+      // 2. Inject Import Map (so we can import config.js)
       const im = document.createElement('script');
       im.type = 'importmap';
       im.textContent = JSON.stringify({
@@ -31,40 +30,13 @@
       document.head.appendChild(icon);
     })();
   </script>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background-color: #f9fafb;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #333;
-    }
-    .loader {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e5e7eb;
-      border-radius: 50%;
-      border-top-color: #2563eb;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .message {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #6b7280;
-    }
-    .container {
-      text-align: center;
-    }
-  </style>
+  <script>
+    loadSharedCSS('core.css');     // Base typography
+    loadSharedCSS('branding.css'); // Premium background
+    loadSharedCSS('forms.css');    // Input and button states
+  </script>
 </head>
-<body>
+<body class="auth-page-body">
 
   <div class="container">
     <div class="loader"></div>

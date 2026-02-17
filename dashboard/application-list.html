@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>All Applications – Skreenit</title>
+  <title>Received Applications – Skreenit</title>
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
       const im = document.createElement('script');
       im.type = 'importmap';
@@ -15,65 +15,124 @@
       window.loadSharedCSS = function(file) {
         const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
       };
-      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
-  <script> loadSharedCSS('shared-styles.css'); loadSharedCSS('dashboard-styles.css'); </script>
+  <script>
+    loadSharedCSS('core.css');   
+    loadSharedCSS('layout.css'); 
+    loadSharedCSS('forms.css');  
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  
+  <style>
+    /* 1. FORCED LAYOUT RESET */
+    #appListBody .dashboard-container {
+        display: flex; /* Use flex instead of grid for better browser compatibility */
+        min-height: 100vh;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    #appListBody .sidebar {
+        width: 260px;
+        flex-shrink: 0; /* Prevents sidebar from shrinking */
+        height: 100vh;
+        position: sticky; /* Sticky is better than fixed for flow */
+        top: 0;
+    }
+
+    #appListBody .dashboard-content {
+        flex-grow: 1;
+        min-width: 0; /* Critical for grid items inside flex */
+        padding: 30px;
+        background: #f8fafc;
+    }
+
+    /* 2. TABLE GRID - Force rendering */
+    .app-table {
+        width: 100%;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        display: block; /* Change from flex to block */
+    }
+
+    .app-row {
+        display: grid;
+        /* Force columns to align even if browser is slow */
+        grid-template-columns: minmax(200px, 2.5fr) minmax(150px, 2fr) 1.2fr 1fr 50px;
+        padding: 15px 20px;
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 15px;
+    }
+    /* Update your existing .app-item-row class */
+    .app-item-row {
+        cursor: pointer; /* This changes the mouse to a hand */
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .app-item-row:hover {
+        background-color: #f8fafc;
+        /* Optional: adds a tiny lift effect */
+        transform: translateX(4px); 
+    }
+  </style>
 </head>
-<body>
-  <div class="dashboard-container">
-    
-    <nav class="sidebar">
-      <div class="sidebar-header"><div class="logo"><img src="" id="logoImg" alt="Skreenit" /></div></div>
-      <ul class="nav-menu">
-        <li class="nav-item" onclick="window.location.href='recruiter-dashboard.html'"><i class="fas fa-tachometer-alt"></i><span>Overview</span></li>
-        <li class="nav-item" onclick="window.location.href='my-jobs.html'"><i class="fas fa-briefcase"></i><span>My Jobs</span></li>
-        <li class="nav-item active"><i class="fas fa-users"></i><span>Applications</span></li>
-        <li class="nav-item" onclick="window.location.href='recruiter-profile.html'"><i class="fas fa-user-circle"></i><span>My Profile</span></li>
-      </ul>
-      <div class="sidebar-footer">
-        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-      </div>
-    </nav>
-
-    <main class="main-content">
-      <header class="dashboard-header">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <button onclick="window.history.back()" class="btn-sm btn-outline-secondary" style="border:none; background:transparent; font-size:1.2rem;">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <h1>Received Applications</h1>
-        </div>
-        <div class="user-profile"><span id="recruiterName">Recruiter</span></div>
-      </header>
-
-      <div class="dashboard-content">
-        <div class="card" style="margin-bottom: 20px; padding: 15px;">
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 200px;">
-                    <label style="font-size: 0.85rem; font-weight: bold; color: #666;">Search Candidate</label>
-                    <div class="search-input-wrapper" style="margin-top: 5px;">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="appSearch" class="search-input" placeholder="Name or email..." style="width: 100%;">
+<body id="appListBody">
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><img src="" id="logoImg" alt="Skreenit" /></div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="window.location.href='recruiter-dashboard.html'"><i class="fas fa-tachometer-alt"></i><span>Overview</span></li>
+                <li class="nav-item" onclick="window.location.href='my-jobs.html'"><i class="fas fa-briefcase"></i><span>My Jobs</span></li>
+                <li class="nav-item active"><i class="fas fa-users"></i><span>Applications</span></li>
+                <li class="nav-item" onclick="window.location.href='../recruiter/recruiter-profile.html'"><i class="fas fa-user-circle"></i><span>My Profile</span></li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-details">
+                        <span class="user-name" id="recruiterName">Loading...</span>
+                        <span class="user-role">Recruiter</span> 
                     </div>
                 </div>
-                <div style="flex: 0 0 250px;">
-                    <label style="font-size: 0.85rem; font-weight: bold; color: #666;">Filter by Job</label>
-                    <select id="jobFilter" class="form-select" style="width: 100%; margin-top: 5px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </nav>
+
+        <main class="dashboard-content">
+            <div class="header-group">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <button onclick="window.history.back()" style="border:none; background:none; cursor:pointer; color:#64748b; font-size:1.1rem;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 id="pageHeaderTitle" style="margin:0;">Received Applications</h2>
+                </div>
+                
+                <div style="display:flex; gap:12px;">
+                    <input type="text" id="appSearch" placeholder="Search..." class="form-control" style="width:200px;">
+                    <select id="jobFilter" class="form-control" style="width:180px;">
                         <option value="all">All Jobs</option>
-                        </select>
+                    </select>
                 </div>
             </div>
-        </div>
 
-        <div class="app-list-container" id="applicationListContainer">
-             <div class="loading-spinner"></div>
-        </div>
-      </div>
-    </main>
-  </div>
+            <div class="app-table">
+                <div class="app-row app-header">
+                    <div>Candidate Name</div>
+                    <div>Applied For</div>
+                    <div>Applied Date</div>
+                    <div>Status</div>
+                    <div></div>
+                </div>
+                <div id="applicationListContainer"></div>
+            </div>
+        </main>
+    </div>
 
-  <script type="module" src="js/application-list.js"></script>
+    <script type="module" src="js/application-list.js"></script>
 </body>
 </html>

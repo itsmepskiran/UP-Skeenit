@@ -4,45 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Skreenit – Redirecting...</title>
-
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
-      
       const im = document.createElement('script');
       im.type = 'importmap';
       im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
       document.head.appendChild(im);
-
-      const icon = document.createElement('link');
-      icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`;
-      document.head.appendChild(icon);
-      
-      const logo = document.createElement('img');
-      logo.src = `${authBase}/assets/images/logo.png`;
-      logo.className = 'logo';
-      // We will append this logo in body via JS below or just setting it here
+      window.loadSharedCSS = function(file) {
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
+      };
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
 
-  <style>
-    body {
-      margin: 0; font-family: Inter, sans-serif; background: #f9fafb;
-      height: 100vh; display: flex; align-items: center; justify-content: center; color: #333;
-    }
-    .container { text-align: center; }
-    .spinner {
-      width: 48px; height: 48px; border: 4px solid #ddd; border-top-color: #0066ff;
-      border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 16px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .logo { height: 40px; margin-bottom: 16px; }
-    .text { font-size: 16px; font-weight: 500; }
-  </style>
+
+<script>
+  loadSharedCSS('core.css');     // Base typography
+  loadSharedCSS('branding.css'); // Premium background
+  loadSharedCSS('forms.css');    // Input and button states
+</script>
 </head>
 
-<body>
+<body class="auth-page-body">
   <div class="container">
     <div id="logoContainer"></div>
     <div class="spinner"></div>

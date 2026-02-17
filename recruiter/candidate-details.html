@@ -7,31 +7,25 @@
 
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
-
       const im = document.createElement('script');
       im.type = 'importmap';
       im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
       document.head.appendChild(im);
-
       window.loadSharedCSS = function(file) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = `${authBase}/assets/css/${file}`;
-        document.head.appendChild(link);
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
       };
-
-      const icon = document.createElement('link');
-      icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`;
-      document.head.appendChild(icon);
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
 
-  <script>
-    loadSharedCSS('shared-styles.css');
-    loadSharedCSS('dashboard-styles.css');
-  </script>
+<script>
+  loadSharedCSS('core.css');   // Base typography
+  loadSharedCSS('layout.css'); // Sidebar and Grid layouts
+  loadSharedCSS('forms.css');  // Input and button states
+</script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
 

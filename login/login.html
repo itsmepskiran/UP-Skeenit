@@ -3,57 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skreenit - Login</title>
+  <title>Skreenit - Authentication</title>
 
-  <script>
+    <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
-
-      // 1. Inject Import Map for JS
       const im = document.createElement('script');
       im.type = 'importmap';
-      im.textContent = JSON.stringify({
-        imports: { "@shared/": `${authBase}/assets/` }
-      });
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
       document.head.appendChild(im);
-
-      // 2. Helper to load CSS
       window.loadSharedCSS = function(file) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = `${authBase}/assets/css/${file}`;
-        document.head.appendChild(link);
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
       };
-
-      // 3. Helper to set Favicon
-      const icon = document.createElement('link');
-      icon.rel = 'icon'; 
-      icon.type = 'image/png';
-      icon.href = `${authBase}/assets/images/favicon-32x32.png`;
-      document.head.appendChild(icon);
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
 
   <script>
-    loadSharedCSS('shared-styles.css');
+    loadSharedCSS('core.css');     // Base tokens
+    loadSharedCSS('branding.css'); // Gradients & Floating Circles
+    loadSharedCSS('forms.css');    // Input field styling
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-
-  <style>
-    .alert {
-      padding: 12px;
-      border-radius: 4px;
-      margin-bottom: 15px;
-      font-size: 14px;
-      display: none;
-    }
-    .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-  </style>
 </head>
 
-<body>
-
+<body class="auth-page-body"> 
 <div class="floating-elements">
   <div class="floating-circle"></div>
   <div class="floating-circle"></div>

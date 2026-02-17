@@ -4,7 +4,7 @@ from services.dashboard_service import DashboardService
 from middleware.role_required import ensure_permission
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
-svc = DashboardService()
+dash_svc = DashboardService()
 
 # ---------------------------------------------------------
 # CANDIDATE/PUBLIC: LIST ACTIVE JOBS
@@ -18,7 +18,7 @@ async def list_active_jobs(request: Request, q: Optional[str] = None):
 
     try:
         # Fetch jobs with optional search query
-        jobs = svc.list_public_jobs(search_query=q)
+        jobs = dash_svc.list_public_jobs(search_query=q)
         return {"ok": True, "data": jobs}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -33,7 +33,7 @@ async def get_job_details(job_id: str, request: Request):
          raise HTTPException(status_code=401, detail="Authentication required")
 
     try:
-        job = svc.get_public_job(job_id)
+        job = dash_svc.get_public_job(job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         return {"ok": True, "data": job}
@@ -47,7 +47,7 @@ async def get_job_details(job_id: str, request: Request):
 async def get_dashboard(request: Request):
     ensure_permission(request, "dashboard:view")
     try:
-        summary = svc.get_summary(request.state.user["id"])
+        summary = dash_svc.get_summary(request.state.user["id"])
         return {"ok": True, "data": summary}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

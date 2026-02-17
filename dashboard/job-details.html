@@ -7,7 +7,7 @@
 
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
       const im = document.createElement('script');
       im.type = 'importmap';
@@ -21,8 +21,10 @@
   </script>
 
   <script>
-    loadSharedCSS('shared-styles.css');
-    loadSharedCSS('dashboard-styles.css');
+    loadSharedCSS('core.css');    // Base typography
+    loadSharedCSS('layout.css');  // Sidebar and Grid layouts
+    loadSharedCSS('forms.css');   // Input and button states
+    loadSharedCSS('special.css'); // Special page styles
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <style>

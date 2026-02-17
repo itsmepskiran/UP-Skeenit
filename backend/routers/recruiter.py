@@ -121,7 +121,7 @@ async def create_job(request: Request, payload: JobCreateRequest):
         data = payload.model_dump()
         data["created_by"] = user["id"]
         data["company_id"] = get_or_create_company_id(user["id"])
-        job = svc.post_job(data)
+        job = rec_svc.post_job(data)
         return {"ok": True, "data": job}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -131,7 +131,7 @@ async def list_jobs(request: Request, page: int = 1, page_size: int = 20):
     ensure_permission(request, "jobs:view")
     user = request.state.user
     try:
-        jobs = svc.list_jobs(user["id"], page=page, page_size=page_size)
+        jobs = rec_svc.list_jobs(user["id"], page=page, page_size=page_size)
         return {"ok": True, "data": jobs}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -140,7 +140,7 @@ async def list_jobs(request: Request, page: int = 1, page_size: int = 20):
 async def get_job(request: Request, job_id: str):
     ensure_permission(request, "jobs:view")
     try:
-        job = svc.get_job(job_id)
+        job = rec_svc.get_job(job_id)
         return {"ok": True, "data": job}
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -150,7 +150,7 @@ async def update_job(request: Request, job_id: str, payload: JobUpdateRequest):
     ensure_permission(request, "jobs:edit")
     user = request.state.user
     try:
-        updated = svc.update_job(job_id, payload.model_dump(), user["id"])
+        updated = rec_svc.update_job(job_id, payload.model_dump(), user["id"])
         return {"ok": True, "data": updated}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -160,7 +160,7 @@ async def delete_job(request: Request, job_id: str):
     ensure_permission(request, "jobs:delete")
     user = request.state.user
     try:
-        deleted = svc.delete_job(job_id, user["id"])
+        deleted = rec_svc.delete_job(job_id, user["id"])
         return {"ok": True, "data": deleted}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -171,7 +171,7 @@ async def list_recruiter_applications(request: Request):
     ensure_permission(request, "applications:view")
     try:
         # Calls service to get applications for jobs OWNED by this recruiter
-        apps = svc.get_recruiter_applications(request.state.user["id"])
+        apps = rec_svc.get_recruiter_applications(request.state.user["id"])
         return {"ok": True, "data": apps}
     except Exception as e:
         return {"ok": True, "data": []}
@@ -179,21 +179,32 @@ async def list_recruiter_applications(request: Request):
 # ---------------------------------------------------------
 # ✅ NEW: Get Single Application Details
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# ✅ NEW: Get Single Application Details (SECURED)
+# ---------------------------------------------------------
 @router.get("/applications/{application_id}")
-def get_application_details(
-    application_id: str, 
-    current_user: dict = Depends(get_current_user)
-):
-    # Optional: Verify this recruiter owns the job associated with this app
-    # For now, we trust the ID fetching logic returns null if not found
+async def get_application_details(request: Request, application_id: str):
+    # 1. Enforce Role & Permission
+    ensure_permission(request, "applications:view")
+    user = request.state.user
     
-    app = svc.get_application_by_id(application_id)
+    # 2. Fetch the Application
+    app = rec_svc.get_application_by_id(application_id)
     
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
+
+    # 3. 🔒 SECURITY CHECK: Verify Ownership
+    # We try to fetch the job associated with this application, 
+    # filtering by the current recruiter's ID. 
+    try:
+        # If this raises an error, it means the recruiter didn't create this job
+        rec_svc.get_job(app["job_id"], recruiter_id=user["id"])
+    except:
+        # If the job doesn't belong to you, you can't see the application
+        raise HTTPException(status_code=403, detail="You are not authorized to view this application")
         
     return app
-
 # ---------------------------------------------------------
 # ✅ NEW: Update Application Status
 # ---------------------------------------------------------
@@ -208,7 +219,7 @@ def update_application_status(
     if not new_status:
         raise HTTPException(status_code=400, detail="Status is required")
 
-    success = svc.update_application_status(application_id, new_status, questions)
+    success = rec_svc.update_application_status(application_id, new_status, questions)
     
     if not success:
         raise HTTPException(status_code=500, detail="Failed to update status")

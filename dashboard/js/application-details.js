@@ -31,7 +31,8 @@ async function checkAuth() {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session || !session.user) { window.location.href = CONFIG.PAGES.LOGIN; return; }
     
-    document.getElementById('recruiterName').textContent = session.user.user_metadata.full_name || "Recruiter";
+    const recruiterNameEl = document.getElementById('recruiterName');
+    if(recruiterNameEl) {recruiterNameEl.textContent = session.user.user_metadata.full_name || "Recruiter";}
     
     // Get ID from URL
     const urlParams = new URLSearchParams(window.location.search);

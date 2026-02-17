@@ -29,9 +29,17 @@ async function checkAuth() {
 }
 
 function updateSidebarProfile(meta, email) {
+    // 1. Update Name
     const nameEl = document.getElementById('recruiterName');
-    const avatarEl = document.getElementById('userAvatar');
     if(nameEl) nameEl.textContent = meta.full_name || email.split('@')[0];
+
+    // 2. Update Role (Company Name)
+    // We try to find the element with class 'user-role'
+    const roleEl = document.querySelector('.user-role');
+    if(roleEl) {
+        // Use company name if available in metadata, otherwise default to "Recruiter"
+        roleEl.textContent = meta.company_name || 'Recruiter';
+    }
 }
 
 async function updateUserInfo() {
@@ -39,9 +47,20 @@ async function updateUserInfo() {
     const res = await backendGet('/recruiter/profile');
     const data = await handleResponse(res);
     const profile = data.data || data; 
-    if (profile && profile.contact_name) {
-      const el = document.getElementById('recruiterName');
-      if (el) el.textContent = profile.contact_name;
+    
+    if (profile) {
+        // Update Name if contact_name exists
+        if (profile.contact_name) {
+            const el = document.getElementById('recruiterName');
+            if (el) el.textContent = profile.contact_name;
+        }
+
+        // Update Role with Company Name from DB
+        // This overwrites the "Recruiter" default once data loads
+        if (profile.company_name) {
+            const roleEl = document.querySelector('.user-role');
+            if (roleEl) roleEl.textContent = profile.company_name;
+        }
     }
   } catch (error) { console.warn('Error loading user info:', error); }
 }
@@ -75,15 +94,16 @@ async function loadDashboardData(userId) {
         if(!Array.isArray(jobsList)) jobsList = [];
         
         // Update Stats
-        const activeJobsCount = jobsList.filter(j => j.status === 'active').length;
+        // FIX: Handle 'Active', 'active', etc.
+        const activeJobsCount = jobsList.filter(j => (j.status || '').toLowerCase() === 'active').length;
         setText("statActiveJobs", activeJobsCount);
 
-        // ✅ FIX: Actually Render the jobs list
         renderJobs(jobsList.slice(0, 5));
 
         // B. Fetch Applications
         let appsList = [];
         try {
+            // This endpoint must return ALL applications for the recruiter's jobs
             const appsRes = await backendGet(`/recruiter/applications`); 
             const appsData = await handleResponse(appsRes);
             appsList = appsData?.data || appsData || [];
@@ -94,7 +114,12 @@ async function loadDashboardData(userId) {
             
             // Update Stats
             const totalCandidates = new Set(appsList.map(a => a.candidate_id)).size;
-            const newAppsCount = appsList.filter(a => a.status === 'pending').length;
+            
+            // FIX: Check for multiple "New" statuses and ignore case
+            const newStatuses = ['pending', 'applied', 'submitted', 'new'];
+            const newAppsCount = appsList.filter(a => 
+                newStatuses.includes((a.status || '').toLowerCase())
+            ).length;
             
             setText("statTotalCandidates", totalCandidates);
             setText("statNewApplications", newAppsCount);
@@ -103,6 +128,33 @@ async function loadDashboardData(userId) {
     } catch (err) { console.error("Dashboard load error:", err); }
 }
 
+function renderApplications(apps) {
+    const list = document.getElementById("recentAppsList"); 
+    if(!list) return;
+
+    if (!apps || !apps.length) { 
+        list.innerHTML = "<p class='text-muted' style='padding:1rem'>No applications received yet.</p>"; 
+        return; 
+    }
+    
+    list.innerHTML = apps.map(app => `
+        <div class="card" onclick="window.location.href='application-details.html?id=${app.id}'" style="cursor:pointer; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-radius: 8px;">
+            <div class="card-body" style="padding: 1rem;">
+                <h4 style="margin:0; font-size:1.05rem; color:#2d3748;">${app.candidate_name || 'Candidate'}</h4>
+                <p style="margin:4px 0 8px; color:#718096; font-size:0.9rem;">
+                    Applied for: <strong>${app.job_title || 'Unknown Job'}</strong>
+                </p>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="status-badge status-${(app.status || 'pending').toLowerCase()}" 
+                          style="padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold; background:#edf2f7; color:#4a5568;">
+                        ${app.status || 'Pending'}
+                    </span>
+                    <small style="color:#a0aec0;">${new Date(app.applied_at || Date.now()).toLocaleDateString()}</small>
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
 // ✅ NEW FUNCTION: Missing in your original code
 function renderJobs(jobs) {
     const list = document.getElementById("recentJobsList");
@@ -122,34 +174,6 @@ function renderJobs(jobs) {
                 </p>
             </div>
             <a href="job-details.html?job_id=${job.id}" class="btn-sm btn-outline-primary" style="font-size:0.8rem;">View</a>
-        </div>
-    `).join("");
-}
-
-function renderApplications(apps) {
-    const list = document.getElementById("recentAppsList"); 
-    if(!list) return;
-
-    if (!apps || !apps.length) { 
-        list.innerHTML = "<p class='text-muted' style='padding:1rem'>No applications received yet.</p>"; 
-        return; 
-    }
-    
-    list.innerHTML = apps.map(app => `
-        <div class="card" onclick="window.location.href='application-details.html?id=${app.id}'" style="cursor:pointer; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <div class="card-body" style="padding: 1rem;">
-                <h4 style="margin:0; font-size:1.05rem; color:#2d3748;">${app.candidate_name || 'Candidate'}</h4>
-                <p style="margin:4px 0 8px; color:#718096; font-size:0.9rem;">
-                    Applied for: <strong>${app.job_title}</strong>
-                </p>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="status-badge status-${(app.status || 'pending').toLowerCase()}" 
-                          style="padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold; background:#edf2f7; color:#4a5568;">
-                        ${app.status || 'Pending'}
-                    </span>
-                    <small style="color:#a0aec0;">${new Date(app.applied_at).toLocaleDateString()}</small>
-                </div>
-            </div>
         </div>
     `).join("");
 }

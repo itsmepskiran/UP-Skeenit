@@ -2,7 +2,7 @@ import os
 from typing import Optional, Dict, Any
 
 # ✅ NEW IMPORTS for the Dependency Logic
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from supabase import Client
@@ -224,3 +224,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Session expired or invalid"
         )
+
+async def get_current_user(request: Request):
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return user

@@ -4,73 +4,30 @@
     <meta charset="UTF-8" />
     <title>Email Confirmed - Skreenit</title>
 
+  <script>
+    (function() {
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
+      const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
+      const im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
+      document.head.appendChild(im);
+      window.loadSharedCSS = function(file) {
+        const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = `${authBase}/assets/css/${file}`; document.head.appendChild(link);
+      };
+      const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
+    })();
+  </script>
+
     <script>
-      (function() {
-        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
-
-        const im = document.createElement('script');
-        im.type = 'importmap';
-        im.textContent = JSON.stringify({ imports: { "@shared/": `${authBase}/assets/` } });
-        document.head.appendChild(im);
-
-        const icon = document.createElement('link');
-        icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`;
-        document.head.appendChild(icon);
-      })();
+      loadSharedCSS('core.css');     // Base typography
+      loadSharedCSS('branding.css'); // Premium background
+      loadSharedCSS('forms.css');    // Input and button states
     </script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            text-align: center;
-            color: #333;
-            animation: fadeIn 0.8s ease-out forwards;
-            opacity: 0;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .brand {
-            max-width: 220px;
-            margin: 0 auto 25px auto;
-            display: block;
-            animation: slideUp 0.9s ease-out forwards;
-            opacity: 0;
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .checkmark {
-            font-size: 60px;
-            color: #28a745;
-            margin-top: 10px;
-            animation: popIn 0.6s ease-out forwards, glow 1.5s ease-in-out infinite alternate;
-            opacity: 0;
-        }
-        @keyframes popIn { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
-        @keyframes glow { from { text-shadow: 0 0 4px #8ff5b8; } to { text-shadow: 0 0 12px #28a745; } }
-        .message {
-            margin: 25px 0;
-            padding: 18px;
-            border-radius: 6px;
-            font-size: 16px;
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            animation: fadeIn 1.2s ease-out forwards;
-            opacity: 0;
-        }
-        .redirect-note {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #666;
-            animation: fadeIn 1.6s ease-out forwards;
-            opacity: 0;
-        }
-    </style>
 </head>
 
-<body>
+<body class="auth-page-body">
     <img src="" id="brandImg" class="brand" alt="Skreenit" />
 
     <div class="checkmark">✔</div>

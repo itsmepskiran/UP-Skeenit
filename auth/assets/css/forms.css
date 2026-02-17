@@ -1,0 +1,121 @@
+/* =========================================
+   FORMS.CSS - Inputs & Validation
+   ========================================= */
+
+.form-group { margin-bottom: 1.5rem; }
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: white;
+    color: var(--text-dark);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* Password Toggle & Strength */
+.input-group { position: relative; }
+.input-group input { padding-right: 2.5rem; }
+
+.toggle-password {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0.25rem;
+}
+.toggle-password:hover { color: var(--primary-color); }
+
+.password-strength {
+    margin-top: 0.5rem;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.password-strength-fill { height: 100%; width: 0; transition: width 0.3s ease, background-color 0.3s ease; }
+
+.password-requirements { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light); }
+.password-requirements ul { list-style: none; padding-left: 1rem; }
+.password-requirements li.valid { color: var(--secondary-color); }
+
+/* Role Selection Cards (Merged from auth.css) */
+.role-selection { display: flex; gap: 1rem; margin: 1.5rem 0; }
+.role-card {
+    flex: 1;
+    padding: 1.5rem;
+    border-radius: 14px;
+    border: 2px solid var(--border-color);
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+}
+.role-card:hover { border-color: var(--primary-light); box-shadow: var(--shadow-md); }
+.role-card.active { border-color: var(--primary-color); background: rgba(79,70,229,0.05); }
+.role-card input { display: none; }
+.role-icon { font-size: 2rem; margin-bottom: 0.5rem; color: var(--primary-color); display: block; }
+
+/* File Upload Grid (Merged from application-form-styles.css) */
+.upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.file-upload {
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    color: #718096;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+.file-upload:hover { border-color: var(--primary-color); background: #f8fafc; }
+
+/* Feedback Messages */
+.error-message { color: #dc2626; background: #fef2f2; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #fecaca; }
+.success-message { color: #065f46; background: #f0fff4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #9ae6b4; }
+
+/* =========================================
+   SIDE-BY-SIDE FORM LAYOUTS
+   ========================================= */
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0; /* Let form-group handle the bottom margin */
+}
+
+.form-row .form-group {
+    flex: 1; /* Makes inputs take equal width */
+    min-width: 0; /* Prevents overflow in flex items */
+}
+
+/* Mobile Responsive: Stack them on small screens */
+@media (max-width: 500px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}

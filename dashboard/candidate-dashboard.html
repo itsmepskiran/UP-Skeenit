@@ -7,7 +7,7 @@
 
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
       const im = document.createElement('script');
       im.type = 'importmap';
@@ -19,62 +19,66 @@
       const icon = document.createElement('link'); icon.rel = 'icon'; icon.href = `${authBase}/assets/images/favicon-32x32.png`; document.head.appendChild(icon);
     })();
   </script>
+  <style>
+    .search-container-modern {
+      display: flex;
+      justify-content: flex-end;
+      flex: 1;
+    }
 
-  <script>
-    loadSharedCSS('shared-styles.css');
-    loadSharedCSS('dashboard-styles.css');
+    .search-input-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 350px; /* Limits width so it doesn't stretch too far */
+    }
+    .badge-success {
+    background: #c6f6d5;
+    color: #22543d;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    }
+    .search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8; /* Modern slate-gray icon */
+    font-size: 0.9rem;
+    pointer-events: none;
+    }
+
+    #jobSearchInput {
+    width: 100%;
+    padding: 10px 15px 10px 40px; /* Extra padding on left for the icon */
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background-color: #ffffff;
+    transition: all 0.3s ease;
+    outline: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+    #jobSearchInput:focus {
+    border-color: #4f46e5; /* Primary Indigo */
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); /* Soft glow */
+    background-color: #fff;
+    max-width: 400px; /* Optional: expands slightly when clicking */
+}
+
+    #jobSearchInput::placeholder {
+    color: #cbd5e0;
+}
+  </style>
+<script>
+    loadSharedCSS('core.css');   // Base tokens
+    loadSharedCSS('layout.css'); // Sidebar, Main Content, Grids
+    loadSharedCSS('forms.css');  // Dashboard Search/Filter inputs
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  
-  <style>
-    /* Search Bar Styles */
-    .search-container {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        margin-bottom: 2rem;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-    .search-input-wrapper {
-        flex: 1;
-        position: relative;
-    }
-    .search-input-wrapper i {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #a0aec0;
-    }
-    .search-input {
-        width: 100%;
-        padding: 0.75rem 1rem 0.75rem 2.5rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.2s;
-    }
-    .search-input:focus {
-        border-color: #667eea;
-        outline: none;
-    }
-    .btn-search {
-        padding: 0.75rem 1.5rem;
-        background: #667eea;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: background 0.2s;
-    }
-    .btn-search:hover { background: #5a67d8; }
-  </style>
 </head>
-
 <body>
   <div class="dashboard-container">
     <nav class="sidebar">
@@ -95,7 +99,7 @@
           </div>
           <div class="user-details">
             <span id="userName" class="user-name">Loading...</span>
-            <span class="user-role">Candidate</span>
+            <span id="userDesignation" class="userRole">Candidate</span>
           </div>
         </div>
         <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
@@ -109,7 +113,7 @@
 
       <div class="dashboard-content">
         <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 2rem;">
-            <div class="stat-card">
+            <div class="stat-card" id="applicationsSentCard">
                 <div class="stat-icon bg-blue"><i class="fas fa-paper-plane"></i></div>
                 <div class="stat-info"><h3 id="totalApplications">0</h3><p>Applications Sent</p></div>
             </div>
@@ -119,16 +123,32 @@
             </div>
         </div>
 
-        <div class="search-container">
+        <div class="search-container-modern">
             <div class="search-input-wrapper">
-                <i class="fas fa-search"></i>
-                <input type="text" id="jobSearchInput" class="search-input" placeholder="Search by title..." />
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="jobSearchInput" placeholder="Search by title, location..." />
             </div>
             <button id="jobSearchBtn" class="btn-search">Search</button>
         </div>
 
         <div class="section-header">
             <h2>My Applications</h2>
+        </div>
+        <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius: 15px;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Interview Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <div class="text-center p-5" id="modalSpinner">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Fetching your recorded responses...</p>
+                </div>
+            </div>
+            </div>
+          </div>
         </div>
         <div class="grid-cards" id="myApplicationsList">
              <div class="loading-spinner"></div>
@@ -143,6 +163,23 @@
       </div>
     </main>
   </div>
+  <!-- Response Modal -->
+<div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="responseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="responseModalLabel">My Interview Responses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="responseModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
   <script type="module" src="js/candidate-dashboard.js"></script>
 </body>
 </html>

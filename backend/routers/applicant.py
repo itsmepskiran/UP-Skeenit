@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form, Depends
+from typing import Optional, List
 import json
+from services.auth_service import get_current_user
 from services.applicant_service import ApplicantService
 from services.recruiter_service import RecruiterService
 from services.video_service import VideoService
+from services.supabase_client import get_client
 from middleware.role_required import ensure_permission
 from models.applicant_models import ApplicationCreate
 
@@ -77,8 +79,6 @@ async def update_profile(
         edu_list = json.loads(education) if education else []
         
         # Prepare Profile Data
-        # Note: We do NOT send 'contact_email' as it is not in the schema.
-        # 'summary' maps to 'bio' in the database.
         profile_data = {
             "full_name": full_name,
             "phone": phone,
@@ -117,7 +117,7 @@ async def list_my_applications(request: Request):
     ensure_permission(request, "applications:view")
     try:
         apps = app_svc.get_candidate_applications(request.state.user["id"])
-        return {"ok": True, "data": apps}
+        return apps # Return list directly for cleaner JS handling
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -134,47 +134,137 @@ async def get_application_details(request: Request, application_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ---------------------------------------------------------
-# 1. GET INTERVIEW QUESTIONS
+# 1. GET INTERVIEW QUESTIONS / SETUP
 # ---------------------------------------------------------
 @router.get("/applications/{application_id}/interview")
 async def get_interview_setup(request: Request, application_id: str):
     ensure_permission(request, "applications:view")
     current_user = request.state.user
 
-    # Get the application to find the questions
-    app = rec_svc.get_application_by_id(application_id)
-    
-    if not app:
-        raise HTTPException(status_code=404, detail="Application not found")
-        
-    # Security: Ensure this candidate owns this application
-    if app["candidate_id"] != current_user["id"]:
-        raise HTTPException(status_code=403, detail="Unauthorized access to this interview")
+    try:
+        # Fetch directly from Supabase to ensure clean data access
+        # Using dependency injection here for DB client would be cleaner, but
+        # keeping consistency with your existing style:
+        db = get_client() 
+        res = db.table("job_applications").select("*").eq("id", application_id).single().execute()
+        app = res.data
 
-    return {
-        "ok": True,
-        "interview_questions": app.get("interview_questions", []),
-        "status": app.get("status")
-    }
+        if not app:
+            raise HTTPException(status_code=404, detail="Application not found")
+        
+        # Security: Ensure this candidate owns this application
+        if app.get("candidate_id") != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Unauthorized access to this interview")
+        
+        # Fetch the questions related to the job
+        # Assuming questions are stored in jobs table or a joined query
+        # For now, returning the status which is crucial for the frontend flow
+        return {
+            "ok": True,
+            "status": app.get("status"),
+            "job_id": app.get("job_id")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ---------------------------------------------------------
 # 2. SAVE VIDEO RESPONSE
 # ---------------------------------------------------------
 @router.post("/applications/{application_id}/response")
 async def save_interview_response(request: Request, application_id: str, payload: dict):
-    ensure_permission(request, "video:upload") # OR "applications:create"
+    ensure_permission(request, "video:upload")
     current_user = request.state.user
 
     try:
-        # Save metadata to video_responses table
+        # Extract variables safely
+        q_text = payload.get("question") 
+        v_path = payload.get("video_path")
+
+        # Call Service
         saved_row = vd_svc.save_video_response(
             application_id=application_id,
-            question_id=payload.get("question"), # Storing Question Text
-            video_url=payload.get("video_path"), # Path from frontend upload
+            question=q_text,      
+            video_url=v_path,
             candidate_id=current_user["id"],
             status="completed"
         )
-        return {"ok": True, "data": saved_row}
+
+        return {
+            "ok": True, 
+            "message": "Response saved successfully",
+            "data": {
+                "question": q_text,
+                "video_url": v_path,
+                "db_id": saved_row.get("id") if saved_row else None
+            }
+        }
 
     except Exception as e:
+        print(f"Save Response Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---------------------------------------------------------
+# 3. GET INTERVIEW RESPONSES (Review Feature)
+# ---------------------------------------------------------
+@router.get("/applications/{application_id}/responses")
+async def get_interview_responses(
+    request: Request, 
+    application_id: str,
+    db = Depends(get_client) # Use Depends for cleaner DB access
+):
+    """
+    Get all video responses for a specific application.
+    Used for the 'Review My Responses' modal.
+    """
+    ensure_permission(request, "applications:view")
+    current_user = request.state.user
+
+    try:
+        # Securely fetch only the candidate's own responses
+        # We explicitly check candidate_id match here
+        query = db.table("video_responses") \
+            .select("question, video_url, recorded_at") \
+            .eq("application_id", application_id) \
+            .eq("candidate_id", current_user["id"]) \
+            .order("recorded_at") \
+            .execute()
+
+        # Format matches what frontend expects: {"responses": [...]}
+        return {"responses": query.data}
+
+    except Exception as e:
+        print(f"Error getting interview responses: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Failed to retrieve interview responses"
+        )
+
+# ---------------------------------------------------------
+# 4. FINISH INTERVIEW
+# ---------------------------------------------------------
+@router.post("/applications/{application_id}/finish-interview")
+async def finish_interview(
+    application_id: str,
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_client)
+):
+    try:
+        # 1. Fetch from job_applications
+        res = db.table("job_applications").select("*").eq("id", application_id).single().execute()
+        application = res.data
+
+        if not application:
+            raise HTTPException(status_code=404, detail="Application not found")
+
+        # 2. Security Check (candidate_id must match)
+        if application.get('candidate_id') != current_user.get('id'):
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        # 3. Update status
+        db.table("job_applications").update({"status": "interview_submitted"}).eq("id", application_id).execute()
+
+        return {"ok": True, "message": "Interview completed", "status": "interview_submitted"}
+
+    except Exception as e:
+        print(f"Finish Interview Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -7,7 +7,8 @@
 
   <script>
     (function() {
-      const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isLocal = ['localhost', '127.0.0.1',''].includes(window.location.hostname);
+      // Adjust path if your folder depth is different (Standard is usually ../auth)
       const authBase = isLocal ? '../../auth' : 'https://auth.skreenit.com';
       const im = document.createElement('script');
       im.type = 'importmap';
@@ -20,103 +21,17 @@
     })();
   </script>
 
+
   <script>
-    loadSharedCSS('shared-styles.css');
-    loadSharedCSS('dashboard-styles.css');
-    loadSharedCSS('application-form-styles.css'); 
+    loadSharedCSS('core.css');    // Base tokens
+    loadSharedCSS('layout.css');  // Sidebar (if used)
+    loadSharedCSS('forms.css');   // Form styling
+    loadSharedCSS('special.css'); // Video Room or Progress Steppers
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-
-  <style>
-    /* Inline overrides */
-    .form-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        padding: 2rem;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    /* Stepper Styles */
-    .stepper-wrapper {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 2rem;
-        position: relative;
-    }
-    .stepper-wrapper::before {
-        content: '';
-        position: absolute;
-        top: 24px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: #e2e8f0;
-        z-index: 0;
-    }
-    .step-item {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-    }
-    .step-circle {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: white;
-        border: 2px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: #718096;
-        transition: all 0.3s ease;
-        margin-bottom: 0.5rem;
-    }
-    .step-label {
-        font-size: 0.85rem;
-        color: #718096;
-        font-weight: 500;
-    }
-    
-    /* Active State (Current) - Blue */
-    .step-item.active .step-circle {
-        border-color: #667eea;
-        background: #667eea;
-        color: white;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
-    }
-    .step-item.active .step-label { color: #2d3748; font-weight: 600; }
-    
-    /* Completed State (Past) - Green */
-    .step-item.completed .step-circle {
-        border-color: #38a169;
-        background: #38a169;
-        color: white;
-    }
-    .step-item.completed .step-label { color: #38a169; }
-
-    /* Animation */
-    .form-section { display: none; animation: fadeIn 0.3s ease; }
-    .form-section.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Actions */
-    .form-actions {
-        display: flex;
-        justify-content: space-between; /* Keeps Back button on left */
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #f1f5f9;
-    }
-  </style>
 </head>
 
-<body>
+<body class="auth-page-body">
   <div class="dashboard-container">
     <nav class="sidebar">
       <div class="sidebar-header">
